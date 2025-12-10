@@ -1,0 +1,8 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#FFFFFF" /> <!-- Cor de fundo do botão -->
+            <corners android:radius="12dp" /> <!-- Cantos arredondados -->
+        </shape>
+    </item>
+</layer-list>

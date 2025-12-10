@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:gravity="center"
+    android:background="#F5F5F5">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Recuperar Senha"
+        android:textColor="#03A9F4"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="32dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Digite seu e-mail cadastrado. Enviaremos um link para você redefinir sua senha."
+        android:gravity="center"
+        android:textColor="#666666"
+        android:layout_marginBottom="24dp"/>
+
+    <EditText
+        android:id="@+id/editTextEmailRecuperacao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="E-MAIL"
+        android:inputType="textEmailAddress"
+        android:padding="12dp"
+        android:textColor="#000000"
+        android:textColorHint="#5A5B59"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/buttonEnviarRecuperacao"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ENVIAR E-MAIL"
+        android:backgroundTint="#4CAF50"
+        android:textColor="#FFFFFF"/>
+
+    <Button
+        android:id="@+id/buttonVoltarLogin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="VOLTAR"
+        android:backgroundTint="#9E9E9E"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="16dp"/>
+
+</LinearLayout>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/textViewEditarTitulo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Editar Abstinência"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="24dp" />
+
+    <EditText
+        android:id="@+id/editTextDataInicio"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Data de Início da Abstinência"
+        android:focusable="false"
+        android:layout_below="@id/textViewEditarTitulo"
+        android:layout_marginBottom="16dp" />
+
+    <TextView
+        android:id="@+id/textViewLabelVicio"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Vício a ser superado:"
+        android:layout_below="@id/editTextDataInicio"
+        android:layout_marginTop="16dp"/>
+
+    <Spinner
+        android:id="@+id/spinnerVicioEdicao"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_below="@id/textViewLabelVicio"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/buttonSalvar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/spinnerVicioEdicao"
+        android:backgroundTint="#03A9F4"
+        android:text="Salvar" />
+
+</RelativeLayout>

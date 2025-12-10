@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#E3F2FD"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginBottom="24dp">
+
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@android:drawable/ic_menu_edit"
+                app:tint="#3F51B5"
+                android:contentDescription="Editar Perfil" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Editar Perfil"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#3F51B5"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_background"
+            android:elevation="4dp"
+            android:padding="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📝 Informações Pessoais"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#3F51B5"
+                android:layout_marginBottom="12dp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:textColorHint="#424242"
+                app:hintTextColor="#3F51B5"
+                app:boxBackgroundColor="#FFFFFF"
+                app:boxStrokeColor="#3F51B5">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextNick"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Novo Nick (Opcional)"
+                    android:textColor="#000000"
+                    android:textSize="16sp"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:textColorHint="#424242"
+                app:hintTextColor="#3F51B5"
+                app:boxBackgroundColor="#FFFFFF"
+                app:boxStrokeColor="#3F51B5">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextApresentacao"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Nova Apresentação (Opcional)"
+                    android:textColor="#000000"
+                    android:textSize="16sp"
+                    android:inputType="textMultiLine"
+                    android:minLines="3"
+                    android:gravity="top" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#E0E0E0"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🔒 Segurança"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#3F51B5"
+                android:layout_marginBottom="12dp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:textColorHint="#212121"
+                app:hintTextColor="#3F51B5"
+                app:boxBackgroundColor="#FFFFFF"
+                app:passwordToggleEnabled="true"
+                app:boxStrokeColor="#3F51B5">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextSenhaAtual"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Senha Atual (Obrigatório)*"
+                    android:inputType="textPassword"
+                    android:textColor="#000000"
+                    android:textSize="16sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:textColorHint="#424242"
+                app:hintTextColor="#3F51B5"
+                app:boxBackgroundColor="#FFFFFF"
+                app:passwordToggleEnabled="true"
+                app:boxStrokeColor="#3F51B5">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/editTextNovaSenha"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Nova Senha (Opcional)"
+                    android:inputType="textPassword"
+                    android:textColor="#000000"
+                    android:textSize="16sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="⚠️ A senha atual é necessária para salvar qualquer alteração"
+                android:textSize="12sp"
+                android:textColor="#E65100"
+                android:textStyle="bold"
+                android:layout_marginBottom="20dp"
+                android:background="#FFF3E0"
+                android:padding="10dp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/buttonSalvarAlteracoes"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="24dp"
+            android:backgroundTint="#4CAF50"
+            android:text="💾 Salvar Alterações"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:elevation="6dp" />
+
+    </LinearLayout>
+</ScrollView>

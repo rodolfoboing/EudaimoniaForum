@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="end"
+    android:orientation="vertical"
+    android:paddingStart="64dp"
+    android:paddingTop="4dp"
+    android:paddingEnd="8dp"
+    android:paddingBottom="4dp">
+
+    <!-- Balão da Mensagem Enviada -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bubble_send"
+        android:elevation="1dp"
+        android:orientation="vertical"
+        android:padding="10dp">
+
+        <!-- Texto da Mensagem -->
+        <TextView
+            android:id="@+id/textViewMessageSend"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Esta é uma mensagem enviada por mim!"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <!-- Linha de Info: Hora + Status -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <!-- Hora -->
+            <TextView
+                android:id="@+id/textViewTimeSend"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="14:32"
+                android:textColor="#E3F2FD"
+                android:textSize="11sp" />
+
+            <!-- Status da Mensagem (Enviado/Lido) -->
+            <ImageView
+                android:id="@+id/imageViewStatus"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginStart="4dp"
+                android:contentDescription="Status"
+                android:src="@drawable/ic_message_read" />
+        </LinearLayout>
+    </LinearLayout>
+
+</LinearLayout>

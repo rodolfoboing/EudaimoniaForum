@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#F5F5F5">
+
+    <ImageView
+        android:id="@+id/ic_eudaimoniaforum"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:src="@drawable/ic_eudaimoniaforum" />
+
+    <!-- Nome do App -->
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginBottom="24dp"
+        android:text="EudaimoniaForum"
+        android:textColor="#03A9F4"
+        android:textSize="24sp"
+        android:textStyle="bold" />
+
+    <!-- Mensagem de Boas-Vindas -->
+    <TextView
+        android:id="@+id/welcome_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="Bem-vindo! Faça login para continuar."
+        android:textSize="16sp"
+        android:textColor="#666666"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Campo de Usuário -->
+    <EditText
+        android:id="@+id/editTextUsuario"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="USUARIO"
+        android:padding="12dp"
+        android:textColor="#000000"
+        android:textColorHint="#5A5B59" />
+
+    <!-- Campo de Senha -->
+    <EditText
+        android:id="@+id/editTextSenha"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:hint="SENHA"
+        android:inputType="textPassword"
+        android:padding="12dp"
+        android:textColor="#000000"
+        android:textColorHint="#625F5F" />
+
+    <TextView
+        android:id="@+id/textViewEsqueciSenha"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_marginBottom="16dp"
+        android:text="Esqueci minha senha"
+        android:textColor="#03A9F4"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:clickable="true"
+        android:focusable="true"/>
+
+    <!-- Botão de Login -->
+    <Button
+        android:id="@+id/buttonEntrar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="ENTRAR"
+        android:backgroundTint="#4CAF50"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Botão de Registro -->
+    <Button
+        android:id="@+id/buttonCadastrar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CADASTRAR"
+        android:backgroundTint="#2196F3"
+        android:textColor="#FFFFFF" />
+
+    <!-- Rodapé -->
+    <TextView
+        android:id="@+id/footer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="© 2024 Desenvolvido por Rodolfo B.M"
+        android:textSize="12sp"
+        android:textColor="#999999"
+        android:layout_marginTop="24dp" />
+
+</LinearLayout>

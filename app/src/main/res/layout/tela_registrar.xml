@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".RegistrarActivity">
+
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"/>
+    <!-- android:src="@drawable/logo"-->
+ <TextView
+     android:id="@+id/textViewTitulo"
+     android:layout_width="wrap_content"
+     android:layout_height="wrap_content"
+     android:layout_alignParentTop="true"
+     android:layout_centerHorizontal="true"
+     android:layout_marginTop="16dp"
+     android:text="REGISTRO"
+     android:textSize="24sp" />
+
+
+ <EditText
+     android:id="@+id/editTextEmail"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+     android:layout_below="@+id/textViewTitulo"
+     android:layout_margin="16dp"
+     android:hint="EMAIL"
+     android:inputType="textEmailAddress"
+     android:textColor="#FAFAFA" />
+
+ <EditText
+     android:id="@+id/editTextNome"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+     android:layout_below="@+id/editTextEmail"
+     android:layout_margin="16dp"
+     android:textColor="#FAFAFA"
+     android:hint="NICK" />
+
+    <Spinner
+        android:id="@+id/spinnerVicio"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:layout_below="@+id/editTextNome"
+        android:layout_margin="16dp" />
+
+ <EditText
+     android:id="@+id/editTextSenhaCadastro"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+     android:layout_below="@+id/spinnerVicio"
+     android:layout_margin="16dp"
+     android:hint="SENHA (Minimo 6 Caracteres)"
+     android:textColor="#FAFAFA"
+     android:inputType="textPassword" />
+
+ <Button
+     android:id="@+id/buttonCadastrar"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+     android:layout_below="@+id/editTextSenhaCadastro"
+     android:layout_margin="16dp"
+     android:backgroundTint="#8BC34A"
+     android:text="CADASTRAR" />
+
+</RelativeLayout>

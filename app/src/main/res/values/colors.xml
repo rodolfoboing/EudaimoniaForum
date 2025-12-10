@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Cores para o status da mensagem -->
+    <color name="status_read_blue">#4FC3F7</color> <!-- Um azul claro e vibrante -->
+    <color name="status_sent_gray">#BDBDBD</color> <!-- Um cinza para o status de enviado -->
+
+    <color name="azul_muito_claro">#E3F2FD</color>
+</resources>
