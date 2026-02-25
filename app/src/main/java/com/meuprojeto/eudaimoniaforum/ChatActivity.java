@@ -42,7 +42,8 @@ public class ChatActivity extends AppCompatActivity {
     private List<ChatMessage> chatMessages;
 
     private String receiverId, currentUserId, chatId;
-    private DatabaseReference chatRef, userRef;
+    private DatabaseReference messagesRef;
+    private DatabaseReference userRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,12 +63,18 @@ public class ChatActivity extends AppCompatActivity {
         currentUserId = currentUser.getUid();
 
         chatId = getChatId(currentUserId, receiverId);
-        chatRef = FirebaseDatabase.getInstance().getReference("chats").child(chatId).child("messages");
+
+        // Mensagens ficam em "messages/{chatId}" para não pesar o
+        // carregamento dos metadados
+        messagesRef = FirebaseDatabase.getInstance().getReference("messages").child(chatId);
         userRef = FirebaseDatabase.getInstance().getReference("users");
 
         setupRecyclerView();
         loadMessages();
         carregarDadosDoCabecalho();
+
+        // Marca a conversa como lida ao entrar
+        atualizarStatusLidoNoChat();
 
         buttonSendMessage.setOnClickListener(v -> sendMessage());
         buttonOpcoes.setOnClickListener(this::showChatMenu);
@@ -80,6 +87,13 @@ public class ChatActivity extends AppCompatActivity {
         textViewNomeChat = findViewById(R.id.textViewNomeChat);
         textViewStatusOnline = findViewById(R.id.textViewStatusOnline);
         buttonOpcoes = findViewById(R.id.buttonOpcoes);
+    }
+
+    private void atualizarStatusLidoNoChat() {
+        // Atualiza o timestamp de leitura do usuário nos metadados do chat
+        DatabaseReference readRef = FirebaseDatabase.getInstance().getReference("chats").child(chatId).child("lidoPor")
+                .child(currentUserId);
+        readRef.setValue(System.currentTimeMillis());
     }
 
     private void showChatMenu(View view) {
@@ -104,12 +118,20 @@ public class ChatActivity extends AppCompatActivity {
                 .setTitle("Apagar Conversa")
                 .setMessage("Tem certeza que deseja apagar esta conversa? A ação não pode ser desfeita.")
                 .setPositiveButton("Sim", (dialog, which) -> {
-                    chatRef.getParent().removeValue().addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(this, "Conversa apagada.", Toast.LENGTH_SHORT).show();
-                            finish();
-                        }
-                    });
+                    // Remoção Atômica Multicaminho (Apaga Metadados, Mensagens e Índices)
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("/messages/" + chatId, null);
+                    updates.put("/chats/" + chatId, null); // Apaga metadata
+                    updates.put("/user_conversas/" + currentUserId + "/" + chatId, null);
+                    updates.put("/user_conversas/" + receiverId + "/" + chatId, null);
+
+                    FirebaseDatabase.getInstance().getReference().updateChildren(updates)
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    Toast.makeText(this, "Conversa apagada.", Toast.LENGTH_SHORT).show();
+                                    finish();
+                                }
+                            });
                 })
                 .setNegativeButton("Não", null)
                 .show();
@@ -120,11 +142,12 @@ public class ChatActivity extends AppCompatActivity {
                 .setTitle("Bloquear Usuário")
                 .setMessage("Tem certeza que deseja bloquear este usuário? Você não receberá mais mensagens dele.")
                 .setPositiveButton("Sim", (dialog, which) -> {
-                    userRef.child(currentUserId).child("hasBlocked").child(receiverId).setValue(true).addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Toast.makeText(this, "Usuário bloqueado.", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+                    userRef.child(currentUserId).child("hasBlocked").child(receiverId).setValue(true)
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    Toast.makeText(this, "Usuário bloqueado.", Toast.LENGTH_SHORT).show();
+                                }
+                            });
                 })
                 .setNegativeButton("Não", null)
                 .show();
@@ -132,7 +155,8 @@ public class ChatActivity extends AppCompatActivity {
 
     private void sendMessage() {
         String messageText = editTextChatMessage.getText().toString().trim();
-        if (TextUtils.isEmpty(messageText)) return;
+        if (TextUtils.isEmpty(messageText))
+            return;
 
         // Verifica se o destinatário te bloqueou
         userRef.child(receiverId).child("hasBlocked").child(currentUserId).get().addOnSuccessListener(snapshot -> {
@@ -140,38 +164,40 @@ public class ChatActivity extends AppCompatActivity {
                 Toast.makeText(this, "Você não pode enviar mensagens para este usuário.", Toast.LENGTH_SHORT).show();
                 return;
             }
-            // Se não, envia a mensagem
+
             long timestamp = System.currentTimeMillis();
             ChatMessage chatMessage = new ChatMessage(messageText, currentUserId, receiverId, timestamp);
-            
-            // Usar updateChildren para garantir que "membros" seja escrito JUNTO com a mensagem.
-            // Isso satisfaz a regra de segurança que exige que membros contenha auth.uid.
-            DatabaseReference chatRoot = FirebaseDatabase.getInstance().getReference("chats").child(chatId);
-            String messageKey = chatRoot.child("messages").push().getKey();
-            
+
+            // Gerar chaves
+            String messageKey = messagesRef.push().getKey();
+
+            // Mapa de Atualização Atômica (Melhoria de Performance e Consistência)
             Map<String, Object> updates = new HashMap<>();
-            updates.put("messages/" + messageKey, chatMessage);
-            updates.put("membros/" + currentUserId, true);
-            updates.put("membros/" + receiverId, true);
-            
-            chatRoot.updateChildren(updates).addOnCompleteListener(task -> {
+
+            // 1. Mensagem em si (Coleção separada)
+            updates.put("/messages/" + chatId + "/" + messageKey, chatMessage);
+
+            // 2. Metadados do Chat (Para a lista de conversas carregar rápido)
+            updates.put("/chats/" + chatId + "/ultimaMensagem", messageText);
+            updates.put("/chats/" + chatId + "/timestamp", timestamp);
+            updates.put("/chats/" + chatId + "/membros/" + currentUserId, true);
+            updates.put("/chats/" + chatId + "/membros/" + receiverId, true);
+            // Marca como lido por quem enviou a mensagem agora
+            updates.put("/chats/" + chatId + "/lidoPor/" + currentUserId, timestamp);
+
+            // 3. Índices de Conversa (Garante que apareça na lista)
+            updates.put("/user_conversas/" + currentUserId + "/" + chatId, true);
+            updates.put("/user_conversas/" + receiverId + "/" + chatId, true);
+
+            FirebaseDatabase.getInstance().getReference().updateChildren(updates).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     editTextChatMessage.setText("");
                     enviarNotificacao();
-                    
-                    // Atualiza índice de conversas (para listar na ConversasActivity)
-                    atualizarIndicesDeConversa();
                 } else {
-                    Toast.makeText(this, "Falha ao enviar mensagem: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Falha ao enviar mensagem.", Toast.LENGTH_SHORT).show();
                 }
             });
         });
-    }
-
-    private void atualizarIndicesDeConversa() {
-        DatabaseReference userConversas = FirebaseDatabase.getInstance().getReference("user_conversas");
-        userConversas.child(currentUserId).child(chatId).setValue(true);
-        userConversas.child(receiverId).child(chatId).setValue(true);
     }
 
     private void enviarNotificacao() {
@@ -181,24 +207,64 @@ public class ChatActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Usuario user = snapshot.getValue(Usuario.class);
                 String nomeRemetente = (user != null) ? user.getNick() : "Alguém";
-                String mensagemNotificacao = "Nova mensagem de " + nomeRemetente;
 
-                DatabaseReference notificacaoRef = FirebaseDatabase.getInstance().getReference("notificacoes").child(receiverId).push();
-                String notifId = notificacaoRef.getKey();
+                DatabaseReference notificacoesRef = FirebaseDatabase.getInstance().getReference("notificacoes")
+                        .child(receiverId);
 
-                Notificacao notificacao = new Notificacao(notifId, "chat", mensagemNotificacao, currentUserId, System.currentTimeMillis());
-                notificacaoRef.setValue(notificacao);
+                // Query para verificar se já existe notificação deste chat
+                notificacoesRef.orderByChild("idReferencia").equalTo(currentUserId)
+                        .addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                boolean chatNotificationExists = false;
+
+                                // Se encontrar, verifica se é do tipo chat e atualiza
+                                if (dataSnapshot.exists()) {
+                                    for (DataSnapshot child : dataSnapshot.getChildren()) {
+                                        Notificacao existingNotif = child.getValue(Notificacao.class);
+                                        if (existingNotif != null && "chat".equals(existingNotif.getTipo())) {
+                                            child.getRef().child("timestamp").setValue(System.currentTimeMillis());
+                                            child.getRef().child("mensagem")
+                                                    .setValue("Novas mensagens de " + nomeRemetente);
+                                            chatNotificationExists = true;
+                                            return;
+                                        }
+                                    }
+                                }
+
+                                // Se não encontrar (ou se as notificações existentes não forem de chat), cria
+                                // nova
+                                if (!chatNotificationExists) {
+                                    String notifId = notificacoesRef.push().getKey();
+                                    String mensagemNotificacao = "Nova mensagem de " + nomeRemetente;
+                                    Notificacao notificacao = new Notificacao(notifId, "chat",
+                                            mensagemNotificacao, currentUserId, System.currentTimeMillis());
+                                    notificacoesRef.child(notifId).setValue(notificacao);
+                                }
+                            }
+
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError error) {
+                            }
+                        });
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
     }
 
+    private DatabaseReference receiverRef;
+    private ValueEventListener headerListener;
+
     private void carregarDadosDoCabecalho() {
-        DatabaseReference receiverRef = FirebaseDatabase.getInstance().getReference("users").child(receiverId);
-        receiverRef.addValueEventListener(new ValueEventListener() {
+        receiverRef = FirebaseDatabase.getInstance().getReference("users").child(receiverId);
+        headerListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (isFinishing() || isDestroyed())
+                    return;
                 if (snapshot.exists()) {
                     Usuario user = snapshot.getValue(Usuario.class);
                     if (user != null) {
@@ -215,9 +281,15 @@ public class ChatActivity extends AppCompatActivity {
                     }
                 }
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { textViewNomeChat.setText("Usuário desconhecido"); }
-        });
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (!isFinishing() && !isDestroyed()) {
+                    textViewNomeChat.setText("Usuário desconhecido");
+                }
+            }
+        };
+        receiverRef.addValueEventListener(headerListener);
     }
 
     private void setupRecyclerView() {
@@ -227,31 +299,48 @@ public class ChatActivity extends AppCompatActivity {
         recyclerViewChat.setAdapter(chatAdapter);
     }
 
+    private ValueEventListener messagesListener;
+
     private void loadMessages() {
-        chatRef.addValueEventListener(new ValueEventListener() {
+        messagesListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (isFinishing() || isDestroyed())
+                    return;
                 chatMessages.clear();
                 for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
                     ChatMessage message = dataSnapshot.getValue(ChatMessage.class);
                     if (message != null) {
                         chatMessages.add(message);
+
+                        // Atualiza status de leitura localmente se necessário
                         if (!message.getSenderId().equals(currentUserId) && !"lido".equals(message.getStatus())) {
-                            marcarMensagemComoLida(dataSnapshot.getKey());
+                            messagesRef.child(dataSnapshot.getKey()).child("status").setValue("lido");
                         }
                     }
                 }
                 chatAdapter.notifyDataSetChanged();
                 recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
+
+                // Sempre que carregarem mensagens novas, atualizamos o status de leitura global
+                atualizarStatusLidoNoChat();
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
-        });
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        };
+        messagesRef.addValueEventListener(messagesListener);
     }
 
-    private void marcarMensagemComoLida(String messageKey) {
-        if (messageKey != null) {
-            chatRef.child(messageKey).child("status").setValue("lido");
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (receiverRef != null && headerListener != null) {
+            receiverRef.removeEventListener(headerListener);
+        }
+        if (messagesRef != null && messagesListener != null) {
+            messagesRef.removeEventListener(messagesListener);
         }
     }
 

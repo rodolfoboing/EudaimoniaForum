@@ -41,15 +41,18 @@ public class MainActivity extends AppCompatActivity {
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
     private static final String META_WORK_TAG = "MetasWork";
 
-    private TextView textViewTempoAbstinenciaMeses, textViewTempoAbstinenciaDias, textViewTempoAbstinenciaHoras, textViewTempoAbstinenciaSegundos, textViewHabito;
+    private TextView textViewTempoAbstinenciaMeses, textViewTempoAbstinenciaDias, textViewTempoAbstinenciaHoras,
+            textViewTempoAbstinenciaMinutos, textViewHabito;
     private ImageButton buttonNotificacao;
     private MaterialButton buttonModeracao;
+    private MaterialButton buttonCheckInDiario;
     private long tempoInicial;
     private Handler handler = new Handler(Looper.getMainLooper());
     private Runnable runnableAtualizarTempo;
     private FirebaseAuth firebaseAuth;
     private DatabaseReference userRef;
-    private Map<DatabaseReference, ChildEventListener> activeListeners = new HashMap<>();
+    private Map<DatabaseReference, ChildEventListener> activeChildListeners = new HashMap<>();
+    private Map<DatabaseReference, ValueEventListener> activeValueListeners = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,24 +66,72 @@ public class MainActivity extends AppCompatActivity {
             userRef = FirebaseDatabase.getInstance().getReference("users").child(currentUser.getUid());
         }
 
+        // Verifica se é a primeira vez (Onboarding)
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        if (!prefs.getBoolean("onboarding_complete", false)) {
+            startActivity(new Intent(this, OnboardingActivity.class));
+        }
+
         inicializarUI();
+
         configurarBotoes();
+
         recuperarTempoInicial();
+
         iniciarAtualizacaoTempo();
+
         verificarModerador();
+
         carregarDadosUsuario();
+
+        verificarCheckInDiario(); // Verifica se já fez check-in hoje
+
         agendarTrabalhoDeMetas();
+
         iniciarListenersDeNotificacao();
+
     }
 
     private void iniciarListenersDeNotificacao() {
         FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        if (currentUser == null) return;
+        if (currentUser == null)
+            return;
         String userId = currentUser.getUid();
 
         monitorarStatusDoLeitor(userId);
-        ouvirNovosComentarios(userId);
-        ouvirNovasMensagensDeChat(userId);
+
+        // Solicitar permissão de notificação (Android 13+)
+        verificarPermissaoNotificacao();
+
+        // Atualizar Token FCM
+        atualizarFcmToken();
+    }
+
+    private void verificarPermissaoNotificacao() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this,
+                    android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                androidx.core.app.ActivityCompat.requestPermissions(this,
+                        new String[] { android.Manifest.permission.POST_NOTIFICATIONS }, 101);
+            }
+        }
+    }
+
+    private void atualizarFcmToken() {
+        com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken()
+                .addOnCompleteListener(task -> {
+                    if (!task.isSuccessful()) {
+                        return;
+                    }
+                    String token = task.getResult();
+                    FirebaseUser user = firebaseAuth.getCurrentUser();
+                    if (user != null && token != null) {
+                        FirebaseDatabase.getInstance().getReference("users")
+                                .child(user.getUid())
+                                .child("fcmToken")
+                                .setValue(token);
+                    }
+                });
     }
 
     private void monitorarStatusDoLeitor(String userId) {
@@ -90,118 +141,32 @@ public class MainActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 buttonNotificacao.setColorFilter(snapshot.hasChildren() ? Color.YELLOW : Color.WHITE);
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         };
         notificacoesRef.addValueEventListener(listener);
+        activeValueListeners.put(notificacoesRef, listener);
+
         buttonNotificacao.setOnClickListener(v -> startActivity(new Intent(this, NotificacaoActivity.class)));
     }
 
-    private void ouvirNovosComentarios(String userId) {
-        DatabaseReference postsRef = FirebaseDatabase.getInstance().getReference("forum/posts");
-        Query userPostsQuery = postsRef.orderByChild("autor").equalTo(userId);
-
-        ChildEventListener listener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot postSnapshot, @Nullable String previousChildName) {
-                String postId = postSnapshot.getKey();
-                if (postId == null) return;
-
-                DatabaseReference commentsRef = postSnapshot.child("comentarios").getRef();
-                commentsRef.orderByChild("timestamp").startAt(System.currentTimeMillis()).addChildEventListener(new ChildEventListener() {
-                    @Override
-                    public void onChildAdded(@NonNull DataSnapshot commentSnapshot, @Nullable String previousChildName) {
-                        Comentario comentario = commentSnapshot.getValue(Comentario.class);
-                        if (comentario != null && !comentario.getAutor().equals(userId)) {
-                            criarNotificacaoDeComentario(comentario, postId);
-                        }
-                    }
-                    @Override public void onChildChanged(@NonNull DataSnapshot s, @Nullable String p) {}
-                    @Override public void onChildRemoved(@NonNull DataSnapshot s) {}
-                    @Override public void onChildMoved(@NonNull DataSnapshot s, @Nullable String p) {}
-                    @Override public void onCancelled(@NonNull DatabaseError e) {}
-                });
-            }
-            @Override public void onChildChanged(@NonNull DataSnapshot s, @Nullable String p) {}
-            @Override public void onChildRemoved(@NonNull DataSnapshot s) {}
-            @Override public void onChildMoved(@NonNull DataSnapshot s, @Nullable String p) {}
-            @Override public void onCancelled(@NonNull DatabaseError e) {}
-        };
-        userPostsQuery.addChildEventListener(listener);
-        activeListeners.put(userPostsQuery.getRef(), listener);
-    }
-
-    private void ouvirNovasMensagensDeChat(String userId) {
-        DatabaseReference chatsRef = FirebaseDatabase.getInstance().getReference("chats");
-        ChildEventListener listener = new ChildEventListener() {
-            @Override
-            public void onChildAdded(@NonNull DataSnapshot chatSnapshot, @Nullable String previousChildName) {
-                String chatId = chatSnapshot.getKey();
-                if (chatId != null && chatId.contains(userId)) {
-                    DatabaseReference messagesRef = chatSnapshot.child("messages").getRef();
-                    messagesRef.orderByChild("timestamp").startAt(System.currentTimeMillis()).addChildEventListener(new ChildEventListener() {
-                        @Override
-                        public void onChildAdded(@NonNull DataSnapshot messageSnapshot, @Nullable String previousChildName) {
-                            ChatMessage message = messageSnapshot.getValue(ChatMessage.class);
-                            if (message != null && !message.getSenderId().equals(userId)) {
-                                criarNotificacaoDeChat(message);
-                            }
-                        }
-                        @Override public void onChildChanged(@NonNull DataSnapshot s, @Nullable String p) {}
-                        @Override public void onChildRemoved(@NonNull DataSnapshot s) {}
-                        @Override public void onChildMoved(@NonNull DataSnapshot s, @Nullable String p) {}
-                        @Override public void onCancelled(@NonNull DatabaseError e) {}
-                    });
-                }
-            }
-            @Override public void onChildChanged(@NonNull DataSnapshot s, @Nullable String p) {}
-            @Override public void onChildRemoved(@NonNull DataSnapshot s) {}
-            @Override public void onChildMoved(@NonNull DataSnapshot s, @Nullable String p) {}
-            @Override public void onCancelled(@NonNull DatabaseError e) {}
-        };
-        chatsRef.addChildEventListener(listener);
-        activeListeners.put(chatsRef, listener);
-    }
-
-    private void criarNotificacaoDeComentario(Comentario comentario, String postId) {
-        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users").child(comentario.getAutor());
-        usersRef.child("nick").get().addOnSuccessListener(nickSnapshot -> {
-            String nick = nickSnapshot.exists() ? nickSnapshot.getValue(String.class) : "Alguém";
-            String mensagem = nick + " comentou no seu post.";
-            DatabaseReference notificacoesRef = FirebaseDatabase.getInstance().getReference("notificacoes").child(firebaseAuth.getCurrentUser().getUid());
-            String notificacaoId = notificacoesRef.push().getKey();
-            if (notificacaoId != null) {
-                Notificacao notificacao = new Notificacao(notificacaoId, "comentario", mensagem, postId, comentario.getTimestamp());
-                notificacoesRef.child(notificacaoId).setValue(notificacao);
-            }
-        });
-    }
-
-    private void criarNotificacaoDeChat(ChatMessage message) {
-        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users").child(message.getSenderId());
-        usersRef.child("nick").get().addOnSuccessListener(nickSnapshot -> {
-            String nick = nickSnapshot.exists() ? nickSnapshot.getValue(String.class) : "Alguém";
-            String mensagem = "Nova mensagem de " + nick;
-            DatabaseReference notificacoesRef = FirebaseDatabase.getInstance().getReference("notificacoes").child(firebaseAuth.getCurrentUser().getUid());
-            String notificacaoId = notificacoesRef.push().getKey();
-            if (notificacaoId != null) {
-                Notificacao notificacao = new Notificacao(notificacaoId, "chat", mensagem, message.getSenderId(), message.getTimestamp());
-                notificacoesRef.child(notificacaoId).setValue(notificacao);
-            }
-        });
-    }
-
     private void removerTodosOsListeners() {
-        for (Map.Entry<DatabaseReference, ChildEventListener> entry : activeListeners.entrySet()) {
+        for (Map.Entry<DatabaseReference, ChildEventListener> entry : activeChildListeners.entrySet()) {
             entry.getKey().removeEventListener(entry.getValue());
         }
-        activeListeners.clear();
+        activeChildListeners.clear();
+
+        for (Map.Entry<DatabaseReference, ValueEventListener> entry : activeValueListeners.entrySet()) {
+            entry.getKey().removeEventListener(entry.getValue());
+        }
+        activeValueListeners.clear();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        // Não precisamos mais salvar o timestamp aqui
     }
 
     @Override
@@ -215,30 +180,139 @@ public class MainActivity extends AppCompatActivity {
         textViewTempoAbstinenciaMeses = findViewById(R.id.textViewTempoAbstinenciaMeses);
         textViewTempoAbstinenciaDias = findViewById(R.id.textViewTempoAbstinenciaDias);
         textViewTempoAbstinenciaHoras = findViewById(R.id.textViewTempoAbstinenciaHoras);
-        textViewTempoAbstinenciaSegundos = findViewById(R.id.textViewTempoAbstinenciaSegundos);
+        textViewTempoAbstinenciaMinutos = findViewById(R.id.textViewTempoAbstinenciaMinutos);
         textViewHabito = findViewById(R.id.textViewHabito);
         buttonNotificacao = findViewById(R.id.buttonNotificacao);
         buttonModeracao = findViewById(R.id.buttonModeracao);
+        buttonCheckInDiario = findViewById(R.id.buttonCheckInDiario);
     }
 
-    private void carregarDadosUsuario() {
-        if (userRef != null) {
-            userRef.child("vicio").addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    textViewHabito.setText(snapshot.exists() ? snapshot.getValue(String.class) : "Vício não definido");
-                }
-                @Override public void onCancelled(@NonNull DatabaseError error) { }
-            });
+    private void realizarCheckIn() {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user == null)
+            return;
+
+        String hoje = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+        DatabaseReference checkInRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid())
+                .child("checkins");
+
+        checkInRef.child(hoje).setValue(true).addOnSuccessListener(aVoid -> {
+            buttonCheckInDiario.setText("✅ Compromisso Feito!");
+            buttonCheckInDiario.setEnabled(false);
+            buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+
+            // Incrementa Streak
+            incrementarStreak(user.getUid());
+
+            // Verifica e concede medalhas baseadas no tempo de abstinência atual
+            verificarEConcederMedalhas(user.getUid());
+
+            new AlertDialog.Builder(this)
+                    .setTitle("Compromisso Firmado!")
+                    .setMessage(
+                            "Parabéns por renovar seu compromisso de sobriedade por mais 24 horas. Um dia de cada vez!")
+                    .setPositiveButton("Vamos lá!", null)
+                    .show();
+        });
+    }
+
+    private void verificarEConcederMedalhas(String userId) {
+        long diferenca = System.currentTimeMillis() - tempoInicial;
+        long dias = TimeUnit.MILLISECONDS.toDays(diferenca);
+
+        DatabaseReference conquistasRef = FirebaseDatabase.getInstance().getReference("users")
+                .child(userId).child("conquistas");
+
+        Map<String, Object> updates = new HashMap<>();
+
+        // Milestones: 1, 3, 7, 30, 90, 180, 365
+        if (dias >= 1)
+            updates.put("badge_1_dia", true);
+        if (dias >= 3)
+            updates.put("badge_3_dias", true);
+        if (dias >= 7)
+            updates.put("badge_1_semana", true);
+        if (dias >= 30)
+            updates.put("badge_1_mes", true);
+        if (dias >= 90)
+            updates.put("badge_3_meses", true);
+        if (dias >= 180)
+            updates.put("badge_6_meses", true);
+        if (dias >= 365)
+            updates.put("badge_1_ano", true);
+
+        if (!updates.isEmpty()) {
+            conquistasRef.updateChildren(updates);
         }
+    }
+
+    private void incrementarStreak(String userId) {
+        DatabaseReference streakRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
+                .child("streakAtual");
+        streakRef.runTransaction(new com.google.firebase.database.Transaction.Handler() {
+            @NonNull
+            @Override
+            public com.google.firebase.database.Transaction.Result doTransaction(
+                    @NonNull com.google.firebase.database.MutableData currentData) {
+                Integer currentStreak = currentData.getValue(Integer.class);
+                if (currentStreak == null) {
+                    currentData.setValue(1);
+                } else {
+                    currentData.setValue(currentStreak + 1);
+                }
+                return com.google.firebase.database.Transaction.success(currentData);
+            }
+
+            @Override
+            public void onComplete(@Nullable DatabaseError error, boolean committed,
+                    @Nullable DataSnapshot currentData) {
+            }
+        });
+    }
+
+    private void verificarCheckInDiario() {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user == null)
+            return;
+
+        String hoje = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(new java.util.Date());
+        DatabaseReference checkInRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid())
+                .child("checkins").child(hoje);
+
+        checkInRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    buttonCheckInDiario.setText("✅ Compromisso Feito!");
+                    buttonCheckInDiario.setEnabled(false);
+                    buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+                } else {
+                    buttonCheckInDiario.setText("✅ Compromisso Diário");
+                    buttonCheckInDiario.setEnabled(true);
+                    buttonCheckInDiario.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(Color.parseColor("#673AB7"))); // Roxo
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
     }
 
     private void configurarBotoes() {
         findViewById(R.id.buttonNovoRegistro).setOnClickListener(v -> reiniciarContador());
-        findViewById(R.id.buttonEditar).setOnClickListener(v -> startActivity(new Intent(this, EditarAbstinenciaActivity.class)));
-        findViewById(R.id.linearLayoutForum).setOnClickListener(v -> startActivity(new Intent(this, ForumActivity.class)));
-        findViewById(R.id.navConversas).setOnClickListener(v -> startActivity(new Intent(this, ConversasActivity.class)));
+        findViewById(R.id.buttonEditar)
+                .setOnClickListener(v -> startActivity(new Intent(this, EditarAbstinenciaActivity.class)));
+        findViewById(R.id.linearLayoutForum)
+                .setOnClickListener(v -> startActivity(new Intent(this, ForumActivity.class)));
+        findViewById(R.id.navConversas)
+                .setOnClickListener(v -> startActivity(new Intent(this, ConversasActivity.class)));
         findViewById(R.id.navMenu).setOnClickListener(this::showPopupMenu);
         buttonModeracao.setOnClickListener(v -> startActivity(new Intent(this, ModeracaoActivity.class)));
+        buttonCheckInDiario.setOnClickListener(v -> realizarCheckIn());
     }
 
     private void showPopupMenu(View view) {
@@ -248,6 +322,9 @@ public class MainActivity extends AppCompatActivity {
             int itemId = item.getItemId();
             if (itemId == R.id.menu_perfil) {
                 startActivity(new Intent(this, PerfilActivity.class));
+                return true;
+            } else if (itemId == R.id.menu_orientacoes) {
+                startActivity(new Intent(this, OrientacoesActivity.class));
                 return true;
             } else if (itemId == R.id.menu_contato) {
                 mostrarDialogoContato();
@@ -262,7 +339,45 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void mostrarDialogoContato() {
-        new AlertDialog.Builder(this).setTitle("Contato e Feedback").setMessage("Para feedback, sugestões ou denúncias, entre em contato: Rodolfo.bm.reserva@outlook.com").setPositiveButton("OK", null).show();
+        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
+        builder.setTitle("Contato & Feedback");
+
+        // Cria um layout personalizado para o diálogo
+        android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
+        layout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        layout.setPadding(50, 40, 50, 10);
+
+        // Texto de ajuda
+        android.widget.TextView message = new android.widget.TextView(this);
+        message.setText("Para dúvidas, sugestões ou suporte, envie um e-mail para:\n\nrodolfo.bm.reserva@gmail.com");
+        message.setTextSize(16);
+        message.setTextColor(android.graphics.Color.BLACK);
+        message.setAutoLinkMask(android.text.util.Linkify.EMAIL_ADDRESSES); // Torna o e-mail clicável
+        message.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+        layout.addView(message);
+
+        // Botão para Política de Privacidade
+        android.widget.Button btnPrivacy = new android.widget.Button(this);
+        btnPrivacy.setText("Política de Privacidade");
+        btnPrivacy.setBackgroundTintList(
+                android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E0E0E0")));
+        btnPrivacy.setTextColor(android.graphics.Color.BLACK);
+        android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
+                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.setMargins(0, 40, 0, 0);
+        btnPrivacy.setLayoutParams(params);
+
+        btnPrivacy.setOnClickListener(v -> {
+            android.content.Intent browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://gist.github.com/rodolfoboing/c68da4a7504b78036166b44b11e8c7ee"));
+            startActivity(browserIntent);
+        });
+
+        layout.addView(btnPrivacy);
+        builder.setView(layout);
+        builder.setPositiveButton("Fechar", null);
+        builder.show();
     }
 
     private void deslogar() {
@@ -277,8 +392,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void agendarTrabalhoDeMetas() {
-        PeriodicWorkRequest metasWorkRequest = new PeriodicWorkRequest.Builder(MetasWorker.class, 1, TimeUnit.DAYS).build();
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(META_WORK_TAG, ExistingPeriodicWorkPolicy.KEEP, metasWorkRequest);
+        PeriodicWorkRequest metasWorkRequest = new PeriodicWorkRequest.Builder(MetasWorker.class, 1, TimeUnit.DAYS)
+                .build();
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(META_WORK_TAG, ExistingPeriodicWorkPolicy.KEEP,
+                metasWorkRequest);
     }
 
     private void recuperarTempoInicial() {
@@ -308,10 +425,39 @@ public class MainActivity extends AppCompatActivity {
         long dias = TimeUnit.MILLISECONDS.toDays(diferenca) % 30;
         long horas = TimeUnit.MILLISECONDS.toHours(diferenca) % 24;
         long minutos = TimeUnit.MILLISECONDS.toMinutes(diferenca) % 60;
+        long segundos = TimeUnit.MILLISECONDS.toSeconds(diferenca) % 60;
+
         textViewTempoAbstinenciaMeses.setText(String.valueOf(meses));
         textViewTempoAbstinenciaDias.setText(String.valueOf(dias));
         textViewTempoAbstinenciaHoras.setText(String.valueOf(horas));
-        textViewTempoAbstinenciaSegundos.setText(String.valueOf(minutos));
+        textViewTempoAbstinenciaMinutos.setText(String.valueOf(minutos));
+    }
+
+    private void carregarDadosUsuario() {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user == null)
+            return;
+
+        DatabaseReference userRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(user.getUid());
+
+        userRef.child("vicio").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String vicio = snapshot.getValue(String.class);
+                if (vicio != null && !vicio.isEmpty()) {
+                    textViewHabito.setText(vicio);
+                } else {
+                    textViewHabito.setText("Hábito não definido");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                textViewHabito.setText("Erro ao carregar");
+            }
+        });
     }
 
     private void verificarModerador() {
@@ -327,8 +473,10 @@ public class MainActivity extends AppCompatActivity {
                         buttonModeracao.setVisibility(View.GONE);
                     }
                 }
+
                 @Override
-                public void onCancelled(@NonNull DatabaseError error) {}
+                public void onCancelled(@NonNull DatabaseError error) {
+                }
             });
         } else {
             buttonModeracao.setVisibility(View.GONE);

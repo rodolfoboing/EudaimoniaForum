@@ -5,9 +5,11 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -61,12 +63,24 @@ public class ComentarioActivity extends AppCompatActivity {
             return;
         }
 
-        comentariosRef = FirebaseDatabase.getInstance().getReference("forum/posts").child(postId).child("comentarios");
+        // Comentários em coleção separada
+        comentariosRef = FirebaseDatabase.getInstance().getReference("forum/comentarios").child(postId);
 
         // Inicia o fluxo de carregamento: Post -> Moderador -> Comentários
         carregarDadosDoPost();
 
         buttonEnviarComentario.setOnClickListener(v -> adicionarComentario());
+
+        // Verifica se deve focar na caixa de comentários
+        if (getIntent().getBooleanExtra("FOCUS_COMMENT", false)) {
+            editTextComentario.requestFocus();
+            // Opcional: Abrir teclado automaticamente (pode precisar de um pequeno delay)
+            editTextComentario.postDelayed(() -> {
+                android.view.inputmethod.InputMethodManager imm = (android.view.inputmethod.InputMethodManager) getSystemService(
+                        android.content.Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(editTextComentario, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
+            }, 200);
+        }
     }
 
     private void carregarDadosDoPost() {
@@ -77,9 +91,18 @@ public class ComentarioActivity extends AppCompatActivity {
                 Post post = snapshot.getValue(Post.class);
                 if (post != null) {
                     autorDoPostId = post.getAutor();
+
+                    // Atualiza Preview
+                    TextView tvTitulo = findViewById(R.id.textViewTituloPreview);
+                    TextView tvConteudo = findViewById(R.id.textViewConteudoPreview);
+                    if (tvTitulo != null && tvConteudo != null) {
+                        tvTitulo.setText(post.getTitulo());
+                        tvConteudo.setText(post.getResumo());
+                    }
                 }
                 verificarModerador();
             }
+
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Toast.makeText(ComentarioActivity.this, "Erro ao carregar dados do post", Toast.LENGTH_SHORT).show();
@@ -91,10 +114,10 @@ public class ComentarioActivity extends AppCompatActivity {
     private void verificarModerador() {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user == null) {
-             carregarComentarios(); // Usuario não logado, carrega como visitante
-             return;
+            carregarComentarios(); // Usuario não logado, carrega como visitante
+            return;
         }
-        
+
         String userId = user.getUid();
         DatabaseReference moderadoresRef = FirebaseDatabase.getInstance().getReference("moderadores").child(userId);
 
@@ -104,6 +127,7 @@ public class ComentarioActivity extends AppCompatActivity {
                 isModerador = snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class));
                 carregarComentarios();
             }
+
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Toast.makeText(ComentarioActivity.this, "Erro ao verificar moderador", Toast.LENGTH_SHORT).show();
@@ -126,9 +150,11 @@ public class ComentarioActivity extends AppCompatActivity {
                     }
                 }
                 // Passando autorDoPostId para o adapter
-                comentarioAdapter = new ComentarioAdapter(comentarios, isModerador, ComentarioActivity.this, autorDoPostId);
+                comentarioAdapter = new ComentarioAdapter(comentarios, isModerador, ComentarioActivity.this,
+                        autorDoPostId);
                 recyclerViewComentarios.setAdapter(comentarioAdapter);
             }
+
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Toast.makeText(ComentarioActivity.this, "Erro ao carregar comentários", Toast.LENGTH_SHORT).show();
@@ -157,26 +183,30 @@ public class ComentarioActivity extends AppCompatActivity {
                         editTextComentario.setText("");
                         incrementarNumeroComentarios();
                         verificarEEnviarNotificacao(postId, conteudoComentario);
+                        salvarReferenciaPostComentado(autor, postId);
                     })
-                    .addOnFailureListener(e -> Toast.makeText(ComentarioActivity.this, "Erro ao enviar comentário", Toast.LENGTH_SHORT).show());
+                    .addOnFailureListener(e -> Toast
+                            .makeText(ComentarioActivity.this, "Erro ao enviar comentário", Toast.LENGTH_SHORT).show());
         }
     }
 
+    private void salvarReferenciaPostComentado(String userId, String postId) {
+        DatabaseReference userPostsComentadosRef = FirebaseDatabase.getInstance().getReference("users")
+                .child(userId).child("postsComentados").child(postId);
+        userPostsComentadosRef.setValue(true);
+    }
+
     private void verificarEEnviarNotificacao(String postId, String conteudoComentario) {
-        // Poderíamos usar o autorDoPostId já carregado aqui, mas para segurança e caso mude algo
-        // manteremos a lógica original ou simplificaremos usando a variável global se confiarmos nela.
-        // Vou manter a lógica original para garantir consistência se a variável global ainda não estivesse pronta (embora deva estar).
-        // Mas como já temos autorDoPostId carregado no início, podemos usar:
-        
+
         if (autorDoPostId != null) {
-             String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-             if (!autorDoPostId.equals(currentUserId)) {
-                 enviarNotificacaoParaAutor(autorDoPostId, conteudoComentario);
-             }
+            String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+            if (!autorDoPostId.equals(currentUserId)) {
+                enviarNotificacaoParaAutor(autorDoPostId, conteudoComentario);
+            }
         } else {
-             // Fallback caso autorDoPostId seja null por algum motivo raro
-             DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts").child(postId);
-             postRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            // Fallback caso autorDoPostId seja null por algum motivo raro
+            DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts").child(postId);
+            postRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     Post post = snapshot.getValue(Post.class);
@@ -188,33 +218,48 @@ public class ComentarioActivity extends AppCompatActivity {
                         }
                     }
                 }
+
                 @Override
-                public void onCancelled(@NonNull DatabaseError error) {}
+                public void onCancelled(@NonNull DatabaseError error) {
+                }
             });
         }
     }
 
     private void enviarNotificacaoParaAutor(String autorPostId, String conteudoComentario) {
-        String resumoComentario = conteudoComentario.length() > 30 ? conteudoComentario.substring(0, 30) + "..." : conteudoComentario;
+        String resumoComentario = conteudoComentario.length() > 30 ? conteudoComentario.substring(0, 30) + "..."
+                : conteudoComentario;
         String mensagemNotificacao = "Novo comentário: " + resumoComentario;
 
-        DatabaseReference notificacaoRef = FirebaseDatabase.getInstance().getReference("notificacoes").child(autorPostId).push();
+        DatabaseReference notificacaoRef = FirebaseDatabase.getInstance().getReference("notificacoes")
+                .child(autorPostId).push();
         String notifId = notificacaoRef.getKey();
 
-        Notificacao notificacao = new Notificacao(notifId, "comentario", mensagemNotificacao, postId, System.currentTimeMillis());
+        Notificacao notificacao = new Notificacao(notifId, "comentario", mensagemNotificacao, postId,
+                System.currentTimeMillis());
         notificacaoRef.setValue(notificacao);
     }
 
     private void incrementarNumeroComentarios() {
         DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts").child(postId);
-        postRef.child("numeroComentarios").addListenerForSingleValueEvent(new ValueEventListener() {
+        postRef.child("numeroComentarios").runTransaction(new com.google.firebase.database.Transaction.Handler() {
+            @NonNull
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Long numeroComentarios = snapshot.getValue(Long.class);
-                postRef.child("numeroComentarios").setValue((numeroComentarios == null ? 0L : numeroComentarios) + 1);
+            public com.google.firebase.database.Transaction.Result doTransaction(
+                    @NonNull com.google.firebase.database.MutableData currentData) {
+                Integer currentCount = currentData.getValue(Integer.class);
+                if (currentCount == null) {
+                    currentData.setValue(1);
+                } else {
+                    currentData.setValue(currentCount + 1);
+                }
+                return com.google.firebase.database.Transaction.success(currentData);
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onComplete(@Nullable DatabaseError error, boolean committed,
+                    @Nullable DataSnapshot currentData) {
+            }
         });
     }
 }

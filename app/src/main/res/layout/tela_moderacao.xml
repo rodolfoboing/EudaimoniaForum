@@ -30,23 +30,56 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Abas de Navegação -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:background="#FFFFFF"
+        android:elevation="2dp">
+
+        <Button
+            android:id="@+id/btnTabDenuncias"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:text="🚨 Denúncias"
+            android:textColor="#D32F2F"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnTabUsuarios"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            style="@style/Widget.AppCompat.Button.Borderless"
+            android:text="👥 Usuários"
+            android:textColor="#455A64"
+            android:alpha="0.5" />
+    </LinearLayout>
+
+    <!-- Área de Busca de Usuários (Visível apenas na aba Usuários) -->
+    <LinearLayout
+        android:id="@+id/layoutBuscaUsuarios"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:padding="12dp"
-        android:background="#FFFFFF">
+        android:background="#ECEFF1"
+        android:visibility="gone">
 
         <EditText
             android:id="@+id/etBuscarUsuario"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
-            android:background="@drawable/edit_text_background"
+            android:background="@android:drawable/edit_text"
             android:hint="Buscar por Nome ou ID..."
             android:paddingStart="12dp"
             android:paddingEnd="12dp"
             android:textSize="14sp"
-            android:inputType="text" />
+            android:inputType="text" 
+            android:backgroundTint="#FFFFFF"/>
 
         <Button
             android:id="@+id/btnBuscar"
@@ -58,11 +91,26 @@
             android:textColor="#FFFFFF"/>
     </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvListaUsuarios"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp"
-        android:clipToPadding="false" />
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvListaDenuncias"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            android:visibility="visible" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvListaUsuarios"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:clipToPadding="false"
+            android:visibility="gone" />
+
+    </FrameLayout>
 
 </LinearLayout>

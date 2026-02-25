@@ -21,127 +21,155 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
 
-    private List<Post> postList; // Lista de posts
-    private Context context; // Contexto da aplicação
+    // Cache para armazenar nicks de usuários e evitar requisições repetidas
+    private static final Map<String, String> userNickCache = new HashMap<>();
+
+    private List<Post> postList;
+    private Context context;
     private boolean isModerador;
     private String currentUserId;
 
-    // Construtor do adapter
-    public PostAdapter(List<Post> postList, Context context, boolean isModerador) {
-        this.postList = postList;
+    public PostAdapter(Context context, List<Post> postList) {
         this.context = context;
+        this.postList = postList;
+        this.isModerador = false; // Valor padrão
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        this.currentUserId = (user != null) ? user.getUid() : null;
+    }
+
+    // Construtor sobrecarregado para lidar com o status de moderador
+    public PostAdapter(Context context, List<Post> postList, boolean isModerador) {
+        this.context = context;
+        this.postList = postList;
         this.isModerador = isModerador;
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         this.currentUserId = (user != null) ? user.getUid() : null;
     }
 
-    // Método para atualizar a lista de posts
-    public void updatePosts(List<Post> newPostList) {
-        this.postList = newPostList;
-        notifyDataSetChanged(); // Notificar o adapter sobre a mudança
-    }
-
     @NonNull
     @Override
     public PostViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Inflar o layout do item do post
-        View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.item_post, parent, false);
+        View view = LayoutInflater.from(context).inflate(R.layout.item_post, parent, false);
         return new PostViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull PostViewHolder holder, int position) {
-        // Obter o post atual
         Post post = postList.get(position);
 
-        // Exibir título e resumo do post
         holder.textViewTituloPost.setText(post.getTitulo());
         holder.textViewResumoPost.setText(post.getResumo());
 
-        // Configurar o nome do autor como clicável
+        // Configura o clique no nome do autor para abrir o perfil
         holder.textViewAutor.setOnClickListener(v -> {
             if (post.getAutor() != null) {
                 Intent intent = new Intent(context, VisualizarPerfilActivity.class);
-                intent.putExtra("USER_ID", post.getAutor()); // Passar o ID do autor
+                intent.putExtra("USER_ID", post.getAutor());
                 context.startActivity(intent);
             }
         });
 
-        // Atualizar o número de comentários em tempo real
-        DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts").child(post.getId());
-        postRef.child("numeroComentarios").addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Long numeroComentarios = snapshot.getValue(Long.class);
-                if (numeroComentarios != null) {
-                    holder.textViewComentarios.setText("Comentários (" + numeroComentarios + ")");
-                } else {
-                    holder.textViewComentarios.setText("Comentários (0)");
-                }
-            }
+        // Exibe o número de comentários diretamente do objeto Post
+        int comentarios = post.getNumeroComentarios() != null ? post.getNumeroComentarios() : 0;
+        holder.textViewComentarios.setText("Comentários (" + comentarios + ")");
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("PostAdapter", "Erro ao carregar número de comentários: " + error.getMessage());
-                holder.textViewComentarios.setText("Comentários (erro)");
-            }
-        });
-
-        // Buscar o nickname do autor diretamente como String
-        DatabaseReference usuariosRef = FirebaseDatabase.getInstance().getReference("users").child(post.getAutor());
-        usuariosRef.child("nick").addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String nick = snapshot.getValue(String.class);
-                if (nick != null && !nick.isEmpty()) {
-                    holder.textViewAutor.setText("Autor: " + nick);
-                } else {
-                    holder.textViewAutor.setText("Autor: desconhecido");
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                holder.textViewAutor.setText("Autor: erro ao carregar");
-                Log.e("PostAdapter", "Erro ao buscar o autor: " + error.getMessage());
-            }
-        });
-
-        // Exibir a data do post
-        holder.textViewData.setText("Data: " + post.getData());
-
-        // Configurar clique no botão "Adicionar Comentário"
-        holder.buttonAddComment.setOnClickListener(v -> {
-            if (post.getId() != null) {
-                Intent intent = new Intent(v.getContext(), ComentarioActivity.class);
-                intent.putExtra("POST_ID", post.getId());
-                v.getContext().startActivity(intent);
+        // Busca o nick do autor com cache simples
+        String autorId = post.getAutor();
+        if (autorId != null) {
+            if (userNickCache.containsKey(autorId)) {
+                holder.textViewAutor.setText("Autor: " + userNickCache.get(autorId));
             } else {
-                Log.e("PostAdapter", "Post ID is null");
+                // Define um valor temporário ou loading se desejar, ou mantém "Autor: ..."
+                // holder.textViewAutor.setText("Autor: Carregando...");
+
+                DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(autorId);
+                userRef.child("nick").addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        String nick = snapshot.getValue(String.class);
+                        if (nick != null) {
+                            userNickCache.put(autorId, nick);
+                            // Verifica se o holder ainda corresponde ao mesmo autor (item não foi reciclado
+                            // para outro post de outro autor)
+                            holder.textViewAutor.setText("Autor: " + nick);
+                        } else {
+                            holder.textViewAutor.setText("Autor: Desconhecido");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        holder.textViewAutor.setText("Autor: Desconhecido");
+                    }
+                });
             }
+        } else {
+            holder.textViewAutor.setText("Autor: Desconhecido");
+        }
+
+        // Formatar a data para exibição
+        if (post.getData() > 0) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy",
+                    java.util.Locale.getDefault());
+            String dataFormatada = sdf.format(new java.util.Date(post.getData()));
+            holder.textViewData.setText("Data: " + dataFormatada);
+        } else {
+            holder.textViewData.setText("Data: Desconhecida");
+        }
+
+        // Ação do botão de comentar (Foca na caixa de texto)
+        holder.buttonAddComment.setOnClickListener(v -> {
+            Intent intent = new Intent(context, ComentarioActivity.class);
+            intent.putExtra("POST_ID", post.getId());
+            intent.putExtra("FOCUS_COMMENT", true); // Flag para focar no input
+            context.startActivity(intent);
         });
 
-        // Lógica de exclusão
-        boolean isDonoPost = (post.getAutor() != null && currentUserId != null && post.getAutor().equals(currentUserId));
+        // Clique no card (Apenas abre o post)
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, ComentarioActivity.class);
+            intent.putExtra("POST_ID", post.getId());
+            context.startActivity(intent);
+        });
 
-        if (isModerador || isDonoPost) {
+        // Lógica de Denúncia
+        holder.iconReport.setOnClickListener(v -> {
+            Intent intent = new Intent(context, DenunciaActivity.class);
+            intent.putExtra("POST_ID", post.getId());
+            context.startActivity(intent);
+        });
+
+        // Visibilidade e ação do botão de deletar (Moderador ou Dono)
+        boolean isOwner = currentUserId != null && currentUserId.equals(post.getAutor());
+
+        // Esconder botão de denúncia se for o dono
+        if (isOwner) {
+            holder.iconReport.setVisibility(View.GONE);
+        } else {
+            holder.iconReport.setVisibility(View.VISIBLE);
+        }
+
+        if (isOwner || isModerador) {
             holder.imageViewDeletePost.setVisibility(View.VISIBLE);
             holder.imageViewDeletePost.setOnClickListener(v -> {
                 new AlertDialog.Builder(context)
-                    .setTitle("Excluir Postagem")
-                    .setMessage("Tem certeza que deseja excluir esta postagem?")
-                    .setPositiveButton("Sim", (dialog, which) -> {
-                        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("forum/posts").child(post.getId());
-                        ref.removeValue();
-                        // A activity deve atualizar a lista automaticamente
-                    })
-                    .setNegativeButton("Não", null)
-                    .show();
+                        .setTitle("Excluir Postagem")
+                        .setMessage("Tem certeza que deseja excluir esta postagem?")
+                        .setPositiveButton("Sim", (dialog, which) -> {
+                            // Criar referência para o post no Firebase e remover
+                            DatabaseReference postRef = FirebaseDatabase.getInstance()
+                                    .getReference("forum/posts") // Caminho corrigido para forum/posts
+                                    .child(post.getId());
+                            postRef.removeValue();
+                        })
+                        .setNegativeButton("Não", null)
+                        .show();
             });
         } else {
             holder.imageViewDeletePost.setVisibility(View.GONE);
@@ -150,22 +178,16 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
     @Override
     public int getItemCount() {
-        return postList.size(); // Retorna o número de posts na lista
+        return postList.size();
     }
 
-    // Classe interna para o ViewHolder
     static class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView textViewTituloPost; // Título do post
-        TextView textViewResumoPost; // Resumo do post
-        TextView textViewComentarios; // Número de comentários
-        TextView buttonAddComment; // Botão para adicionar comentário
-        TextView textViewAutor; // Autor do post
-        TextView textViewData; // Data do post
-        ImageView imageViewDeletePost; // Botão de excluir
+        TextView textViewTituloPost, textViewResumoPost, textViewComentarios, buttonAddComment, textViewAutor,
+                textViewData;
+        ImageView imageViewDeletePost, iconReport;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Inicializar os elementos do layout
             textViewTituloPost = itemView.findViewById(R.id.textViewTituloPost);
             textViewResumoPost = itemView.findViewById(R.id.textViewResumoPost);
             textViewComentarios = itemView.findViewById(R.id.textViewComentarios);
@@ -173,7 +195,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             textViewAutor = itemView.findViewById(R.id.textViewAutor);
             textViewData = itemView.findViewById(R.id.textViewData);
             imageViewDeletePost = itemView.findViewById(R.id.imageViewDeletePost);
+            iconReport = itemView.findViewById(R.id.iconReport);
         }
     }
-
 }

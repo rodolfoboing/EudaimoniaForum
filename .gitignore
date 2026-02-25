@@ -19,3 +19,11 @@ app/google-services.json
 
 # Text files
 *.txt
+
+# Node modules
+node_modules/
+
+# Chaves diversas e secrets
+*.key
+*.pem
+secrets.xml

@@ -3,8 +3,10 @@ package com.meuprojeto.eudaimoniaforum;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,12 +25,22 @@ import java.util.List;
 public class ModeracaoActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewUsuarios;
+    private RecyclerView recyclerViewDenuncias;
     private UsuarioModeracaoAdapter usuarioAdapter;
+    private DenunciaAdapter denunciaAdapter;
+
     private List<Usuario> usuarioList = new ArrayList<>();
     private List<Usuario> usuarioListExibida = new ArrayList<>();
     private List<String> usuariosBanidos = new ArrayList<>();
+
+    private List<Denuncia> denunciaList = new ArrayList<>();
+
     private EditText etBuscarUsuario;
     private Button btnBuscar;
+
+    // Tab buttons
+    private Button btnTabUsuarios, btnTabDenuncias;
+    private LinearLayout layoutBuscaUsuarios;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,33 +49,85 @@ public class ModeracaoActivity extends AppCompatActivity {
 
         // Configurar UI
         recyclerViewUsuarios = findViewById(R.id.rvListaUsuarios);
+        recyclerViewDenuncias = findViewById(R.id.rvListaDenuncias);
+
         etBuscarUsuario = findViewById(R.id.etBuscarUsuario);
         btnBuscar = findViewById(R.id.btnBuscar);
 
+        btnTabUsuarios = findViewById(R.id.btnTabUsuarios);
+        btnTabDenuncias = findViewById(R.id.btnTabDenuncias);
+        layoutBuscaUsuarios = findViewById(R.id.layoutBuscaUsuarios);
+
         recyclerViewUsuarios.setLayoutManager(new LinearLayoutManager(this));
+        recyclerViewDenuncias.setLayoutManager(new LinearLayoutManager(this));
 
         usuarioAdapter = new UsuarioModeracaoAdapter(usuarioListExibida);
         recyclerViewUsuarios.setAdapter(usuarioAdapter);
 
-        // Carregar dados do Firebase
+        denunciaAdapter = new DenunciaAdapter(denunciaList, this);
+        recyclerViewDenuncias.setAdapter(denunciaAdapter);
+
+        // Carregar dados
         carregarBanidos();
         carregarUsuarios();
+        carregarDenuncias();
 
-        // Busca
+        // Busca de usuários
         etBuscarUsuario.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
-            @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 filtrarUsuarios(s.toString());
             }
 
-            @Override
-            public void afterTextChanged(Editable s) {}
+            public void afterTextChanged(Editable s) {
+            }
         });
-
         btnBuscar.setOnClickListener(v -> filtrarUsuarios(etBuscarUsuario.getText().toString()));
+
+        // Abas
+        btnTabUsuarios.setOnClickListener(v -> mostrarAbaUsuarios());
+        btnTabDenuncias.setOnClickListener(v -> mostrarAbaDenuncias());
+
+        mostrarAbaDenuncias(); // Inicia na aba de denúncias que é mais urgente
+    }
+
+    private void mostrarAbaUsuarios() {
+        recyclerViewUsuarios.setVisibility(View.VISIBLE);
+        layoutBuscaUsuarios.setVisibility(View.VISIBLE);
+        recyclerViewDenuncias.setVisibility(View.GONE);
+        btnTabUsuarios.setAlpha(1.0f);
+        btnTabDenuncias.setAlpha(0.5f);
+    }
+
+    private void mostrarAbaDenuncias() {
+        recyclerViewUsuarios.setVisibility(View.GONE);
+        layoutBuscaUsuarios.setVisibility(View.GONE);
+        recyclerViewDenuncias.setVisibility(View.VISIBLE);
+        btnTabUsuarios.setAlpha(0.5f);
+        btnTabDenuncias.setAlpha(1.0f);
+    }
+
+    private void carregarDenuncias() {
+        DatabaseReference denunciasRef = FirebaseDatabase.getInstance().getReference("denuncias");
+        denunciasRef.orderByChild("status").equalTo("pendente").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                denunciaList.clear();
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    Denuncia d = ds.getValue(Denuncia.class);
+                    if (d != null) {
+                        denunciaList.add(d);
+                    }
+                }
+                denunciaAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
     }
 
     private void carregarBanidos() {
@@ -75,12 +139,12 @@ public class ModeracaoActivity extends AppCompatActivity {
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     usuariosBanidos.add(ds.getKey());
                 }
-                // Atualiza a lista exibida sempre que a lista de banidos mudar
                 filtrarUsuarios(etBuscarUsuario.getText().toString());
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
     }
 
@@ -95,18 +159,7 @@ public class ModeracaoActivity extends AppCompatActivity {
                     try {
                         Usuario usuario = new Usuario();
                         usuario.setUid(userSnapshot.getKey());
-
                         usuario.setNick(safelyGetString(userSnapshot, "nick"));
-                        usuario.setDataEntrada(safelyGetString(userSnapshot, "dataEntrada"));
-                        usuario.setSobreMim(safelyGetString(userSnapshot, "sobreMim"));
-                        usuario.setVicio(safelyGetString(userSnapshot, "vicio"));
-
-                        Object timestampObj = userSnapshot.child("lastLoginTimestamp").getValue();
-                        if (timestampObj instanceof Long) {
-                            usuario.setLastLoginTimestamp((Long) timestampObj);
-                        } else {
-                            usuario.setLastLoginTimestamp(0);
-                        }
 
                         usuarioList.add(usuario);
                     } catch (Exception e) {
@@ -117,14 +170,14 @@ public class ModeracaoActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
     }
 
     private void filtrarUsuarios(String query) {
         usuarioListExibida.clear();
-        
-        // Lista intermediária apenas com não banidos
+
         List<Usuario> naoBanidos = new ArrayList<>();
         for (Usuario u : usuarioList) {
             if (!usuariosBanidos.contains(u.getUid())) {

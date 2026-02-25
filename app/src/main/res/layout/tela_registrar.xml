@@ -58,11 +58,31 @@
      android:textColor="#FAFAFA"
      android:inputType="textPassword" />
 
+ <CheckBox
+     android:id="@+id/checkBoxMaiorIdade"
+     android:layout_width="wrap_content"
+     android:layout_height="wrap_content"
+     android:layout_below="@+id/editTextSenhaCadastro"
+     android:layout_marginStart="16dp"
+     android:layout_marginEnd="16dp"
+     android:text="Tenho 18 anos ou mais e estou ciente do conteúdo deste app, se tratando de vícios e assuntos sensíveis."
+     android:textColor="#FAFAFA" />
+
+ <CheckBox
+     android:id="@+id/checkBoxTermos"
+     android:layout_width="wrap_content"
+     android:layout_height="wrap_content"
+     android:layout_below="@+id/checkBoxMaiorIdade"
+     android:layout_marginStart="16dp"
+     android:layout_marginEnd="16dp"
+     android:text="Li e concordo com os Termos de Uso e Política de Privacidade"
+     android:textColor="#FAFAFA" />
+
  <Button
      android:id="@+id/buttonCadastrar"
      android:layout_width="match_parent"
      android:layout_height="wrap_content"
-     android:layout_below="@+id/editTextSenhaCadastro"
+     android:layout_below="@+id/checkBoxTermos"
      android:layout_margin="16dp"
      android:backgroundTint="#8BC34A"
      android:text="CADASTRAR" />

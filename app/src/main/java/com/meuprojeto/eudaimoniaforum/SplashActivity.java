@@ -3,6 +3,9 @@ package com.meuprojeto.eudaimoniaforum;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.ImageView;
 import androidx.appcompat.app.AppCompatActivity;
 
 public class SplashActivity extends AppCompatActivity {
@@ -12,11 +15,16 @@ public class SplashActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_splash);
 
-        // Aguarde 3 segundos antes de abrir a MainActivity
+        ImageView logo = findViewById(R.id.logo);
+        // Aplica a animação suave de fade e escala
+        Animation anim = AnimationUtils.loadAnimation(this, R.anim.fade_in_scale);
+        logo.startAnimation(anim);
+
+        // Aguarda a animação e depois vai pra próxima tela
         new Handler().postDelayed(() -> {
             Intent intent = new Intent(SplashActivity.this, LoginActivity.class);
             startActivity(intent);
-            finish(); // Finaliza a SplashActivity para que o usuário não volte para ela
-        }, 1500); // 3000 milissegundos = 1,5 segundos
+            finish();
+        }, 2000);
     }
 }

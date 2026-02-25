@@ -7,6 +7,9 @@
         android:id="@+id/menu_contato"
         android:title="Contato / Feedback" />
     <item
+        android:id="@+id/menu_orientacoes"
+        android:title="Orientações / Ajuda" />
+    <item
         android:id="@+id/menu_deslogar"
         android:title="Deslogar" />
 </menu>

@@ -34,6 +34,9 @@ public class RegistrarActivity extends AppCompatActivity {
 
     private DatabaseReference usersRef;
 
+    private android.widget.CheckBox checkBoxTermos;
+    private android.widget.CheckBox checkBoxMaiorIdade;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -47,6 +50,33 @@ public class RegistrarActivity extends AppCompatActivity {
         spinnerVicio = findViewById(R.id.spinnerVicio);
         editTextSenhaCadastro = findViewById(R.id.editTextSenhaCadastro);
         buttonCadastrar = findViewById(R.id.buttonCadastrar);
+        checkBoxTermos = findViewById(R.id.checkBoxTermos);
+        checkBoxMaiorIdade = findViewById(R.id.checkBoxMaiorIdade);
+
+        // Configurar link clicável nos Termos de Uso
+        String textoTermos = "Li e concordo com os Termos de Uso e Política de Privacidade";
+        android.text.SpannableString ss = new android.text.SpannableString(textoTermos);
+        android.text.style.ClickableSpan clickableSpan = new android.text.style.ClickableSpan() {
+            @Override
+            public void onClick(@androidx.annotation.NonNull android.view.View widget) {
+                // Abrir o link no navegador
+                android.content.Intent browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("https://gist.github.com/rodolfoboing/c68da4a7504b78036166b44b11e8c7ee"));
+                startActivity(browserIntent);
+            }
+
+            @Override
+            public void updateDrawState(@androidx.annotation.NonNull android.text.TextPaint ds) {
+                super.updateDrawState(ds);
+                ds.setUnderlineText(true);
+                ds.setColor(android.graphics.Color.BLUE);
+            }
+        };
+
+        // Define o link nas palavras a partir do index 17 ("Termos de Uso...")
+        ss.setSpan(clickableSpan, 21, textoTermos.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        checkBoxTermos.setText(ss);
+        checkBoxTermos.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
 
         setupSpinner();
 
@@ -61,8 +91,22 @@ public class RegistrarActivity extends AppCompatActivity {
                 return;
             }
 
+            if (!checkBoxTermos.isChecked()) {
+                Toast.makeText(RegistrarActivity.this, "Você precisa aceitar os Termos de Uso.", Toast.LENGTH_SHORT)
+                        .show();
+                return;
+            }
+
+            if (!checkBoxMaiorIdade.isChecked()) {
+                Toast.makeText(RegistrarActivity.this, "Você precisa confirmar que tem 18 anos ou mais.",
+                        Toast.LENGTH_SHORT)
+                        .show();
+                return;
+            }
+
             if (nickDesejado.length() < 3) {
-                Toast.makeText(RegistrarActivity.this, "O nick deve ter pelo menos 3 caracteres.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(RegistrarActivity.this, "O nick deve ter pelo menos 3 caracteres.", Toast.LENGTH_SHORT)
+                        .show();
                 return;
             }
 
@@ -76,7 +120,8 @@ public class RegistrarActivity extends AppCompatActivity {
                 public void onNickExists(boolean exists) {
                     progressDialog.dismiss();
                     if (exists) {
-                        Toast.makeText(RegistrarActivity.this, "Este nick já está em uso, escolha outro!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(RegistrarActivity.this, "Este nick já está em uso, escolha outro!",
+                                Toast.LENGTH_SHORT).show();
                     } else {
                         registerUser(email, password, nickDesejado, vicioSelecionado);
                     }
@@ -85,7 +130,8 @@ public class RegistrarActivity extends AppCompatActivity {
                 @Override
                 public void onError(String error) {
                     progressDialog.dismiss();
-                    Toast.makeText(RegistrarActivity.this, "Erro ao verificar nick: " + error, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(RegistrarActivity.this, "Erro ao verificar nick: " + error, Toast.LENGTH_SHORT)
+                            .show();
                 }
             });
         });
@@ -125,7 +171,8 @@ public class RegistrarActivity extends AppCompatActivity {
                 salvarDadosUsuario(user, nick, vicio);
             } else {
                 Log.w(TAG, "createUserWithEmail:failure", task.getException());
-                Toast.makeText(RegistrarActivity.this, "Falha ao criar conta: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(RegistrarActivity.this, "Falha ao criar conta: " + task.getException().getMessage(),
+                        Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -153,8 +200,9 @@ public class RegistrarActivity extends AppCompatActivity {
                 Toast.makeText(this, "Usuário registrado com sucesso!", Toast.LENGTH_SHORT).show();
                 updateUI(user);
             } else {
-                Toast.makeText(this, "Falha ao salvar dados no banco de dados: " + 
-                        (task.getException() != null ? task.getException().getMessage() : ""), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Falha ao salvar dados no banco de dados: " +
+                        (task.getException() != null ? task.getException().getMessage() : ""), Toast.LENGTH_SHORT)
+                        .show();
             }
         });
     }
@@ -167,6 +215,7 @@ public class RegistrarActivity extends AppCompatActivity {
 
     interface OnNickCheckListener {
         void onNickExists(boolean exists);
+
         void onError(String error);
     }
 }

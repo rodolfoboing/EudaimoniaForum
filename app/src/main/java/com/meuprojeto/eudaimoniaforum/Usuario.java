@@ -7,6 +7,7 @@ public class Usuario {
     private String sobreMim;
     private String vicio;
     private long lastLoginTimestamp; // Novo campo para o status
+    private String fcmToken; // Token para notificações FCM
 
     public Usuario() {
         // Construtor vazio para o Firebase
@@ -68,5 +69,14 @@ public class Usuario {
 
     public void setLastLoginTimestamp(long lastLoginTimestamp) {
         this.lastLoginTimestamp = lastLoginTimestamp;
+    }
+
+    // Novo getter e setter para Token de Notificação
+    public String getFcmToken() {
+        return fcmToken;
+    }
+
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }

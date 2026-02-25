@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -34,7 +35,6 @@ public class ConversasActivity extends AppCompatActivity {
     private Button buttonTodas, buttonNaoLidas;
     private boolean mostrandoNaoLidas = false;
 
-    private DatabaseReference chatsRef;
     private String currentUserId;
 
     @Override
@@ -56,9 +56,6 @@ public class ConversasActivity extends AppCompatActivity {
         }
         currentUserId = currentUser.getUid();
 
-        // Referência mantida para uso no Adapter
-        chatsRef = FirebaseDatabase.getInstance().getReference("chats");
-
         setupAdapter();
         setupFilterButtons();
 
@@ -67,9 +64,8 @@ public class ConversasActivity extends AppCompatActivity {
 
     private void setupAdapter() {
         conversasAdapter = new ConversasAdapter(filteredList, conversa -> {
-            DatabaseReference readStatusRef = chatsRef.child(conversa.getChatId()).child("readStatus").child(currentUserId);
-            readStatusRef.setValue(System.currentTimeMillis());
-
+            // Ao clicar, atualiza o status de lido nos metadados
+            // Mas a atualização real acontece ao abrir o ChatActivity agora
             Intent intent = new Intent(this, ChatActivity.class);
             intent.putExtra("USER_ID", conversa.getOtherUserId());
             startActivity(intent);
@@ -88,40 +84,60 @@ public class ConversasActivity extends AppCompatActivity {
         });
     }
 
+    private DatabaseReference userConversasRef;
+    private com.google.firebase.database.ChildEventListener userConversasListener;
+    private final java.util.Map<String, ValueEventListener> chatListeners = new java.util.HashMap<>();
+    private final java.util.Map<String, DatabaseReference> chatRefs = new java.util.HashMap<>();
+
     private void loadConversas() {
-        // Correção: Buscar apenas os chats do usuário através do índice "user_conversas"
-        // Isso evita o erro de PERMISSION_DENIED ao tentar ler "chats" inteiro
-        DatabaseReference userConversasRef = FirebaseDatabase.getInstance().getReference("user_conversas").child(currentUserId);
+        // Carrega o índice de conversas do usuário
+        userConversasRef = FirebaseDatabase.getInstance().getReference("user_conversas").child(currentUserId);
 
-        userConversasRef.addValueEventListener(new ValueEventListener() {
+        userConversasListener = new com.google.firebase.database.ChildEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                conversasList.clear();
-                filterConversas(); // Limpa a lista atual na UI
-
-                if (!snapshot.exists()) {
-                    updateEmptyState();
-                    return;
+            public void onChildAdded(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                String chatId = snapshot.getKey();
+                if (chatId != null) {
+                    monitorarDetalhesDoChat(chatId);
                 }
+            }
 
-                // Para cada ID de chat encontrado, carrega os detalhes do chat
-                for (DataSnapshot chatRefSnap : snapshot.getChildren()) {
-                    String chatId = chatRefSnap.getKey();
-                    if (chatId != null) {
-                        carregarDetalhesDoChat(chatId);
-                    }
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
+                // Se algo mudar no índice (raro), garantimos o monitoramento
+                String chatId = snapshot.getKey();
+                if (chatId != null && !chatListeners.containsKey(chatId)) {
+                    monitorarDetalhesDoChat(chatId);
                 }
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot snapshot) {
+                String chatId = snapshot.getKey();
+                if (chatId != null) {
+                    removerMonitoramentoChat(chatId);
+                    removerConversaDaLista(chatId);
+                }
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot snapshot, @Nullable String previousChildName) {
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Toast.makeText(ConversasActivity.this, "Erro ao carregar conversas.", Toast.LENGTH_SHORT).show();
             }
-        });
+        };
+        userConversasRef.addChildEventListener(userConversasListener);
     }
 
-    private void carregarDetalhesDoChat(String chatId) {
-        FirebaseDatabase.getInstance().getReference("chats").child(chatId).addListenerForSingleValueEvent(new ValueEventListener() {
+    private void monitorarDetalhesDoChat(String chatId) {
+        if (chatListeners.containsKey(chatId))
+            return; // Já estamos monitorando
+
+        DatabaseReference chatRef = FirebaseDatabase.getInstance().getReference("chats").child(chatId);
+        ValueEventListener listener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot chatSnapshot) {
                 if (chatSnapshot.exists()) {
@@ -131,79 +147,107 @@ public class ConversasActivity extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Falha silenciosa ao carregar um chat específico
             }
-        });
+        };
+
+        chatRef.addValueEventListener(listener);
+        chatListeners.put(chatId, listener);
+        chatRefs.put(chatId, chatRef);
+    }
+
+    private void removerMonitoramentoChat(String chatId) {
+        if (chatListeners.containsKey(chatId)) {
+            DatabaseReference ref = chatRefs.get(chatId);
+            ValueEventListener listener = chatListeners.get(chatId);
+            if (ref != null && listener != null) {
+                ref.removeEventListener(listener);
+            }
+            chatListeners.remove(chatId);
+            chatRefs.remove(chatId);
+        }
+    }
+
+    private void removerConversaDaLista(String chatId) {
+        for (int i = 0; i < conversasList.size(); i++) {
+            if (conversasList.get(i).getChatId().equals(chatId)) {
+                conversasList.remove(i);
+                break;
+            }
+        }
+        filterConversas();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (userConversasRef != null && userConversasListener != null) {
+            userConversasRef.removeEventListener(userConversasListener);
+        }
+
+        // Limpar todos os listeners de chat
+        for (String chatId : chatListeners.keySet()) {
+            DatabaseReference ref = chatRefs.get(chatId);
+            ValueEventListener listener = chatListeners.get(chatId);
+            if (ref != null && listener != null) {
+                ref.removeEventListener(listener);
+            }
+        }
+        chatListeners.clear();
+        chatRefs.clear();
     }
 
     private void processarConversa(DataSnapshot chatSnapshot) {
         String chatId = chatSnapshot.getKey();
-        // Assume formato uid1_uid2
+        if (chatId == null)
+            return;
+
+        // Assume formato uid1_uid2 para extrair ID do outro
         String otherUserId = chatId.replace(currentUserId, "").replace("_", "");
 
         Conversa conversa = new Conversa();
         conversa.setChatId(chatId);
         conversa.setOtherUserId(otherUserId);
 
-        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users").child(otherUserId);
-        DatabaseReference messagesRef = chatSnapshot.child("messages").getRef();
-        DatabaseReference readStatusRef = chatSnapshot.child("readStatus").child(currentUserId).getRef();
+        // Extrai dados diretos dos Metadados (Otimização)
+        String ultimaMsg = chatSnapshot.child("ultimaMensagem").getValue(String.class);
+        Long timestamp = chatSnapshot.child("timestamp").getValue(Long.class);
 
+        conversa.setLastMessage(ultimaMsg != null ? ultimaMsg : "");
+        conversa.setLastMessageTimestamp(timestamp != null ? timestamp : 0);
+
+        // Lógica de "Não Lido": Se última msg é mais recente que minha leitura
+        Long myReadTime = chatSnapshot.child("lidoPor").child(currentUserId).getValue(Long.class);
+        boolean isUnread = (timestamp != null && (myReadTime == null || timestamp > myReadTime));
+        conversa.setUnreadCount(isUnread ? 1 : 0);
+
+        // Busca Info do Usuário (Nick, Avatar, Status)
+        DatabaseReference usersRef = FirebaseDatabase.getInstance().getReference("users").child(otherUserId);
         usersRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot userSnapshot) {
-                if (!userSnapshot.exists()) return;
+                if (!userSnapshot.exists())
+                    return; // Usuário pode ter sido deletado
+
                 conversa.setOtherUserNick(userSnapshot.child("nick").getValue(String.class));
-                long lastLogin = userSnapshot.child("lastLoginTimestamp").getValue(Long.class) != null ? userSnapshot.child("lastLoginTimestamp").getValue(Long.class) : 0;
-                long daysSinceLogin = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastLogin);
+
+                Long lastLogin = userSnapshot.child("lastLoginTimestamp").getValue(Long.class);
+                long daysSinceLogin = TimeUnit.MILLISECONDS
+                        .toDays(System.currentTimeMillis() - (lastLogin != null ? lastLogin : 0));
                 conversa.setOtherUserStatus(daysSinceLogin < 10);
 
-                messagesRef.orderByKey().limitToLast(1).addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot msgSnapshot) {
-                        if (msgSnapshot.exists()) {
-                            for (DataSnapshot lastMsg : msgSnapshot.getChildren()) {
-                                ChatMessage lastMessage = lastMsg.getValue(ChatMessage.class);
-                                conversa.setLastMessage(lastMessage.getMessageText());
-                                conversa.setLastMessageTimestamp(lastMessage.getTimestamp());
-                            }
-                        }
-
-                        readStatusRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot readSnapshot) {
-                                long lastReadTimestamp = readSnapshot.exists() ? readSnapshot.getValue(Long.class) : 0;
-                                messagesRef.orderByChild("timestamp").startAt(lastReadTimestamp + 1).addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot unreadSnapshot) {
-                                        int unreadCount = 0;
-                                        for(DataSnapshot msg : unreadSnapshot.getChildren()){
-                                            ChatMessage chatMessage = msg.getValue(ChatMessage.class);
-                                            if(chatMessage != null && !chatMessage.getSenderId().equals(currentUserId)){
-                                                unreadCount++;
-                                            }
-                                        }
-                                        conversa.setUnreadCount(unreadCount);
-                                        addOrUpdateConversa(conversa);
-                                    }
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError databaseError) { addOrUpdateConversa(conversa); }
-                                });
-                            }
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError databaseError) { addOrUpdateConversa(conversa); }
-                        });
-                    }
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) { addOrUpdateConversa(conversa); }
-                });
+                addOrUpdateConversa(conversa);
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {}
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                // Mesmo com erro no user, tentamos mostrar a conversa
+                addOrUpdateConversa(conversa);
+            }
         });
     }
 
     private void addOrUpdateConversa(Conversa novaConversa) {
+        // Verifica se já existe na lista para atualizar
         int index = -1;
         for (int i = 0; i < conversasList.size(); i++) {
             if (conversasList.get(i).getChatId().equals(novaConversa.getChatId())) {
@@ -218,26 +262,31 @@ public class ConversasActivity extends AppCompatActivity {
             conversasList.add(novaConversa);
         }
 
-        Collections.sort(conversasList, (c1, c2) -> Long.compare(c2.getLastMessageTimestamp(), c1.getLastMessageTimestamp()));
+        // Ordena por data (mais recente primeiro)
+        Collections.sort(conversasList,
+                (c1, c2) -> Long.compare(c2.getLastMessageTimestamp(), c1.getLastMessageTimestamp()));
         filterConversas();
     }
 
     private void filterConversas() {
         filteredList.clear();
-        if (mostrandoNaoLidas) { // Filtro "Não Lidas"
+        if (mostrandoNaoLidas) {
             for (Conversa c : conversasList) {
                 if (c.getUnreadCount() > 0) {
                     filteredList.add(c);
                 }
             }
-        } else { // Filtro "Todas"
+        } else {
             filteredList.addAll(conversasList);
         }
-        conversasAdapter.notifyDataSetChanged();
+
+        if (conversasAdapter != null) {
+            conversasAdapter.notifyDataSetChanged();
+        }
         updateEmptyState();
     }
 
-    private void updateEmptyState(){
+    private void updateEmptyState() {
         if (filteredList.isEmpty()) {
             recyclerViewConversas.setVisibility(View.GONE);
             emptyState.setVisibility(View.VISIBLE);

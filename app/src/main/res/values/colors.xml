@@ -3,9 +3,30 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
 
-    <!-- Cores para o status da mensagem -->
-    <color name="status_read_blue">#4FC3F7</color> <!-- Um azul claro e vibrante -->
-    <color name="status_sent_gray">#BDBDBD</color> <!-- Um cinza para o status de enviado -->
+    <!-- Marca: Eudaimonia (Serenidade, Resiliência e Foco) -->
+    <!-- Primary: Roxo Profundo (Transformação, Espiritualidade, Foco) -->
+    <color name="colorPrimary">#673AB7</color>
+    <color name="colorPrimaryVariant">#512DA8</color>
+    <color name="colorOnPrimary">#FFFFFF</color>
 
+    <!-- Secondary: Teal / Verde Água (Cura, Renovação, Calma) -->
+    <color name="colorSecondary">#009688</color>
+    <color name="colorSecondaryVariant">#00796B</color>
+    <color name="colorOnSecondary">#FFFFFF</color>
+
+    <!-- Backgrounds e Superfícies -->
+    <color name="colorBackground">#F3F4F6</color> <!-- Cinza Extra Claro -->
+    <color name="colorSurface">#FFFFFF</color>
+
+    <!-- Texts -->
+    <color name="colorOnBackground">#1F2937</color> <!-- Cinza Chumbo/Preto -->
+    <color name="colorOnSurface">#1F2937</color>
+    
+    <!-- Status e Erros -->
+    <color name="colorError">#B00020</color>
+    
+    <!-- Legados / Usados em chats -->
+    <color name="status_read_blue">#4FC3F7</color> 
+    <color name="status_sent_gray">#BDBDBD</color> 
     <color name="azul_muito_claro">#E3F2FD</color>
 </resources>

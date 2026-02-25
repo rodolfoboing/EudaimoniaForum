@@ -5,6 +5,44 @@
     android:orientation="vertical"
     android:padding="8dp">
 
+    <!-- Preview do Post -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="2dp"
+        app:cardBackgroundColor="#E3F2FD"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/textViewTituloPreview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Carregando Título..."
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#000000" />
+
+            <TextView
+                android:id="@+id/textViewConteudoPreview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Carregando conteúdo..."
+                android:textSize="14sp"
+                android:textColor="#424242"
+                android:layout_marginTop="4dp"
+                android:maxLines="3"
+                android:ellipsize="end" />
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
     <!-- Lista de comentários -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewComentarios"

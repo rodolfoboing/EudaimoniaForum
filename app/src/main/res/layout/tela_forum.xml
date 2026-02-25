@@ -10,79 +10,82 @@
         android:layout_height="wrap_content"
         android:background="#3F51B5"
         android:orientation="vertical"
-        android:padding="8dp"> <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:contentDescription="Ícone do Fórum"
-            android:src="@drawable/pillar" />
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:contentDescription="Ícone do Fórum"
-            android:src="@drawable/pillar" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:text="Fórum de Discussão"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold" />
-
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:contentDescription="Ícone do Fórum"
-            android:src="@drawable/pillar" />
-        <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:contentDescription="Ícone do Fórum"
-            android:src="@drawable/pillar" />
-    </LinearLayout>
+        android:padding="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginTop="4dp">
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="Ícone do Fórum"
+                android:src="@drawable/pillar" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="Ícone do Fórum"
+                android:src="@drawable/pillar" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:text="Fórum de Discussão"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="Ícone do Fórum"
+                android:src="@drawable/pillar" />
+
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="Ícone do Fórum"
+                android:src="@drawable/pillar" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="vertical">
 
             <EditText
                 android:id="@+id/editTextSearch"
                 android:layout_width="match_parent"
                 android:layout_height="32dp"
-                android:hint="Buscar por palavra-chave"
-                android:textColorHint="#616161"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
-                android:paddingTop="0dp"
-                android:paddingBottom="0dp"
                 android:background="@drawable/edit_text_background"
+                android:hint="Buscar por palavra-chave"
                 android:inputType="text"
+                android:paddingStart="8dp"
+                android:paddingTop="0dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="0dp"
+                android:textColorHint="#616161"
                 android:textSize="12sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
                 android:layout_marginTop="4dp"
-                android:gravity="center_vertical">
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <Spinner
                     android:id="@+id/spinnerCategorias"
                     android:layout_width="0dp"
                     android:layout_height="32dp"
-                    android:layout_weight="1"
                     android:layout_marginEnd="4dp"
+                    android:layout_weight="1"
                     android:background="@drawable/edit_text_background" />
 
                 <Button
@@ -91,13 +94,13 @@
                     android:layout_height="30dp"
                     android:layout_marginEnd="4dp"
                     android:backgroundTint="#8BC34A"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:paddingTop="0dp"
-                    android:paddingBottom="0dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:minHeight="0dp"
+                    android:paddingStart="8dp"
+                    android:paddingTop="0dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="0dp"
                     android:text="Recentes"
                     android:textColor="#FFFFFF"
                     android:textSize="10sp" />
@@ -107,14 +110,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
                     android:backgroundTint="#FF9800"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
-                    android:paddingTop="0dp"
-                    android:paddingBottom="0dp"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
                     android:minHeight="0dp"
-                    android:text="Comentados"
+                    android:paddingStart="8dp"
+                    android:paddingTop="0dp"
+                    android:paddingEnd="8dp"
+                    android:paddingBottom="0dp"
+                    android:text="+ Comentados"
                     android:textColor="#FFFFFF"
                     android:textSize="10sp" />
             </LinearLayout>
@@ -136,8 +139,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:orientation="vertical"
         android:background="#F5F5F5"
+        android:orientation="vertical"
         android:padding="4dp">
 
         <TextView
@@ -146,19 +149,40 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="2dp"
             android:gravity="center"
-            android:text="📧 Feedback: Rodolfo.bm.reserva@outlook.com"
+            android:text="📧 Feedback: Rodolfo.bm.reserva@gmail.com"
             android:textColor="#757575"
             android:textSize="10sp" />
 
-        <Button
-            android:id="@+id/buttonCriarPost"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="36dp"
-            android:backgroundTint="#03A9F4"
-            android:insetTop="0dp"
-            android:insetBottom="0dp"
-            android:text="➕ Criar Post"
-            android:textColor="#FFFFFF"
-            android:textSize="13sp" />
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonCriarPost"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="2dp"
+                android:layout_weight="1"
+                android:backgroundTint="#03A9F4"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="➕ Criar Post"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/buttonMinhasPostagens"
+                android:layout_width="0dp"
+                android:layout_height="36dp"
+                android:layout_marginStart="2dp"
+                android:layout_weight="1"
+                android:backgroundTint="#FFC107"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:text="Minhas Postagens"
+                android:textColor="#FFFFFF"
+                android:textSize="13sp" />
+        </LinearLayout>
     </LinearLayout>
 </RelativeLayout>

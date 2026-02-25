@@ -6,7 +6,7 @@ public class Comentario {
     private String autor;
     private String conteudo;
     private String data;
-    private long timestamp; // Novo campo
+    private long timestamp;
 
     public Comentario() {
         // Construtor vazio para o Firebase
@@ -17,7 +17,7 @@ public class Comentario {
         this.autor = autor;
         this.conteudo = conteudo;
         this.data = data;
-        this.timestamp = System.currentTimeMillis(); // Padrão para dados antigos
+        this.timestamp = System.currentTimeMillis();
     }
 
     // Novo construtor preferencial

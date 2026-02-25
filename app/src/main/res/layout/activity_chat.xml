@@ -62,15 +62,10 @@
         android:id="@+id/recyclerViewChat"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_above="@+id/layout_chatbox"
         android:layout_below="@id/chatHeader"
+        android:layout_above="@+id/layout_chatbox"
         android:clipToPadding="false"
-        android:paddingStart="8dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="8dp"
-        android:paddingBottom="8dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        app:stackFromEnd="true" />
+        android:padding="8dp" />
 
     <!-- Caixa de Entrada de Mensagem -->
     <LinearLayout

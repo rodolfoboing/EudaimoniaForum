@@ -1,13 +1,20 @@
 package com.meuprojeto.eudaimoniaforum;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -20,6 +27,7 @@ import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
@@ -27,7 +35,10 @@ public class PerfilActivity extends AppCompatActivity {
 
     private TextView textViewNickUsuario, textViewDataEntrada, textViewVicioUsuario, textViewApresentacao;
     private TextView textViewNumPosts, textViewNumComentarios, textViewDiasAtivos;
-    private View buttonEditarPerfil, buttonConversar; // Usando View que é a classe pai de LinearLayout
+    private View buttonEditarPerfil, buttonConversar;
+    private Button buttonMinhasPostagens;
+    private LinearLayout layoutBadges;
+    private View badgesSection;
 
     private FirebaseAuth firebaseAuth;
     private DatabaseReference userRef;
@@ -38,10 +49,9 @@ public class PerfilActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.tela_perfil);
 
-        // Inicialização dos componentes da UI
         inicializarUI();
 
-        // No perfil do próprio usuário, escondemos o botão de conversar
+        // No perfil do próprio usuário, esconde o botão de conversar
         buttonConversar.setVisibility(View.GONE);
 
         firebaseAuth = FirebaseAuth.getInstance();
@@ -52,6 +62,8 @@ public class PerfilActivity extends AppCompatActivity {
             userRef = FirebaseDatabase.getInstance().getReference("users").child(userId);
             postsRef = FirebaseDatabase.getInstance().getReference("forum/posts");
             carregarDadosPerfil(userId);
+            // Carrega conquistas verificadas do Firebase
+            carregarConquistasFirebase(userId);
         } else {
             Toast.makeText(this, "Erro: Usuário não autenticado!", Toast.LENGTH_SHORT).show();
             finish();
@@ -59,6 +71,10 @@ public class PerfilActivity extends AppCompatActivity {
 
         buttonEditarPerfil.setOnClickListener(v -> {
             startActivity(new Intent(this, EditarPerfilActivity.class));
+        });
+
+        buttonMinhasPostagens.setOnClickListener(v -> {
+            startActivity(new Intent(this, MinhasPostagensActivity.class));
         });
     }
 
@@ -72,19 +88,101 @@ public class PerfilActivity extends AppCompatActivity {
         textViewDiasAtivos = findViewById(R.id.textViewDiasAtivos);
         buttonEditarPerfil = findViewById(R.id.buttonEditarPerfil);
         buttonConversar = findViewById(R.id.buttonConversar);
+        buttonMinhasPostagens = findViewById(R.id.buttonMinhasPostagens);
+        layoutBadges = findViewById(R.id.layoutBadges);
+        badgesSection = findViewById(R.id.badgesSection);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // Recarrega os dados sempre que a tela se torna visível
         if (firebaseAuth.getCurrentUser() != null) {
-            carregarDadosPerfil(firebaseAuth.getCurrentUser().getUid());
+            String currentUserId = firebaseAuth.getCurrentUser().getUid();
+            carregarDadosPerfil(currentUserId);
+            carregarConquistasFirebase(currentUserId);
         }
     }
 
+    private void carregarConquistasFirebase(String userId) {
+        DatabaseReference conquistasRef = FirebaseDatabase.getInstance().getReference("users")
+                .child(userId).child("conquistas");
+
+        conquistasRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                layoutBadges.removeAllViews();
+
+                if (!snapshot.exists()) {
+                    adicionarBadge("Iniciante", "#B0BEC5");
+                    return;
+                }
+
+                // Ordem sugerida: 1 dia, 3 dias, 1 semana, 1 mes, 3 meses, 6 meses, 1 ano
+                if (snapshot.hasChild("badge_1_dia"))
+                    adicionarBadge("1 Dia", "#8BC34A");
+                if (snapshot.hasChild("badge_3_dias"))
+                    adicionarBadge("3 Dias", "#4CAF50");
+                if (snapshot.hasChild("badge_1_semana"))
+                    adicionarBadge("1 Semana", "#009688");
+                if (snapshot.hasChild("badge_1_mes"))
+                    adicionarBadge("1 Mês", "#00BCD4");
+                if (snapshot.hasChild("badge_3_meses"))
+                    adicionarBadge("3 Meses", "#2196F3");
+                if (snapshot.hasChild("badge_6_meses"))
+                    adicionarBadge("6 Meses", "#3F51B5");
+                if (snapshot.hasChild("badge_1_ano"))
+                    adicionarBadge("1 Ano", "#9C27B0");
+
+                if (layoutBadges.getChildCount() == 0) {
+                    adicionarBadge("Iniciante", "#B0BEC5");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Em caso de erro, tenta carregar iniciante
+                if (layoutBadges.getChildCount() == 0) {
+                    adicionarBadge("Iniciante", "#B0BEC5");
+                }
+            }
+        });
+    }
+
+    private void adicionarBadge(String titulo, String corHex) {
+        LinearLayout badgeLayout = new LinearLayout(this);
+        badgeLayout.setOrientation(LinearLayout.VERTICAL);
+        badgeLayout.setGravity(Gravity.CENTER);
+        badgeLayout.setPadding(16, 0, 16, 0);
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(android.R.drawable.star_big_on);
+        try {
+            icon.setColorFilter(Color.parseColor(corHex));
+        } catch (IllegalArgumentException e) {
+            icon.setColorFilter(Color.GRAY);
+        }
+        icon.setLayoutParams(new LinearLayout.LayoutParams(100, 100)); // Tamanho fixo
+
+        TextView text = new TextView(this);
+        text.setText(titulo);
+        text.setTextSize(12);
+        text.setTextColor(Color.parseColor("#424242"));
+        text.setGravity(Gravity.CENTER);
+        text.setTypeface(null, Typeface.BOLD);
+
+        badgeLayout.addView(icon);
+        badgeLayout.addView(text);
+
+        layoutBadges.addView(badgeLayout);
+    }
+
     private void carregarDadosPerfil(String userId) {
-        // Carrega dados básicos do usuário
+        if (firebaseAuth.getCurrentUser() != null && !userId.equals(firebaseAuth.getCurrentUser().getUid())) {
+            badgesSection.setVisibility(View.GONE);
+        } else {
+            badgesSection.setVisibility(View.VISIBLE);
+        }
+
         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -93,41 +191,42 @@ public class PerfilActivity extends AppCompatActivity {
                     if (usuario != null) {
                         textViewNickUsuario.setText(usuario.getNick());
                         textViewVicioUsuario.setText(usuario.getVicio() != null ? usuario.getVicio() : "Não definido");
-                        textViewApresentacao.setText(usuario.getSobreMim() != null ? usuario.getSobreMim() : "Ainda não há informações...");
+                        textViewApresentacao.setText(
+                                usuario.getSobreMim() != null ? usuario.getSobreMim() : "Ainda não há informações...");
 
-                        // Calcula e exibe data de entrada e dias ativos
                         try {
                             long dataEntradaMillis = Long.parseLong(usuario.getDataEntrada());
                             SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
-                            textViewDataEntrada.setText("📅 Membro desde " + sdf.format(new java.util.Date(dataEntradaMillis)));
+                            textViewDataEntrada.setText("📅 Membro desde " + sdf.format(new Date(dataEntradaMillis)));
 
                             long diff = System.currentTimeMillis() - dataEntradaMillis;
                             long dias = TimeUnit.MILLISECONDS.toDays(diff);
                             textViewDiasAtivos.setText(String.valueOf(dias > 0 ? dias : 1));
-                        } catch (NumberFormatException e) {
+                        } catch (Exception e) {
                             textViewDataEntrada.setText("Data inválida");
                         }
                     }
                 }
             }
+
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Toast.makeText(PerfilActivity.this, "Falha ao carregar dados.", Toast.LENGTH_SHORT).show();
             }
         });
 
-        // Contar posts do usuário
         Query postsQuery = postsRef.orderByChild("autor").equalTo(userId);
         postsQuery.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 textViewNumPosts.setText(String.valueOf(snapshot.getChildrenCount()));
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
 
-        // Contar comentários do usuário (lógica mais complexa, iterando sobre todos os posts)
         postsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -143,8 +242,10 @@ public class PerfilActivity extends AppCompatActivity {
                 }
                 textViewNumComentarios.setText(String.valueOf(commentCount));
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
     }
 }

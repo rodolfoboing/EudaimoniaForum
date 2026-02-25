@@ -61,11 +61,90 @@ public class EditarPerfilActivity extends AppCompatActivity {
                 salvarAlteracoes();
             }
         });
+
+        Button buttonExcluirConta = findViewById(R.id.buttonExcluirConta);
+        buttonExcluirConta.setOnClickListener(v -> confirmarExclusaoConta());
+    }
+
+    private void confirmarExclusaoConta() {
+        String senhaAtual = editTextSenhaAtual.getText().toString().trim();
+
+        if (TextUtils.isEmpty(senhaAtual)) {
+            editTextSenhaAtual.setError("Senha atual é necessária para confirmar a exclusão");
+            editTextSenhaAtual.requestFocus();
+            Toast.makeText(this, "Por favor, digite sua senha atual para continuar.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Excluir Conta Permanentemente")
+                .setMessage(
+                        "Tem certeza absoluta? Esta ação apagará todos os seus dados, histórico e posts. Não pode ser desfeita.")
+                .setPositiveButton("Excluir Tudo", (dialog, which) -> deletarConta(senhaAtual))
+                .setNegativeButton("Cancelar", null)
+                .show();
+    }
+
+    private void deletarConta(String senha) {
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user == null)
+            return;
+
+        // 1. Reautenticar para garantir segurança
+        AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), senha);
+        user.reauthenticate(credential).addOnCompleteListener(authTask -> {
+            if (authTask.isSuccessful()) {
+                // 2. Apagar dados do banco (Usuário e Nickname)
+                String uid = user.getUid();
+
+                // saber o nick para liberar o username
+                userRef.child("nick").get().addOnSuccessListener(snapshot -> {
+                    String nick = snapshot.getValue(String.class);
+
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("users/" + uid, null); // Remove dados do usuário
+                    if (nick != null) {
+                        updates.put("usernames/" + nick, null); // Libera o nick
+                    }
+
+                    FirebaseDatabase.getInstance().getReference().updateChildren(updates)
+                            .addOnCompleteListener(dbTask -> {
+                                if (dbTask.isSuccessful()) {
+                                    // 3. Apagar usuário do Auth
+                                    user.delete().addOnCompleteListener(deleteTask -> {
+                                        if (deleteTask.isSuccessful()) {
+                                            Toast.makeText(EditarPerfilActivity.this, "Conta excluída com sucesso.",
+                                                    Toast.LENGTH_LONG).show();
+                                            Intent intent = new Intent(EditarPerfilActivity.this, LoginActivity.class);
+                                            intent.setFlags(
+                                                    Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                            startActivity(intent);
+                                            finish();
+                                        } else {
+                                            Toast.makeText(EditarPerfilActivity.this,
+                                                    "Erro ao excluir conta de autenticação: "
+                                                            + deleteTask.getException().getMessage(),
+                                                    Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+                                } else {
+                                    Toast.makeText(EditarPerfilActivity.this, "Erro ao apagar dados do banco.",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                }).addOnFailureListener(e -> {
+                    Toast.makeText(EditarPerfilActivity.this, "Erro ao recuperar dados para exclusão.",
+                            Toast.LENGTH_SHORT).show();
+                });
+
+            } else {
+                Toast.makeText(EditarPerfilActivity.this, "Senha incorreta. Não foi possível excluir.",
+                        Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void carregarDadosAtuais() {
-        // Buscamos o nick original apenas para comparação interna.
-        // Não preenchemos os EditTexts para manter os hints "Opcional" visíveis.
         userRef.child("nick").get().addOnSuccessListener(snapshot -> {
             nickOriginal = snapshot.getValue(String.class);
         });
@@ -91,7 +170,8 @@ public class EditarPerfilActivity extends AppCompatActivity {
         }
 
         FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user == null) return;
+        if (user == null)
+            return;
 
         // Reautenticação
         AuthCredential credential = EmailAuthProvider.getCredential(user.getEmail(), senhaAtual);
@@ -123,7 +203,8 @@ public class EditarPerfilActivity extends AppCompatActivity {
         }
     }
 
-    private void aplicarMudancas(FirebaseUser user, String nickFinal, String apresentacaoFinal, String novaSenha, boolean mudouNick) {
+    private void aplicarMudancas(FirebaseUser user, String nickFinal, String apresentacaoFinal, String novaSenha,
+            boolean mudouNick) {
         Map<String, Object> updates = new HashMap<>();
 
         if (mudouNick) {
@@ -159,7 +240,9 @@ public class EditarPerfilActivity extends AppCompatActivity {
                     Toast.makeText(this, "Perfil e senha atualizados com sucesso!", Toast.LENGTH_SHORT).show();
                     finish();
                 } else {
-                    Toast.makeText(this, "Dados salvos, mas erro ao trocar senha: " + passTask.getException().getMessage(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this,
+                            "Dados salvos, mas erro ao trocar senha: " + passTask.getException().getMessage(),
+                            Toast.LENGTH_LONG).show();
                     finish();
                 }
             });

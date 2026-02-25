@@ -2,25 +2,27 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#3F51B5">
+    android:background="@color/colorPrimary">
 
-    <!-- Logo do App -->
+    <!-- Logo do App (com ID para animação) -->
     <ImageView
         android:id="@+id/logo"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/ic_eudaimoniaforum"
-        android:layout_centerInParent="true" />
+        android:layout_width="160dp"
+        android:layout_height="160dp"
+        android:src="@mipmap/ic_eudaimoniaforum"
+        android:layout_centerInParent="true" 
+        android:contentDescription="Logo Eudaimonia"/>
 
-    <!-- Texto opcional abaixo do logo -->
+    <!-- Texto de slogan da marca -->
     <TextView
         android:id="@+id/splashText"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/logo"
-        android:layout_marginTop="16dp"
-        android:text="Bem-vindo ao EudaimoniaForum"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
+        android:layout_marginTop="24dp"
+        android:text="Controle sua Mente"
+        android:textColor="@color/white"
+        android:fontFamily="sans-serif-medium"
+        android:textSize="20sp"
         android:layout_centerHorizontal="true" />
 </RelativeLayout>

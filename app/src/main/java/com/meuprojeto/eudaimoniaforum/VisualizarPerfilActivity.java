@@ -26,6 +26,7 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
     private TextView textViewNickUsuario, textViewDataEntrada, textViewVicioUsuario, textViewApresentacao;
     private TextView textViewNumPosts, textViewNumComentarios, textViewDiasAtivos;
     private View buttonEditarPerfil, buttonConversar;
+    private android.widget.LinearLayout layoutBadges;
 
     private DatabaseReference userRef;
     private DatabaseReference postsRef;
@@ -53,6 +54,7 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
             userRef = FirebaseDatabase.getInstance().getReference("users").child(userId);
             postsRef = FirebaseDatabase.getInstance().getReference("forum/posts");
             carregarPerfilUsuario(userId);
+            carregarConquistasFirebase(userId);
         } else {
             Toast.makeText(this, "Erro: ID do usuário não fornecido.", Toast.LENGTH_SHORT).show();
             finish();
@@ -79,6 +81,7 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
         textViewDiasAtivos = findViewById(R.id.textViewDiasAtivos);
         buttonEditarPerfil = findViewById(R.id.buttonEditarPerfil);
         buttonConversar = findViewById(R.id.buttonConversar);
+        layoutBadges = findViewById(R.id.layoutBadges);
     }
 
     private void carregarPerfilUsuario(String userId) {
@@ -90,12 +93,14 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
                     if (usuario != null) {
                         textViewNickUsuario.setText(usuario.getNick());
                         textViewVicioUsuario.setText(usuario.getVicio() != null ? usuario.getVicio() : "Não definido");
-                        textViewApresentacao.setText(usuario.getSobreMim() != null ? usuario.getSobreMim() : "Ainda não há informações...");
+                        textViewApresentacao.setText(
+                                usuario.getSobreMim() != null ? usuario.getSobreMim() : "Ainda não há informações...");
 
                         try {
                             long dataEntradaMillis = Long.parseLong(usuario.getDataEntrada());
                             SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
-                            textViewDataEntrada.setText("📅 Membro desde " + sdf.format(new java.util.Date(dataEntradaMillis)));
+                            textViewDataEntrada
+                                    .setText("📅 Membro desde " + sdf.format(new java.util.Date(dataEntradaMillis)));
 
                             long diff = System.currentTimeMillis() - dataEntradaMillis;
                             long dias = TimeUnit.MILLISECONDS.toDays(diff);
@@ -106,8 +111,10 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
                     }
                 }
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) { }
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
 
         Query postsQuery = postsRef.orderByChild("autor").equalTo(userId);
@@ -116,8 +123,10 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 textViewNumPosts.setText(String.valueOf(snapshot.getChildrenCount()));
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
 
         postsRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -135,8 +144,77 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
                 }
                 textViewNumComentarios.setText(String.valueOf(commentCount));
             }
+
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
+    }
+
+    private void carregarConquistasFirebase(String userId) {
+        DatabaseReference conquistasRef = FirebaseDatabase.getInstance().getReference("users")
+                .child(userId).child("conquistas");
+
+        conquistasRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                layoutBadges.removeAllViews();
+                if (!snapshot.exists()) {
+                    adicionarBadge("Iniciante", "#B0BEC5");
+                    return;
+                }
+                if (snapshot.hasChild("badge_1_dia"))
+                    adicionarBadge("1 Dia", "#8BC34A");
+                if (snapshot.hasChild("badge_3_dias"))
+                    adicionarBadge("3 Dias", "#4CAF50");
+                if (snapshot.hasChild("badge_1_semana"))
+                    adicionarBadge("1 Semana", "#009688");
+                if (snapshot.hasChild("badge_1_mes"))
+                    adicionarBadge("1 Mês", "#00BCD4");
+                if (snapshot.hasChild("badge_3_meses"))
+                    adicionarBadge("3 Meses", "#2196F3");
+                if (snapshot.hasChild("badge_6_meses"))
+                    adicionarBadge("6 Meses", "#3F51B5");
+                if (snapshot.hasChild("badge_1_ano"))
+                    adicionarBadge("1 Ano", "#9C27B0");
+
+                if (layoutBadges.getChildCount() == 0) {
+                    adicionarBadge("Iniciante", "#B0BEC5");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (layoutBadges.getChildCount() == 0)
+                    adicionarBadge("Iniciante", "#B0BEC5");
+            }
+        });
+    }
+
+    private void adicionarBadge(String titulo, String corHex) {
+        android.widget.LinearLayout badgeLayout = new android.widget.LinearLayout(this);
+        badgeLayout.setOrientation(android.widget.LinearLayout.VERTICAL);
+        badgeLayout.setGravity(android.view.Gravity.CENTER);
+        badgeLayout.setPadding(16, 0, 16, 0);
+
+        android.widget.ImageView icon = new android.widget.ImageView(this);
+        icon.setImageResource(android.R.drawable.star_big_on);
+        try {
+            icon.setColorFilter(android.graphics.Color.parseColor(corHex));
+        } catch (IllegalArgumentException e) {
+            icon.setColorFilter(android.graphics.Color.GRAY);
+        }
+        icon.setLayoutParams(new android.widget.LinearLayout.LayoutParams(100, 100));
+
+        TextView text = new TextView(this);
+        text.setText(titulo);
+        text.setTextSize(12);
+        text.setTextColor(android.graphics.Color.parseColor("#424242"));
+        text.setGravity(android.view.Gravity.CENTER);
+        text.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        badgeLayout.addView(icon);
+        badgeLayout.addView(text);
+        layoutBadges.addView(badgeLayout);
     }
 }

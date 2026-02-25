@@ -20,6 +20,7 @@
         <activity android:name=".ChatActivity" />
         <activity android:name=".ConversasActivity" />
         <activity android:name=".RecuperarSenhaActivity" />
+        <activity android:name=".MinhasPostagensActivity" />
 
         <activity
             android:name=".NotificacaoActivity"
@@ -44,7 +45,18 @@
         <activity android:name=".ForumActivity" />
         <activity android:name=".EditarPerfilActivity" />
         <activity android:name=".NovoPostActivity" />
+        <service
+            android:name=".MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        
+        <activity android:name=".OnboardingActivity" />
+        <activity android:name=".OrientacoesActivity" />
         <activity android:name=".ModeracaoActivity" />
+        <activity android:name=".DenunciaActivity" />
     </application>
 
 </manifest>

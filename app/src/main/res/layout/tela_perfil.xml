@@ -9,7 +9,8 @@
 
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:paddingBottom="16dp">
 
         <!-- Cabeçalho com Gradiente -->
         <LinearLayout
@@ -21,7 +22,6 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <!-- Ícone de Usuário Grande -->
             <ImageView
                 android:id="@+id/imageViewPerfilIcon"
                 android:layout_width="100dp"
@@ -32,7 +32,6 @@
                 android:src="@android:drawable/ic_menu_myplaces"
                 android:tint="#3F51B5" />
 
-            <!-- Nick do Usuário -->
             <TextView
                 android:id="@+id/textViewNickUsuario"
                 android:layout_width="wrap_content"
@@ -43,7 +42,6 @@
                 android:textSize="24sp"
                 android:textStyle="bold" />
 
-            <!-- Data de Entrada -->
             <TextView
                 android:id="@+id/textViewDataEntrada"
                 android:layout_width="wrap_content"
@@ -68,7 +66,6 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Foco/Vício -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -109,7 +106,6 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <!-- Estatísticas Rápidas (Opcional - pode deixar vazio) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -117,7 +113,6 @@
                 android:gravity="center"
                 android:orientation="horizontal">
 
-                <!-- Posts -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -143,13 +138,11 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <!-- Divisor -->
                 <View
                     android:layout_width="1dp"
                     android:layout_height="40dp"
                     android:background="#E0E0E0" />
 
-                <!-- Comentários -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -175,13 +168,11 @@
                         android:textSize="12sp" />
                 </LinearLayout>
 
-                <!-- Divisor -->
                 <View
                     android:layout_width="1dp"
                     android:layout_height="40dp"
                     android:background="#E0E0E0" />
 
-                <!-- Dias Ativos -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -209,9 +200,9 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Seção Sobre Mim -->
+        <!-- Seção de Conquistas (Medalhas) -->
         <LinearLayout
-            android:id="@+id/sobreLayout"
+            android:id="@+id/badgesSection"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/cardInfo"
@@ -223,7 +214,44 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Título Sobre Mim -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏆 Conquistas"
+                android:textColor="#212121"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/layoutBadges"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+                    <!-- Badges serão adicionadas via código -->
+                </LinearLayout>
+            </HorizontalScrollView>
+        </LinearLayout>
+
+        <!-- Seção Sobre Mim -->
+        <LinearLayout
+            android:id="@+id/sobreLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/badgesSection"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/card_background"
+            android:elevation="2dp"
+            android:orientation="vertical"
+            android:padding="16dp">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -247,7 +275,6 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Divisor -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -255,7 +282,6 @@
                 android:layout_marginBottom="8dp"
                 android:background="#E0E0E0" />
 
-            <!-- Texto Sobre Mim -->
             <TextView
                 android:id="@+id/textViewApresentacao"
                 android:layout_width="match_parent"
@@ -267,20 +293,40 @@
                 android:textSize="15sp" />
         </LinearLayout>
 
-        <!-- Botões de Ação -->
-        <LinearLayout
-            android:id="@+id/buttonLayout"
+        <!-- Botão Minhas Postagens -->
+        <Button
+            android:id="@+id/buttonMinhasPostagens"
+            style="@style/Widget.AppCompat.Button.Colored"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_below="@id/sobreLayout"
             android:layout_marginStart="16dp"
             android:layout_marginTop="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
+            android:backgroundTint="#FFC107"
+            android:drawableStart="@android:drawable/ic_menu_agenda"
+            android:drawablePadding="12dp"
+            android:gravity="center_vertical"
+            android:paddingStart="24dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="14dp"
+            android:text="Minhas Postagens"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp" />
+
+        <!-- Botões de Ação -->
+        <LinearLayout
+            android:id="@+id/buttonLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/buttonMinhasPostagens"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
             android:gravity="center_horizontal"
             android:orientation="horizontal">
 
-            <!-- Botão Conversar -->
             <LinearLayout
                 android:id="@+id/buttonConversar"
                 android:layout_width="0dp"
@@ -312,7 +358,6 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Botão Editar Perfil -->
             <LinearLayout
                 android:id="@+id/buttonEditarPerfil"
                 android:layout_width="0dp"

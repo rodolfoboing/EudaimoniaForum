@@ -24,6 +24,7 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class ForumActivity extends AppCompatActivity {
     private List<Post> postsExibidos; // Lista para os posts que estão sendo exibidos (filtrados)
     private DatabaseReference databaseReference;
     private EditText editTextSearch;
-    private Button buttonOrdenarRecentes, buttonOrdenarComentados;
+    private Button buttonOrdenarRecentes, buttonOrdenarComentados, buttonMinhasPostagens;
     private Spinner spinnerCategorias;
     private String categoriaSelecionada = "Todos"; // Categoria selecionada, padrão é "Todos"
     private boolean isModerador = false;
@@ -52,6 +53,7 @@ public class ForumActivity extends AppCompatActivity {
         editTextSearch = findViewById(R.id.editTextSearch);
         buttonOrdenarRecentes = findViewById(R.id.buttonOrdenarRecentes);
         buttonOrdenarComentados = findViewById(R.id.buttonOrdenarComentados);
+        buttonMinhasPostagens = findViewById(R.id.buttonMinhasPostagens);
         spinnerCategorias = findViewById(R.id.spinnerCategorias);
         recyclerViewPosts = findViewById(R.id.recyclerViewPosts);
         recyclerViewPosts.setLayoutManager(new LinearLayoutManager(this));
@@ -59,7 +61,7 @@ public class ForumActivity extends AppCompatActivity {
         postList = new ArrayList<>();
         postsExibidos = new ArrayList<>();
         // Inicializa com isModerador = false (será atualizado assincronamente)
-        postAdapter = new PostAdapter(postsExibidos, this, isModerador);
+        postAdapter = new PostAdapter(this, postsExibidos, isModerador);
         recyclerViewPosts.setAdapter(postAdapter);
 
         databaseReference = FirebaseDatabase.getInstance().getReference("forum/posts");
@@ -76,7 +78,8 @@ public class ForumActivity extends AppCompatActivity {
         // Configura a busca
         editTextSearch.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
@@ -84,7 +87,8 @@ public class ForumActivity extends AppCompatActivity {
             }
 
             @Override
-            public void afterTextChanged(Editable s) {}
+            public void afterTextChanged(Editable s) {
+            }
         });
 
         // Configura botões de ordenação
@@ -94,6 +98,11 @@ public class ForumActivity extends AppCompatActivity {
         // Configura botão de criar post
         findViewById(R.id.buttonCriarPost).setOnClickListener(v -> {
             startActivity(new Intent(ForumActivity.this, NovoPostActivity.class));
+        });
+
+        // Configura o novo botão "Minhas Postagens"
+        buttonMinhasPostagens.setOnClickListener(v -> {
+            startActivity(new Intent(ForumActivity.this, MinhasPostagensActivity.class));
         });
     }
 
@@ -107,7 +116,7 @@ public class ForumActivity extends AppCompatActivity {
                     if (snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class))) {
                         isModerador = true;
                         // Recria o adapter com a permissão de moderador
-                        postAdapter = new PostAdapter(postsExibidos, ForumActivity.this, isModerador);
+                        postAdapter = new PostAdapter(ForumActivity.this, postsExibidos, isModerador);
                         recyclerViewPosts.setAdapter(postAdapter);
                     }
                 }
@@ -130,9 +139,7 @@ public class ForumActivity extends AppCompatActivity {
         categorias.add("Álcool");
         categorias.add("Drogas");
         categorias.add("Cigarro");
-        // Adicione mais categorias se desejar
 
-        // Usando o layout customizado R.layout.spinner_item_forum para garantir texto preto
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.spinner_item_forum, categorias);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategorias.setAdapter(adapter);
@@ -141,17 +148,39 @@ public class ForumActivity extends AppCompatActivity {
         spinnerCategorias.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                categoriaSelecionada = parent.getItemAtPosition(position).toString();
-                filtrarPostsExibidos(); // Filtra os posts com a nova categoria
+                String novaCategoria = categorias.get(position);
+                if (!novaCategoria.equals(categoriaSelecionada)) {
+                    categoriaSelecionada = novaCategoria;
+                    loadPosts(); // Recarrega do Firebase com a nova query
+                }
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         });
     }
 
+    private Query postsQuery;
+    private ValueEventListener postsListener;
+
     private void loadPosts() {
-        databaseReference.addValueEventListener(new ValueEventListener() {
+        // Remove listener antigo se existir antes de trocar a query
+        if (postsQuery != null && postsListener != null) {
+            postsQuery.removeEventListener(postsListener);
+        }
+
+        // DEFINIÇÃO DO CAMINHO (Otimização de Custo):
+        // Se selecionou categoria, busca direto no nó da categoria.
+        // Se selecionou "Todos", busca na raiz de posts.
+        if (categoriaSelecionada.equals("Todos")) {
+            postsQuery = FirebaseDatabase.getInstance().getReference("forum/posts").limitToLast(100);
+        } else {
+            postsQuery = FirebaseDatabase.getInstance().getReference("forum/categorias")
+                    .child(categoriaSelecionada).child("posts").limitToLast(100);
+        }
+
+        postsListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 postList.clear();
@@ -162,14 +191,26 @@ public class ForumActivity extends AppCompatActivity {
                         postList.add(post);
                     }
                 }
-                filtrarPostsExibidos(); // Após carregar, aplica o filtro inicial
+                Collections.reverse(postList);
+                filtrarPostsExibidos(); // Aplica busca local (texto) sobre os dados carregados
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(ForumActivity.this, "Erro ao carregar postagens", Toast.LENGTH_SHORT).show();
+                if (!isFinishing() && !isDestroyed()) {
+                    Toast.makeText(ForumActivity.this, "Erro ao carregar postagens", Toast.LENGTH_SHORT).show();
+                }
             }
-        });
+        };
+        postsQuery.addValueEventListener(postsListener);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (postsQuery != null && postsListener != null) {
+            postsQuery.removeEventListener(postsListener);
+        }
     }
 
     // Método unificado para aplicar todos os filtros
@@ -189,7 +230,8 @@ public class ForumActivity extends AppCompatActivity {
             List<Post> postsBuscados = new ArrayList<>();
             for (Post post : postsFiltradosTemporarios) {
                 if (post.getTitulo().toLowerCase().contains(palavraChave.toLowerCase()) ||
-                        (post.getResumo() != null && post.getResumo().toLowerCase().contains(palavraChave.toLowerCase()))) {
+                        (post.getResumo() != null
+                                && post.getResumo().toLowerCase().contains(palavraChave.toLowerCase()))) {
                     postsBuscados.add(post);
                 }
             }
@@ -203,12 +245,7 @@ public class ForumActivity extends AppCompatActivity {
     }
 
     private void ordenarPorMaisRecentes() {
-        Collections.sort(postsExibidos, (post1, post2) -> {
-            if (post1.getData() == null || post2.getData() == null) {
-                return 0;
-            }
-            return post2.getData().compareTo(post1.getData());
-        });
+        Collections.sort(postsExibidos, (post1, post2) -> Long.compare(post2.getData(), post1.getData()));
         postAdapter.notifyDataSetChanged();
     }
 
