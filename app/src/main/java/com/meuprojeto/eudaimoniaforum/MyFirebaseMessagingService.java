@@ -122,7 +122,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             NotificationChannel channel = new NotificationChannel(channelId,
                     "Notificações do Fórum",
                     NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("Notificações de chat, comentários e metas");
+            channel.setDescription("Notificações de chat, comentários e conquistas");
             notificationManager.createNotificationChannel(channel);
         }
 

@@ -73,7 +73,7 @@ public class OnboardingActivity extends AppCompatActivity {
 
         onboardingItems.add(new OnboardingItem(
                 android.R.drawable.ic_menu_edit,
-                "Seu Contador e Metas",
+                "Seu Contador e Conquistas",
                 "Na tela principal, defina o vício que deseja superar.\n\nUse 'Novo Registro' para iniciar/reiniciar, e 'Editar' para ajustar a data se necessário."));
 
         onboardingItems.add(new OnboardingItem(

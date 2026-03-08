@@ -15,19 +15,19 @@ import androidx.work.WorkerParameters;
 
 import java.util.concurrent.TimeUnit;
 
-public class MetasWorker extends Worker {
+public class ConquistasWorker extends Worker {
 
     private static final String PREFS_NAME = "PrefsAbstinencia";
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
 
-    public MetasWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+    public ConquistasWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
         super(context, workerParams);
     }
 
     @NonNull
     @Override
     public Result doWork() {
-        android.util.Log.d("MetasWorker", "Worker executando verificação de marcos de abstinência...");
+        android.util.Log.d("ConquistasWorker", "Worker executando verificação de marcos de abstinência...");
         verificarMarcosDeAbstinencia();
         return Result.success();
     }
@@ -43,25 +43,25 @@ public class MetasWorker extends Worker {
         long diferenca = System.currentTimeMillis() - tempoInicial;
         long diasDeAbstinencia = TimeUnit.MILLISECONDS.toDays(diferenca);
 
-        // Meta de 1 dia
+        // Conquista de 1 dia
         if (diasDeAbstinencia >= 1 && !preferences.getBoolean("milestone_1_day_shown", false)) {
             exibirNotificacaoLocal("1 Dia de Abstinência", "Parabéns! Você atingiu 1 dia de abstinência!");
             preferences.edit().putBoolean("milestone_1_day_shown", true).apply();
         }
 
-        // Meta de 3 dias
+        // Conquista de 3 dias
         if (diasDeAbstinencia >= 3 && !preferences.getBoolean("milestone_3_days_shown", false)) {
             exibirNotificacaoLocal("3 Dias de Abstinência", "Força! Você já superou os 3 primeiros dias!");
             preferences.edit().putBoolean("milestone_3_days_shown", true).apply();
         }
 
-        // Meta de 1 semana (7 dias)
+        // Conquista de 1 semana (7 dias)
         if (diasDeAbstinencia >= 7 && !preferences.getBoolean("milestone_7_days_shown", false)) {
             exibirNotificacaoLocal("1 Semana de Abstinência", "Você completou uma semana! Continue firme!");
             preferences.edit().putBoolean("milestone_7_days_shown", true).apply();
         }
 
-        // Meta de 1 mês (30 dias)
+        // Conquista de 1 mês (30 dias)
         if (diasDeAbstinencia >= 30 && !preferences.getBoolean("milestone_30_days_shown", false)) {
             exibirNotificacaoLocal("1 Mês de Abstinência", "Incrível! Você atingiu 1 mês de abstinência!");
             preferences.edit().putBoolean("milestone_30_days_shown", true).apply();
@@ -70,8 +70,8 @@ public class MetasWorker extends Worker {
 
     private void exibirNotificacaoLocal(String titulo, String mensagem) {
         Context context = getApplicationContext();
-        String canalId = "metas_notificacoes";
-        String canalNome = "Notificações de Metas";
+        String canalId = "conquistas_notificacoes";
+        String canalNome = "Notificações de Conquistas";
 
         NotificationManager notificationManager = (NotificationManager) context
                 .getSystemService(Context.NOTIFICATION_SERVICE);

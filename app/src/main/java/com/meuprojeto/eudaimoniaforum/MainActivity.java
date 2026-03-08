@@ -40,7 +40,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "PrefsAbstinencia";
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
-    private static final String META_WORK_TAG = "MetasWork";
+    private static final String CONQUISTA_WORK_TAG = "ConquistasWork";
 
     private TextView textViewTempoAbstinenciaMeses, textViewTempoAbstinenciaDias, textViewTempoAbstinenciaHoras,
             textViewTempoAbstinenciaMinutos, textViewHabito;
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
 
         verificarCheckInDiario(); // Verifica se já fez check-in hoje
 
-        agendarTrabalhoDeMetas();
+        agendarTrabalhoDeConquistas();
 
         iniciarListenersDeNotificacao();
 
@@ -467,7 +467,7 @@ public class MainActivity extends AppCompatActivity {
     private void deslogar() {
         firebaseAuth.signOut();
         removerTodosOsListeners();
-        WorkManager.getInstance(this).cancelUniqueWork(META_WORK_TAG);
+        WorkManager.getInstance(this).cancelUniqueWork(CONQUISTA_WORK_TAG);
         Toast.makeText(this, "Usuário deslogado com sucesso!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(this, LoginActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
@@ -475,11 +475,12 @@ public class MainActivity extends AppCompatActivity {
         finish();
     }
 
-    private void agendarTrabalhoDeMetas() {
-        PeriodicWorkRequest metasWorkRequest = new PeriodicWorkRequest.Builder(MetasWorker.class, 1, TimeUnit.DAYS)
+    private void agendarTrabalhoDeConquistas() {
+        PeriodicWorkRequest conquistasWorkRequest = new PeriodicWorkRequest.Builder(ConquistasWorker.class, 1,
+                TimeUnit.DAYS)
                 .build();
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(META_WORK_TAG, ExistingPeriodicWorkPolicy.KEEP,
-                metasWorkRequest);
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(CONQUISTA_WORK_TAG, ExistingPeriodicWorkPolicy.KEEP,
+                conquistasWorkRequest);
     }
 
     private void recuperarTempoInicial() {

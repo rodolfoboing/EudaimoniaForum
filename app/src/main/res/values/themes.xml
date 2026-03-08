@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.App_Metas_2" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Base.Theme.App_Conquistas_2" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Brand Colors -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryVariant">@color/colorPrimaryVariant</item>
@@ -21,5 +21,5 @@
         <item name="android:navigationBarColor">@color/colorBackground</item>
     </style>
 
-    <style name="Theme.App_Metas_2" parent="Base.Theme.App_Metas_2" />
+    <style name="Theme.App_Conquistas_2" parent="Base.Theme.App_Conquistas_2" />
 </resources>
