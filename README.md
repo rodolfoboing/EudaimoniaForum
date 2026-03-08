@@ -2,7 +2,7 @@
 
 O EudaimoniaForum é um aplicativo Android desenvolvido em Java que oferece um espaço de interação, troca de mensagens e discussões em formato de fórum. Ele inclui funcionalidades de chat, postagens, denúncias, notificações e gerenciamento de perfil, com foco em criar uma comunidade saudável e moderada.
 
-🚀 Funcionalidades Principais
+#🚀 Funcionalidades Principais
 Autenticação de Usuário
 
 Login, registro e recuperação de senha.
@@ -45,7 +45,8 @@ Metas e Orientações
 
 Funcionalidades relacionadas a metas pessoais e orientações de uso.
 
-🛠️ Estrutura do Projeto
+
+# 🛠️ Estrutura do Projeto
 Principais pacotes e classes:
 
 MainActivity.java → Ponto de entrada do app.
@@ -70,7 +71,8 @@ MetasWorker.java → Gerenciamento de metas.
 
 OrientacoesActivity.java → Orientações gerais.
 
-📲 Tecnologias Utilizadas
+
+# 📲 Tecnologias Utilizadas
 Java para desenvolvimento Android.
 
 Firebase Cloud Messaging (FCM) para notificações.
@@ -79,7 +81,8 @@ Android SDK e componentes nativos.
 
 Adapters para listas e gerenciamento de UI.
 
-▶️ Como Executar
+
+# ▶️ Como Executar
 Clone o repositório:
 
 bash
@@ -90,7 +93,8 @@ Configure o Firebase no projeto (adicione o google-services.json).
 
 Compile e rode em um emulador ou dispositivo físico.
 
-📌 Próximos Passos
+
+# 📌 Próximos Passos
 Melhorar UI/UX das telas principais.
 
 Implementar testes automatizados.
@@ -99,6 +103,7 @@ Expandir funcionalidades de moderação.
 
 Adicionar suporte multilíngue.
 
-👨‍💻 Autor
+
+# 👨‍💻 Autor
 Desenvolvido por Rodolfo Boing.
 Contribuições e sugestões são bem-vindas!
