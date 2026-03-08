@@ -47,6 +47,7 @@ public class PerfilActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("PerfilActivity", "onCreate() chamado. Inicializando PerfilActivity.");
         setContentView(R.layout.tela_perfil);
 
         inicializarUI();

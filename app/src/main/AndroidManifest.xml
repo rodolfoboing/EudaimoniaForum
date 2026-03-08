@@ -38,7 +38,15 @@
         </activity>
         <activity android:name=".VisualizarPerfilActivity" />
         <activity android:name=".LoginActivity" />
-        <activity android:name=".MainActivity" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="OPEN_MAIN_ACTIVITY" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
         <activity android:name=".RegistrarActivity" />
         <activity android:name=".EditarAbstinenciaActivity" />
         <activity android:name=".PerfilActivity" />
@@ -52,6 +60,11 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- Configuração do Canal Padrão para Notificações em Background (Obrigatório no Android Oreo+) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="fcm_default_channel" />
         
         <activity android:name=".OnboardingActivity" />
         <activity android:name=".OrientacoesActivity" />

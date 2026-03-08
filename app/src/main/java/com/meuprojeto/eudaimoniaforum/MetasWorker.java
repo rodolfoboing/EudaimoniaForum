@@ -4,6 +4,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.Intent;
+import android.app.PendingIntent;
 import android.os.Build;
 
 import androidx.annotation.NonNull;
@@ -25,6 +27,7 @@ public class MetasWorker extends Worker {
     @NonNull
     @Override
     public Result doWork() {
+        android.util.Log.d("MetasWorker", "Worker executando verificação de marcos de abstinência...");
         verificarMarcosDeAbstinencia();
         return Result.success();
     }
@@ -70,18 +73,27 @@ public class MetasWorker extends Worker {
         String canalId = "metas_notificacoes";
         String canalNome = "Notificações de Metas";
 
-        NotificationManager notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager notificationManager = (NotificationManager) context
+                .getSystemService(Context.NOTIFICATION_SERVICE);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel canal = new NotificationChannel(canalId, canalNome, NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel canal = new NotificationChannel(canalId, canalNome,
+                    NotificationManager.IMPORTANCE_HIGH);
             notificationManager.createNotificationChannel(canal);
         }
+
+        Intent intent = new Intent(context, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        int requestCode = titulo.hashCode();
+        PendingIntent pendingIntent = PendingIntent.getActivity(context, requestCode, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, canalId)
                 .setSmallIcon(R.drawable.ic_eudaimoniaforum)
                 .setContentTitle(titulo)
                 .setContentText(mensagem)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
 
         int notificationId = titulo.hashCode();

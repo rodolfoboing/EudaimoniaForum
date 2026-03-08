@@ -2,59 +2,75 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
-// Função que escuta novos registros em "notificacoes/{userId}/{notificationId}"
-exports.sendNotification = functions.database.ref("/notificacoes/{userId}/{notificationId}")
-    .onCreate(async (snapshot, context) => {
-      const notification = snapshot.val();
+// Função que escuta novos registros ou atualizações em "notificacoes/{userId}/{notificationId}"
+exports.sendNotification = functions.database
+    .ref("/notificacoes/{userId}/{notificationId}")
+    .onWrite(async (change, context) => {
       const userId = context.params.userId;
+      const notificationId = context.params.notificationId;
 
-      // Log para debug no console do Firebase
-      console.log("Nova notificação para o usuário:", userId);
+      // Se a notificação foi apagada do banco, ignoramos
+      if (!change.after.exists()) {
+        console.log(`[sendNotification] ℹ️ Notificação (${notificationId}) DELETADA para o usuário ${userId}. Nenhuma ação necessária.`);
+        return null;
+      }
 
-      // Busca o token FCM do usuário no banco de dados
-      const userRef = admin.database().ref(`users/${userId}/fcmToken`);
-      const tokenSnapshot = await userRef.once("value");
+      const notification = change.after.val();
+
+      console.log(`[sendNotification] 🚀 INÍCIO - Preparando notificação (${notificationId}) para o usuário: ${userId}`);
+      console.log(`[sendNotification] 📦 Payload do banco de dados: ${JSON.stringify(notification)}`);
+
+      console.log(`[sendNotification] 🔍 Buscando token FCM para o usuário ${userId}...`);
+      const tokenSnapshot = await admin.database().ref(`users/${userId}/fcmToken`).once("value");
       const fcmToken = tokenSnapshot.val();
 
       if (!fcmToken) {
-        console.log("Usuário não possui token FCM cadastrado.");
-        return null; // Encerra a execução se não houver token
+        console.warn(`[sendNotification] ⚠️ ALERTA: O usuário ${userId} NÃO possui um token FCM cadastrado. O Push não será enviado.`);
+        return null;
       }
+
+      console.log(`[sendNotification] ✅ Token FCM obtido com sucesso para ${userId}.`);
 
       // Define o título com base no tipo de notificação
       let title = "Eudaimonia Forum";
       if (notification.tipo === "chat") {
-        title = "Nova Mensagem";
+        title = "💬 Nova Mensagem";
       } else if (notification.tipo === "comentario") {
-        title = "Novo Comentário";
+        title = "💬 Novo Comentário";
       }
 
-      // Monta a mensagem para o FCM
-      // Usando estrutura específica para Android para garantir comportamento correto
-      const payload = {
-        notification: {
-          title: title,
-          body: notification.mensagem,
-          sound: "default",
-          channel_id: "fcm_default_channel", // Importante: deve bater com o ID no Android Manifest/Service
+      // Monta a mensagem usando apenas o bloco "data" (Data-Only Message)
+      // Isso força o Android a sempre acordar o app e executar o "onMessageReceived"
+      // mesmo quando o aplicativo está fechado/arrastado para o lado!
+      const message = {
+        token: fcmToken,
+        android: {
+          priority: "high", // Prioridade alta para acordar o app em Doze mode
         },
         data: {
-          tipo: notification.tipo,
-          idReferencia: notification.idReferencia,
-          click_action: "FLUTTER_NOTIFICATION_CLICK", // Mantido por compatibilidade, mas o Android nativo usa Intent Filters
+          title: title,
+          body: notification.mensagem || "Você tem uma nova notificação.",
+          tipo: notification.tipo || "",
+          idReferencia: String(notification.idReferencia || ""),
         },
       };
 
-      // Envia a notificação
-      // Usando sendToDevice (Legacy) que é amplamente suportado
-      return admin.messaging().sendToDevice(fcmToken, payload)
+      return admin.messaging().send(message)
           .then((response) => {
-            console.log("Notificação enviada com sucesso para", userId);
-            // Opcional: Remover notificação do banco após envio se desejar, mas aqui mantemos o histórico
+            console.log(`[sendNotification] 🎉 SUCESSO! A notificação push foi entregue ao servidor do Google. Message ID: ${response}`);
             return null;
           })
-          .catch((error) => {
-            console.error("Erro ao enviar notificação:", error);
+          .catch(async (error) => {
+            console.error(`[sendNotification] ❌ ERRO CRÍTICO ao tentar enviar Push Notification para o usuário ${userId}.`);
+            console.error(`[sendNotification] ❌ Detalhes do erro: Código=[${error.code}] | Mensagem=[${error.message}]`);
+
+            // Se o token for inválido/expirado, limpa do banco para não poluir
+            if (error.code === "messaging/registration-token-not-registered" ||
+                error.code === "messaging/invalid-registration-token") {
+              console.warn(`[sendNotification] 🧹 LIMPANDO BANCO: O token do usuário ${userId} expirou ou é inválido. Removendo nó 'fcmToken'...`);
+              await admin.database().ref(`users/${userId}/fcmToken`).remove();
+              console.log(`[sendNotification] ✨ Limpeza de token concluída para o usuário ${userId}.`);
+            }
             return null;
           });
     });

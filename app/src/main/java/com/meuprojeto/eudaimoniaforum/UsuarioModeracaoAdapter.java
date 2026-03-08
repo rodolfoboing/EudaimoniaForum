@@ -49,6 +49,7 @@ public class UsuarioModeracaoAdapter extends RecyclerView.Adapter<UsuarioModerac
 
         // Botão para banir o usuário
         holder.btnBanir.setOnClickListener(v -> {
+            android.util.Log.d("UsuarioModAdapter", "Banindo usuário. UID: " + usuario.getUid());
             DatabaseReference banidosRef = FirebaseDatabase.getInstance()
                     .getReference("banidos")
                     .child(usuario.getUid());

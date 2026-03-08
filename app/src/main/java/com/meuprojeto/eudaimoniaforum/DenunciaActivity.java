@@ -27,6 +27,7 @@ public class DenunciaActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("DenunciaActivity", "onCreate() chamado. Inicializando DenunciaActivity.");
         setContentView(R.layout.activity_denuncia);
 
         postId = getIntent().getStringExtra("POST_ID");

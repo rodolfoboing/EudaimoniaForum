@@ -1,5 +1,6 @@
 package com.meuprojeto.eudaimoniaforum;
 
+import android.animation.ObjectAnimator;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
@@ -53,10 +54,12 @@ public class MainActivity extends AppCompatActivity {
     private DatabaseReference userRef;
     private Map<DatabaseReference, ChildEventListener> activeChildListeners = new HashMap<>();
     private Map<DatabaseReference, ValueEventListener> activeValueListeners = new HashMap<>();
+    private ObjectAnimator animacaoSino;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("MainActivity", "onCreate() chamado. Inicializando MainActivity.");
         setContentView(R.layout.activity_main);
 
         firebaseAuth = FirebaseAuth.getInstance();
@@ -90,6 +93,33 @@ public class MainActivity extends AppCompatActivity {
 
         iniciarListenersDeNotificacao();
 
+        verificarIntentDeNotificacao(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        verificarIntentDeNotificacao(intent);
+    }
+
+    private void verificarIntentDeNotificacao(Intent intent) {
+        if (intent != null && intent.getExtras() != null) {
+            String tipo = intent.getStringExtra("tipo");
+            String idReferencia = intent.getStringExtra("idReferencia");
+
+            if (tipo != null && idReferencia != null) {
+                if (tipo.equals("chat")) {
+                    Intent chatIntent = new Intent(this, ChatActivity.class);
+                    chatIntent.putExtra("USER_ID", idReferencia);
+                    startActivity(chatIntent);
+                } else if (tipo.equals("comentario")) {
+                    Intent comIntent = new Intent(this, ComentarioActivity.class);
+                    comIntent.putExtra("POST_ID", idReferencia);
+                    startActivity(comIntent);
+                }
+            }
+        }
     }
 
     private void iniciarListenersDeNotificacao() {
@@ -100,11 +130,28 @@ public class MainActivity extends AppCompatActivity {
 
         monitorarStatusDoLeitor(userId);
 
+        // Criar Canal de Notificação para versões Oreo ou superior
+        criarCanalDeNotificacao();
+
         // Solicitar permissão de notificação (Android 13+)
         verificarPermissaoNotificacao();
 
         // Atualizar Token FCM
         atualizarFcmToken();
+    }
+
+    private void criarCanalDeNotificacao() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.NotificationChannel channel = new android.app.NotificationChannel(
+                    "fcm_default_channel",
+                    "Notificações do Fórum",
+                    android.app.NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("Canal principal para mensagens e alertas do Eudaimonia Fórum");
+            android.app.NotificationManager manager = getSystemService(android.app.NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
     }
 
     private void verificarPermissaoNotificacao() {
@@ -121,25 +168,62 @@ public class MainActivity extends AppCompatActivity {
         com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken()
                 .addOnCompleteListener(task -> {
                     if (!task.isSuccessful()) {
+                        android.util.Log.e("MainActivity", "❌ Falha ao obter token FCM", task.getException());
                         return;
                     }
                     String token = task.getResult();
+                    android.util.Log.d("MainActivity",
+                            "Token FCM obtido: " + (token != null ? token.substring(0, 20) + "..." : "null"));
                     FirebaseUser user = firebaseAuth.getCurrentUser();
                     if (user != null && token != null) {
+                        android.util.Log.d("MainActivity", "Salvando token FCM para userId: " + user.getUid());
                         FirebaseDatabase.getInstance().getReference("users")
                                 .child(user.getUid())
                                 .child("fcmToken")
-                                .setValue(token);
+                                .setValue(token)
+                                .addOnSuccessListener(aVoid -> android.util.Log.d("MainActivity",
+                                        "✅ Token FCM salvo com sucesso no banco!"))
+                                .addOnFailureListener(e -> android.util.Log.e("MainActivity",
+                                        "❌ ERRO ao salvar token: " + e.getMessage()));
+                    } else {
+                        android.util.Log.w("MainActivity",
+                                "⚠ user=" + user + ", token=" + token + " — não foi possível salvar");
                     }
                 });
     }
 
     private void monitorarStatusDoLeitor(String userId) {
+        if (animacaoSino == null) {
+            animacaoSino = ObjectAnimator.ofFloat(buttonNotificacao, "rotation", 0f, 15f, -15f, 10f, -10f, 5f, -5f, 0f);
+            animacaoSino.setDuration(1200); // 1.2 segundos por ciclo
+            animacaoSino.setRepeatCount(ObjectAnimator.INFINITE);
+        }
+
         DatabaseReference notificacoesRef = FirebaseDatabase.getInstance().getReference("notificacoes").child(userId);
         ValueEventListener listener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                buttonNotificacao.setColorFilter(snapshot.hasChildren() ? Color.YELLOW : Color.WHITE);
+                boolean temNaoLida = false;
+                for (DataSnapshot doc : snapshot.getChildren()) {
+                    Notificacao notif = doc.getValue(Notificacao.class);
+                    if (notif != null && !notif.isLida()) {
+                        temNaoLida = true;
+                        break;
+                    }
+                }
+
+                if (temNaoLida) {
+                    buttonNotificacao.setColorFilter(Color.parseColor("#FFD700")); // Dourado mais bonito
+                    if (!animacaoSino.isRunning()) {
+                        animacaoSino.start();
+                    }
+                } else {
+                    buttonNotificacao.setColorFilter(Color.WHITE);
+                    if (animacaoSino.isRunning()) {
+                        animacaoSino.cancel();
+                        buttonNotificacao.setRotation(0f);
+                    }
+                }
             }
 
             @Override
@@ -211,7 +295,7 @@ public class MainActivity extends AppCompatActivity {
             new AlertDialog.Builder(this)
                     .setTitle("Compromisso Firmado!")
                     .setMessage(
-                            "Parabéns por renovar seu compromisso de sobriedade por mais 24 horas. Um dia de cada vez!")
+                            "Parabéns por renovar seu compromisso de sobriedade por mais um dia. Um dia de cada vez!")
                     .setPositiveButton("Vamos lá!", null)
                     .show();
         });
@@ -400,7 +484,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void recuperarTempoInicial() {
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        tempoInicial = preferences.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
+        if (!preferences.contains(KEY_TEMPO_INICIAL)) {
+            tempoInicial = System.currentTimeMillis();
+            preferences.edit().putLong(KEY_TEMPO_INICIAL, tempoInicial).apply();
+        } else {
+            tempoInicial = preferences.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
+        }
     }
 
     private void iniciarAtualizacaoTempo() {

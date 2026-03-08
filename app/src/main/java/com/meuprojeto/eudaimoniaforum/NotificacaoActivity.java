@@ -32,6 +32,7 @@ public class NotificacaoActivity extends AppCompatActivity implements Notificaca
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("NotificacaoActivity", "onCreate() chamado. Inicializando NotificacaoActivity.");
         setContentView(R.layout.tela_notificacao);
 
         recyclerViewNotificacoes = findViewById(R.id.recyclerViewNotificacoes);
@@ -70,6 +71,7 @@ public class NotificacaoActivity extends AppCompatActivity implements Notificaca
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     Notificacao notificacao = snapshot.getValue(Notificacao.class);
                     if (notificacao != null) {
+                        notificacao.setId(snapshot.getKey());
                         notificacoes.add(notificacao);
                     }
                 }
@@ -89,6 +91,10 @@ public class NotificacaoActivity extends AppCompatActivity implements Notificaca
     public void onItemClick(Notificacao notificacao) {
         if (notificacao == null || notificacao.getTipo() == null || notificacao.getIdReferencia() == null) {
             return;
+        }
+
+        if (notificacoesRef != null && notificacao.getId() != null) {
+            notificacoesRef.child(notificacao.getId()).child("lida").setValue(true);
         }
 
         if (notificacao.getTipo().equals("comentario")) {

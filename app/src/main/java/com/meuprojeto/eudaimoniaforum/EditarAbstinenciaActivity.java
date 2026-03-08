@@ -44,6 +44,7 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("EditarAbstinencia", "onCreate() chamado. Inicializando EditarAbstinenciaActivity.");
         setContentView(R.layout.tela_edit_abstinencia);
 
         editTextDataInicio = findViewById(R.id.editTextDataInicio);
@@ -84,6 +85,12 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
     }
 
     private void carregarDadosDoUsuario() {
+        // Carrega tempo atual (abstinência) para o calendário não resetar
+        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        long tempoSalvo = preferences.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
+        calendar.setTimeInMillis(tempoSalvo);
+        updateLabel();
+
         // Carrega o vício atual do Firebase
         userRef.child("vicio").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -126,6 +133,7 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
     }
 
     private void salvarAlteracoes() {
+        android.util.Log.d("EditarAbstinencia", "salvarAlteracoes() chamado: gravando dados localmente e no Firebase.");
         // 1. Salvar nova data de início
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         preferences.edit().putLong(KEY_TEMPO_INICIAL, calendar.getTimeInMillis()).apply();
@@ -134,7 +142,8 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
         String novoVicio = spinnerVicioEdicao.getSelectedItem().toString();
         userRef.child("vicio").setValue(novoVicio).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
-                Toast.makeText(EditarAbstinenciaActivity.this, "Alterações salvas com sucesso!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(EditarAbstinenciaActivity.this, "Alterações salvas com sucesso!", Toast.LENGTH_SHORT)
+                        .show();
                 finish();
             } else {
                 Toast.makeText(EditarAbstinenciaActivity.this, "Erro ao salvar o vício.", Toast.LENGTH_SHORT).show();

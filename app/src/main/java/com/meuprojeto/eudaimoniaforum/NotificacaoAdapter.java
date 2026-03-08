@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -49,12 +50,14 @@ public class NotificacaoAdapter extends RecyclerView.Adapter<NotificacaoAdapter.
         TextView textNotificationMessage;
         TextView textNotificationTime;
         Button buttonViewPost;
+        LinearLayout rootLayoutNotificacao;
 
         public NotificacaoViewHolder(@NonNull View itemView) {
             super(itemView);
             textNotificationMessage = itemView.findViewById(R.id.textNotificationMessage);
             textNotificationTime = itemView.findViewById(R.id.textNotificationTime);
             buttonViewPost = itemView.findViewById(R.id.buttonViewPost);
+            rootLayoutNotificacao = itemView.findViewById(R.id.rootLayoutNotificacao);
         }
 
         public void bind(final Notificacao notificacao, final OnItemClickListener listener) {
@@ -72,6 +75,16 @@ public class NotificacaoAdapter extends RecyclerView.Adapter<NotificacaoAdapter.
                 buttonViewPost.setText("Ver Chat");
             } else {
                 buttonViewPost.setText("Ver Post");
+            }
+
+            if (notificacao.isLida()) {
+                rootLayoutNotificacao.setBackgroundColor(android.graphics.Color.parseColor("#F5F5F5")); // Cinza
+                                                                                                        // clarinho p/
+                                                                                                        // Lida
+            } else {
+                rootLayoutNotificacao.setBackgroundColor(android.graphics.Color.parseColor("#E3F2FD")); // Azul
+                                                                                                        // bebezinho p/
+                                                                                                        // Não Lida
             }
 
             buttonViewPost.setOnClickListener(v -> listener.onItemClick(notificacao));

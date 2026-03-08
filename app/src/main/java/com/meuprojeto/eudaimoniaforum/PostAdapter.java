@@ -2,15 +2,17 @@ package com.meuprojeto.eudaimoniaforum;
 
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -27,27 +29,29 @@ import java.util.Map;
 
 public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder> {
 
-    // Cache para armazenar nicks de usuários e evitar requisições repetidas
     private static final Map<String, String> userNickCache = new HashMap<>();
 
     private List<Post> postList;
     private Context context;
     private boolean isModerador;
+    private boolean showActions; // Nova flag para controlar exibição de Delete/Report
     private String currentUserId;
 
     public PostAdapter(Context context, List<Post> postList) {
-        this.context = context;
-        this.postList = postList;
-        this.isModerador = false; // Valor padrão
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        this.currentUserId = (user != null) ? user.getUid() : null;
+        this(context, postList, false, false);
     }
 
-    // Construtor sobrecarregado para lidar com o status de moderador
     public PostAdapter(Context context, List<Post> postList, boolean isModerador) {
+        this(context, postList, isModerador, false);
+    }
+
+    public PostAdapter(Context context, List<Post> postList, boolean isModerador, boolean showActions) {
+        android.util.Log.d("PostAdapter",
+                "PostAdapter inicializado. Itens: " + (postList != null ? postList.size() : 0));
         this.context = context;
         this.postList = postList;
         this.isModerador = isModerador;
+        this.showActions = showActions;
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         this.currentUserId = (user != null) ? user.getUid() : null;
     }
@@ -66,7 +70,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.textViewTituloPost.setText(post.getTitulo());
         holder.textViewResumoPost.setText(post.getResumo());
 
-        // Configura o clique no nome do autor para abrir o perfil
         holder.textViewAutor.setOnClickListener(v -> {
             if (post.getAutor() != null) {
                 Intent intent = new Intent(context, VisualizarPerfilActivity.class);
@@ -75,19 +78,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             }
         });
 
-        // Exibe o número de comentários diretamente do objeto Post
         int comentarios = post.getNumeroComentarios() != null ? post.getNumeroComentarios() : 0;
         holder.textViewComentarios.setText("Comentários (" + comentarios + ")");
 
-        // Busca o nick do autor com cache simples
         String autorId = post.getAutor();
         if (autorId != null) {
             if (userNickCache.containsKey(autorId)) {
                 holder.textViewAutor.setText("Autor: " + userNickCache.get(autorId));
             } else {
-                // Define um valor temporário ou loading se desejar, ou mantém "Autor: ..."
-                // holder.textViewAutor.setText("Autor: Carregando...");
-
                 DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(autorId);
                 userRef.child("nick").addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
@@ -95,8 +93,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                         String nick = snapshot.getValue(String.class);
                         if (nick != null) {
                             userNickCache.put(autorId, nick);
-                            // Verifica se o holder ainda corresponde ao mesmo autor (item não foi reciclado
-                            // para outro post de outro autor)
                             holder.textViewAutor.setText("Autor: " + nick);
                         } else {
                             holder.textViewAutor.setText("Autor: Desconhecido");
@@ -113,7 +109,6 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             holder.textViewAutor.setText("Autor: Desconhecido");
         }
 
-        // Formatar a data para exibição
         if (post.getData() > 0) {
             java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy",
                     java.util.Locale.getDefault());
@@ -123,56 +118,97 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             holder.textViewData.setText("Data: Desconhecida");
         }
 
-        // Ação do botão de comentar (Foca na caixa de texto)
         holder.buttonAddComment.setOnClickListener(v -> {
             Intent intent = new Intent(context, ComentarioActivity.class);
             intent.putExtra("POST_ID", post.getId());
-            intent.putExtra("FOCUS_COMMENT", true); // Flag para focar no input
+            intent.putExtra("FOCUS_COMMENT", true);
             context.startActivity(intent);
         });
 
-        // Clique no card (Apenas abre o post)
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, ComentarioActivity.class);
             intent.putExtra("POST_ID", post.getId());
             context.startActivity(intent);
         });
 
-        // Lógica de Denúncia
-        holder.iconReport.setOnClickListener(v -> {
-            Intent intent = new Intent(context, DenunciaActivity.class);
-            intent.putExtra("POST_ID", post.getId());
-            context.startActivity(intent);
-        });
+        // Lógica de Menu de Opções condicional à flag showActions
+        if (showActions) {
+            holder.iconMenuOpcoes.setVisibility(View.VISIBLE);
 
-        // Visibilidade e ação do botão de deletar (Moderador ou Dono)
-        boolean isOwner = currentUserId != null && currentUserId.equals(post.getAutor());
+            holder.iconMenuOpcoes.setOnClickListener(v -> {
+                boolean isOwner = currentUserId != null && currentUserId.equals(post.getAutor());
 
-        // Esconder botão de denúncia se for o dono
-        if (isOwner) {
-            holder.iconReport.setVisibility(View.GONE);
-        } else {
-            holder.iconReport.setVisibility(View.VISIBLE);
-        }
+                // Verifica status de notificação antes de abrir o menu
+                DatabaseReference seguidorRef = FirebaseDatabase.getInstance().getReference("forum/posts")
+                        .child(post.getId()).child("seguidores")
+                        .child(currentUserId != null ? currentUserId : "visitante");
 
-        if (isOwner || isModerador) {
-            holder.imageViewDeletePost.setVisibility(View.VISIBLE);
-            holder.imageViewDeletePost.setOnClickListener(v -> {
-                new AlertDialog.Builder(context)
-                        .setTitle("Excluir Postagem")
-                        .setMessage("Tem certeza que deseja excluir esta postagem?")
-                        .setPositiveButton("Sim", (dialog, which) -> {
-                            // Criar referência para o post no Firebase e remover
-                            DatabaseReference postRef = FirebaseDatabase.getInstance()
-                                    .getReference("forum/posts") // Caminho corrigido para forum/posts
-                                    .child(post.getId());
-                            postRef.removeValue();
-                        })
-                        .setNegativeButton("Não", null)
-                        .show();
+                seguidorRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        boolean isAcompanhando = false;
+                        if (snapshot.exists()) {
+                            isAcompanhando = Boolean.TRUE.equals(snapshot.getValue(Boolean.class));
+                        } else {
+                            isAcompanhando = isOwner;
+                        }
+
+                        PopupMenu popup = new PopupMenu(context, holder.iconMenuOpcoes);
+                        popup.getMenuInflater().inflate(R.menu.menu_opcoes_postagem, popup.getMenu());
+
+                        popup.getMenu().findItem(R.id.action_acompanhar)
+                                .setTitle(isAcompanhando ? "Silenciar Notificações" : "Acompanhar Notificações");
+
+                        if (isOwner) {
+                            popup.getMenu().findItem(R.id.action_denunciar).setVisible(false);
+                        }
+                        if (!isOwner && !isModerador) {
+                            popup.getMenu().findItem(R.id.action_excluir).setVisible(false);
+                        }
+
+                        final boolean statusAtual = isAcompanhando;
+                        popup.setOnMenuItemClickListener(item -> {
+                            int id = item.getItemId();
+                            if (id == R.id.action_acompanhar) {
+                                boolean novoStatus = !statusAtual;
+                                if (currentUserId != null) {
+                                    seguidorRef.setValue(novoStatus);
+                                    Toast.makeText(context,
+                                            novoStatus ? "Notificações ativadas" : "Notificações silenciadas",
+                                            Toast.LENGTH_SHORT).show();
+                                }
+                                return true;
+                            } else if (id == R.id.action_denunciar) {
+                                Intent intent = new Intent(context, DenunciaActivity.class);
+                                intent.putExtra("POST_ID", post.getId());
+                                context.startActivity(intent);
+                                return true;
+                            } else if (id == R.id.action_excluir) {
+                                new AlertDialog.Builder(context)
+                                        .setTitle("Excluir Postagem")
+                                        .setMessage("Tem certeza que deseja excluir esta postagem?")
+                                        .setPositiveButton("Sim", (dialog, which) -> {
+                                            DatabaseReference postRef = FirebaseDatabase.getInstance()
+                                                    .getReference("forum/posts").child(post.getId());
+                                            postRef.removeValue();
+                                            Toast.makeText(context, "Postagem excluída", Toast.LENGTH_SHORT).show();
+                                        })
+                                        .setNegativeButton("Não", null)
+                                        .show();
+                                return true;
+                            }
+                            return false;
+                        });
+                        popup.show();
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                    }
+                });
             });
         } else {
-            holder.imageViewDeletePost.setVisibility(View.GONE);
+            holder.iconMenuOpcoes.setVisibility(View.GONE);
         }
     }
 
@@ -182,9 +218,9 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     }
 
     static class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView textViewTituloPost, textViewResumoPost, textViewComentarios, buttonAddComment, textViewAutor,
-                textViewData;
-        ImageView imageViewDeletePost, iconReport;
+        TextView textViewTituloPost, textViewResumoPost, textViewComentarios, textViewAutor, textViewData;
+        Button buttonAddComment;
+        ImageView iconMenuOpcoes;
 
         public PostViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -194,8 +230,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             buttonAddComment = itemView.findViewById(R.id.buttonAddComment);
             textViewAutor = itemView.findViewById(R.id.textViewAutor);
             textViewData = itemView.findViewById(R.id.textViewData);
-            imageViewDeletePost = itemView.findViewById(R.id.imageViewDeletePost);
-            iconReport = itemView.findViewById(R.id.iconReport);
+            iconMenuOpcoes = itemView.findViewById(R.id.iconMenuOpcoes);
         }
     }
 }

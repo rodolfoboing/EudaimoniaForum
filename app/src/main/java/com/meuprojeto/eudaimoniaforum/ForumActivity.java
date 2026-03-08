@@ -47,6 +47,7 @@ public class ForumActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("ForumActivity", "onCreate() chamado. Inicializando ForumActivity.");
         setContentView(R.layout.tela_forum);
 
         // Inicialização dos componentes

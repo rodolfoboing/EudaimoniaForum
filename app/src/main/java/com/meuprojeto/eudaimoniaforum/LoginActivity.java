@@ -37,6 +37,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("LoginActivity", "onCreate() chamado. Inicializando LoginActivity.");
 
         // Verificar se o usuário já está logado
         if (FirebaseAuth.getInstance().getCurrentUser() != null) {
@@ -89,7 +90,9 @@ public class LoginActivity extends AppCompatActivity {
                         verificarBanimento(user);
                     } else {
                         Log.e(TAG, "Falha na autenticação: ", task.getException());
-                        Toast.makeText(LoginActivity.this, "Falha na autenticação. Verifique suas credenciais.", Toast.LENGTH_SHORT).show();
+                        editTextSenha.setText(""); // Limpa o campo de senha em caso de erro
+                        Toast.makeText(LoginActivity.this, "Falha na autenticação. Verifique suas credenciais.",
+                                Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -106,6 +109,7 @@ public class LoginActivity extends AppCompatActivity {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
                     Toast.makeText(LoginActivity.this, "Você está banido.", Toast.LENGTH_SHORT).show();
+                    editTextSenha.setText(""); // Limpa a senha se estiver banido por segurança
                     FirebaseAuth.getInstance().signOut();
                 } else {
                     updateUI(user);

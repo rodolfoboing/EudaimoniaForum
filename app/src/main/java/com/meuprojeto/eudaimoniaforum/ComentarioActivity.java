@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,13 +40,18 @@ public class ComentarioActivity extends AppCompatActivity {
     private boolean isModerador = false;
     private EditText editTextComentario;
     private Button buttonEnviarComentario;
+    private ImageView iconMenuOpcoes;
+
+    public static String activePostId = null;
 
     private String postId;
     private String autorDoPostId;
+    private Boolean isAcompanhando = null; // null = status padrão (Autor segue, resto não)
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("ComentarioActivity", "onCreate() chamado. Inicializando ComentarioActivity.");
         setContentView(R.layout.tela_comentarios);
 
         recyclerViewComentarios = findViewById(R.id.recyclerViewComentarios);
@@ -53,6 +59,7 @@ public class ComentarioActivity extends AppCompatActivity {
 
         editTextComentario = findViewById(R.id.editTextComentario);
         buttonEnviarComentario = findViewById(R.id.buttonEnviarComentario);
+        iconMenuOpcoes = findViewById(R.id.iconMenuOpcoes);
 
         comentarios = new ArrayList<>();
 
@@ -70,6 +77,7 @@ public class ComentarioActivity extends AppCompatActivity {
         carregarDadosDoPost();
 
         buttonEnviarComentario.setOnClickListener(v -> adicionarComentario());
+        iconMenuOpcoes.setOnClickListener(v -> abrirMenuOpcoes());
 
         // Verifica se deve focar na caixa de comentários
         if (getIntent().getBooleanExtra("FOCUS_COMMENT", false)) {
@@ -81,6 +89,49 @@ public class ComentarioActivity extends AppCompatActivity {
                 imm.showSoftInput(editTextComentario, android.view.inputmethod.InputMethodManager.SHOW_IMPLICIT);
             }, 200);
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        activePostId = postId;
+        limparNotificacoesDePost();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        activePostId = null;
+    }
+
+    private void limparNotificacoesDePost() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || postId == null)
+            return;
+
+        Log.d(TAG, "Silenciador de Comentarios: Buscando alertas referentes ao Post " + postId);
+        DatabaseReference notificacoesRef = FirebaseDatabase.getInstance().getReference("notificacoes")
+                .child(user.getUid());
+
+        // Apaga do nó todas as notificações que referenciam ESTE post exatamente
+        notificacoesRef.orderByChild("idReferencia").equalTo(postId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        int excluidos = 0;
+                        for (DataSnapshot ds : snapshot.getChildren()) {
+                            ds.getRef().removeValue();
+                            excluidos++;
+                        }
+                        Log.d(TAG, "Silenciador de Comentarios: Finalizado. " + excluidos
+                                + " notificação(ões) relacionada(s) foram apagadas local/servidor.");
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Log.e(TAG, "Silenciador de ComentariosErro na varredura " + error.getMessage());
+                    }
+                });
     }
 
     private void carregarDadosDoPost() {
@@ -99,6 +150,7 @@ public class ComentarioActivity extends AppCompatActivity {
                         tvTitulo.setText(post.getTitulo());
                         tvConteudo.setText(post.getResumo());
                     }
+                    verificarStatusNotificacao();
                 }
                 verificarModerador();
             }
@@ -197,47 +249,170 @@ public class ComentarioActivity extends AppCompatActivity {
     }
 
     private void verificarEEnviarNotificacao(String postId, String conteudoComentario) {
+        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        if (autorDoPostId != null) {
-            String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-            if (!autorDoPostId.equals(currentUserId)) {
-                enviarNotificacaoParaAutor(autorDoPostId, conteudoComentario);
-            }
-        } else {
-            // Fallback caso autorDoPostId seja null por algum motivo raro
-            DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts").child(postId);
-            postRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    Post post = snapshot.getValue(Post.class);
-                    if (post != null) {
-                        String autorPostId = post.getAutor();
-                        String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                        if (!autorPostId.equals(currentUserId)) {
-                            enviarNotificacaoParaAutor(autorPostId, conteudoComentario);
-                        }
+        DatabaseReference seguidoresRef = FirebaseDatabase.getInstance().getReference("forum/posts")
+                .child(postId).child("seguidores");
+
+        seguidoresRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                boolean autorGerenciado = false;
+
+                // Envia para quem pediu explicitamente (e ignora quem marcou explicitamente
+                // como false)
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    String userId = ds.getKey();
+                    Boolean status = ds.getValue(Boolean.class);
+
+                    if (autorDoPostId != null && autorDoPostId.equals(userId)) {
+                        autorGerenciado = true;
+                    }
+
+                    if (Boolean.TRUE.equals(status) && !userId.equals(currentUserId)) {
+                        enviarNotificacaoParaUsuario(userId, conteudoComentario);
                     }
                 }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
+                // Fallback para o autor se ele não tem preferência explícita configurada
+                // (status null)
+                if (!autorGerenciado && autorDoPostId != null && !autorDoPostId.equals(currentUserId)) {
+                    enviarNotificacaoParaUsuario(autorDoPostId, conteudoComentario);
                 }
-            });
-        }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
     }
 
-    private void enviarNotificacaoParaAutor(String autorPostId, String conteudoComentario) {
+    private void enviarNotificacaoParaUsuario(String userId, String conteudoComentario) {
         String resumoComentario = conteudoComentario.length() > 30 ? conteudoComentario.substring(0, 30) + "..."
                 : conteudoComentario;
         String mensagemNotificacao = "Novo comentário: " + resumoComentario;
 
         DatabaseReference notificacaoRef = FirebaseDatabase.getInstance().getReference("notificacoes")
-                .child(autorPostId).push();
+                .child(userId).push();
         String notifId = notificacaoRef.getKey();
 
         Notificacao notificacao = new Notificacao(notifId, "comentario", mensagemNotificacao, postId,
                 System.currentTimeMillis());
         notificacaoRef.setValue(notificacao);
+    }
+
+    private void verificarStatusNotificacao() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null)
+            return;
+
+        DatabaseReference seguidorRef = FirebaseDatabase.getInstance().getReference("forum/posts")
+                .child(postId).child("seguidores").child(user.getUid());
+
+        seguidorRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    isAcompanhando = snapshot.getValue(Boolean.class);
+                } else {
+                    isAcompanhando = null;
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+    }
+
+    private void abrirMenuOpcoes() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null)
+            return;
+
+        boolean isOwner = autorDoPostId != null && autorDoPostId.equals(user.getUid());
+
+        androidx.appcompat.widget.PopupMenu popup = new androidx.appcompat.widget.PopupMenu(this, iconMenuOpcoes);
+        popup.getMenuInflater().inflate(R.menu.menu_opcoes_postagem, popup.getMenu());
+
+        boolean currentlyReceiving = false;
+        if (isAcompanhando == null) {
+            currentlyReceiving = isOwner;
+        } else {
+            currentlyReceiving = isAcompanhando;
+        }
+        popup.getMenu().findItem(R.id.action_acompanhar)
+                .setTitle(currentlyReceiving ? "Silenciar Notificações" : "Acompanhar Notificações");
+
+        if (isOwner) {
+            popup.getMenu().findItem(R.id.action_denunciar).setVisible(false);
+        }
+        if (!isOwner && !isModerador) {
+            popup.getMenu().findItem(R.id.action_excluir).setVisible(false);
+        }
+
+        popup.setOnMenuItemClickListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.action_acompanhar) {
+                alternarNotificacao();
+                return true;
+            } else if (id == R.id.action_denunciar) {
+                android.content.Intent intent = new android.content.Intent(ComentarioActivity.this,
+                        DenunciaActivity.class);
+                intent.putExtra("POST_ID", postId);
+                startActivity(intent);
+                return true;
+            } else if (id == R.id.action_excluir) {
+                excluirPostagem();
+                return true;
+            }
+            return false;
+        });
+        popup.show();
+    }
+
+    private void excluirPostagem() {
+        new androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Excluir Postagem")
+                .setMessage("Tem certeza que deseja excluir esta postagem?")
+                .setPositiveButton("Sim", (dialog, which) -> {
+                    DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts")
+                            .child(postId);
+                    postRef.removeValue().addOnSuccessListener(unused -> {
+                        Toast.makeText(ComentarioActivity.this, "Postagem excluída.", Toast.LENGTH_SHORT).show();
+                        finish();
+                    });
+                })
+                .setNegativeButton("Não", null)
+                .show();
+    }
+
+    private void alternarNotificacao() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null)
+            return;
+
+        boolean currentlyReceiving = false;
+        String curUser = user.getUid();
+
+        if (isAcompanhando == null) {
+            currentlyReceiving = (autorDoPostId != null && autorDoPostId.equals(curUser));
+        } else {
+            currentlyReceiving = isAcompanhando;
+        }
+
+        boolean willReceive = !currentlyReceiving;
+
+        DatabaseReference seguidorRef = FirebaseDatabase.getInstance().getReference("forum/posts")
+                .child(postId).child("seguidores").child(curUser);
+
+        seguidorRef.setValue(willReceive);
+
+        if (willReceive) {
+            Toast.makeText(this, "Você será notificado sobre novos comentários.", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Notificações silenciadas para esta postagem.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void incrementarNumeroComentarios() {

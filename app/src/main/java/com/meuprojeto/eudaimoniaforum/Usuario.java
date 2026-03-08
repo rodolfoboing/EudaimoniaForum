@@ -8,6 +8,13 @@ public class Usuario {
     private String vicio;
     private long lastLoginTimestamp; // Novo campo para o status
     private String fcmToken; // Token para notificações FCM
+    private Long lastPostTimestamp;
+    private String apresentacao;
+    private java.util.Map<String, Boolean> postsComentados;
+    private java.util.Map<String, Boolean> checkins;
+    private java.util.Map<String, Boolean> posts;
+    private java.util.Map<String, Boolean> conquistas;
+    private Integer streakAtual;
 
     public Usuario() {
         // Construtor vazio para o Firebase
@@ -78,5 +85,61 @@ public class Usuario {
 
     public void setFcmToken(String fcmToken) {
         this.fcmToken = fcmToken;
+    }
+
+    public Long getLastPostTimestamp() {
+        return lastPostTimestamp;
+    }
+
+    public void setLastPostTimestamp(Long lastPostTimestamp) {
+        this.lastPostTimestamp = lastPostTimestamp;
+    }
+
+    public String getApresentacao() {
+        return apresentacao;
+    }
+
+    public void setApresentacao(String apresentacao) {
+        this.apresentacao = apresentacao;
+    }
+
+    public java.util.Map<String, Boolean> getPostsComentados() {
+        return postsComentados;
+    }
+
+    public void setPostsComentados(java.util.Map<String, Boolean> postsComentados) {
+        this.postsComentados = postsComentados;
+    }
+
+    public java.util.Map<String, Boolean> getCheckins() {
+        return checkins;
+    }
+
+    public void setCheckins(java.util.Map<String, Boolean> checkins) {
+        this.checkins = checkins;
+    }
+
+    public java.util.Map<String, Boolean> getPosts() {
+        return posts;
+    }
+
+    public void setPosts(java.util.Map<String, Boolean> posts) {
+        this.posts = posts;
+    }
+
+    public java.util.Map<String, Boolean> getConquistas() {
+        return conquistas;
+    }
+
+    public void setConquistas(java.util.Map<String, Boolean> conquistas) {
+        this.conquistas = conquistas;
+    }
+
+    public Integer getStreakAtual() {
+        return streakAtual;
+    }
+
+    public void setStreakAtual(Integer streakAtual) {
+        this.streakAtual = streakAtual;
     }
 }

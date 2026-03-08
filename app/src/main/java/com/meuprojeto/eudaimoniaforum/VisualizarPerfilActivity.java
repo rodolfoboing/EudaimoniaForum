@@ -35,6 +35,7 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("VisualizPerfilAct", "onCreate() chamado. Inicializando VisualizarPerfilActivity.");
         setContentView(R.layout.tela_perfil);
 
         userId = getIntent().getStringExtra("USER_ID");

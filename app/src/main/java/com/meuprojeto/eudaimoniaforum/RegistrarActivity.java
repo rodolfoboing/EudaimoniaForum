@@ -40,6 +40,7 @@ public class RegistrarActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("RegistrarActivity", "onCreate() chamado. Inicializando RegistrarActivity.");
         setContentView(R.layout.tela_registrar);
 
         mAuth = FirebaseAuth.getInstance();

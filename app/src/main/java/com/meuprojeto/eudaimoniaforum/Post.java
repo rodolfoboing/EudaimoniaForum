@@ -15,12 +15,14 @@ public class Post {
     private String autor;
     private long data;
     private String categoria;
+    private java.util.Map<String, Boolean> seguidores;
 
     // Construtor vazio necessário para o Firebase
     public Post() {
     }
 
-    public Post(String id, String titulo, String resumo, int numeroComentarios, String autor, long data, String categoria) {
+    public Post(String id, String titulo, String resumo, int numeroComentarios, String autor, long data,
+            String categoria) {
         this.id = id;
         this.titulo = titulo;
         this.resumo = resumo;
@@ -31,21 +33,66 @@ public class Post {
     }
 
     // Getters
-    public String getId() { return id; }
-    public String getTitulo() { return titulo; }
-    public String getResumo() { return resumo; }
-    public String getAutor() { return autor; }
-    public long getData() { return data; }
-    public Integer getNumeroComentarios() { return numeroComentarios; }
-    public String getCategoria() { return categoria; }
+    public String getId() {
+        return id;
+    }
+
+    public String getTitulo() {
+        return titulo;
+    }
+
+    public String getResumo() {
+        return resumo;
+    }
+
+    public String getAutor() {
+        return autor;
+    }
+
+    public long getData() {
+        return data;
+    }
+
+    public Integer getNumeroComentarios() {
+        return numeroComentarios;
+    }
+
+    public String getCategoria() {
+        return categoria;
+    }
+
+    public java.util.Map<String, Boolean> getSeguidores() {
+        return seguidores;
+    }
 
     // Setters
-    public void setId(String id) { this.id = id; }
-    public void setTitulo(String titulo) { this.titulo = titulo; }
-    public void setResumo(String resumo) { this.resumo = resumo; }
-    public void setAutor(String autor) { this.autor = autor; }
-    public void setNumeroComentarios(Integer numeroComentarios) { this.numeroComentarios = numeroComentarios; }
-    public void setCategoria(String categoria) { this.categoria = categoria; }
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setTitulo(String titulo) {
+        this.titulo = titulo;
+    }
+
+    public void setResumo(String resumo) {
+        this.resumo = resumo;
+    }
+
+    public void setAutor(String autor) {
+        this.autor = autor;
+    }
+
+    public void setNumeroComentarios(Integer numeroComentarios) {
+        this.numeroComentarios = numeroComentarios;
+    }
+
+    public void setCategoria(String categoria) {
+        this.categoria = categoria;
+    }
+
+    public void setSeguidores(java.util.Map<String, Boolean> seguidores) {
+        this.seguidores = seguidores;
+    }
 
     private static long parseDateString(String dateString) {
         if (dateString == null || dateString.trim().isEmpty()) {

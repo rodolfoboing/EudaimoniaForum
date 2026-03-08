@@ -43,6 +43,7 @@ public class MinhasPostagensActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("MinhasPostagensAct", "onCreate() chamado. Inicializando MinhasPostagensActivity.");
         setContentView(R.layout.tela_minhas_postagens);
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
@@ -70,7 +71,7 @@ public class MinhasPostagensActivity extends AppCompatActivity {
     }
 
     private void configurarRecyclerView() {
-        adapter = new PostAdapter(this, postList, false);
+        adapter = new PostAdapter(this, postList, false, true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
     }

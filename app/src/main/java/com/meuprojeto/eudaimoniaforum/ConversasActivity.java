@@ -40,6 +40,7 @@ public class ConversasActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("ConversasActivity", "onCreate() chamado. Inicializando ConversasActivity.");
         setContentView(R.layout.activity_conversas);
 
         recyclerViewConversas = findViewById(R.id.recyclerViewConversas);

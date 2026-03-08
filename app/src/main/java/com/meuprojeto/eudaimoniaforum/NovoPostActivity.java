@@ -31,6 +31,7 @@ public class NovoPostActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("NovoPostActivity", "onCreate() chamado. Inicializando NovoPostActivity.");
         setContentView(R.layout.tela_criar_post);
 
         editTextTitulo = findViewById(R.id.editTextTitulo);

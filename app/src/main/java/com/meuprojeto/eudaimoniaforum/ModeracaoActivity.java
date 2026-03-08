@@ -45,6 +45,7 @@ public class ModeracaoActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("ModeracaoActivity", "onCreate() chamado. Inicializando ModeracaoActivity.");
         setContentView(R.layout.tela_moderacao);
 
         // Configurar UI

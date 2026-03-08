@@ -35,6 +35,7 @@ public class EditarPerfilActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("EditarPerfilAct", "onCreate() chamado. Inicializando EditarPerfilActivity.");
         setContentView(R.layout.tela_edit_perfil);
 
         editTextNick = findViewById(R.id.editTextNick);
@@ -151,6 +152,8 @@ public class EditarPerfilActivity extends AppCompatActivity {
     }
 
     private void salvarAlteracoes() {
+        android.util.Log.d("EditarPerfilAct",
+                "salvarAlteracoes() chamado: tentando salvar novas configurações do perfil.");
         String novoNick = editTextNick.getText().toString().trim();
         String novaApresentacao = editTextApresentacao.getText().toString().trim();
         String novaSenha = editTextNovaSenha.getText().toString().trim();

@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -33,6 +34,8 @@ import java.util.concurrent.TimeUnit;
 
 public class ChatActivity extends AppCompatActivity {
 
+    private static final String TAG = "ChatActivity";
+
     private RecyclerView recyclerViewChat;
     private EditText editTextChatMessage;
     private ImageButton buttonSendMessage, buttonOpcoes;
@@ -41,6 +44,8 @@ public class ChatActivity extends AppCompatActivity {
     private ChatAdapter chatAdapter;
     private List<ChatMessage> chatMessages;
 
+    public static String activeChatUserId = null;
+
     private String receiverId, currentUserId, chatId;
     private DatabaseReference messagesRef;
     private DatabaseReference userRef;
@@ -48,6 +53,7 @@ public class ChatActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        android.util.Log.d("ChatActivity", "onCreate() called. Inicializando ChatActivity.");
         setContentView(R.layout.activity_chat);
 
         receiverId = getIntent().getStringExtra("USER_ID");
@@ -94,6 +100,34 @@ public class ChatActivity extends AppCompatActivity {
         DatabaseReference readRef = FirebaseDatabase.getInstance().getReference("chats").child(chatId).child("lidoPor")
                 .child(currentUserId);
         readRef.setValue(System.currentTimeMillis());
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        activeChatUserId = receiverId;
+        limparNotificacaoDeChat();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        activeChatUserId = null;
+    }
+
+    private void limparNotificacaoDeChat() {
+        if (currentUserId == null || receiverId == null)
+            return;
+        Log.d(TAG, "Silenciador de Chat: Limpando alertas e notificações pendentes do usuário " + receiverId);
+        // Quando entra no chat, automaticamente apaga se houver notificação pendente no
+        // servidor
+        DatabaseReference notificacaoRef = FirebaseDatabase.getInstance().getReference("notificacoes")
+                .child(currentUserId).child("chat_" + receiverId);
+        notificacaoRef.removeValue().addOnSuccessListener(aVoid -> {
+            Log.d(TAG, "Silenciador de Chat: Limpeza concluída do histórico na nuvem (se existia).");
+        }).addOnFailureListener(e -> {
+            Log.e(TAG, "Silenciador de Chat: Falha ao tentar limpar: " + e.getMessage());
+        });
     }
 
     private void showChatMenu(View view) {
@@ -201,56 +235,38 @@ public class ChatActivity extends AppCompatActivity {
     }
 
     private void enviarNotificacao() {
+        Log.d(TAG, "enviarNotificacao() chamado. receiverId=" + receiverId + ", currentUserId=" + currentUserId);
+
         DatabaseReference currentUserRef = FirebaseDatabase.getInstance().getReference("users").child(currentUserId);
         currentUserRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Usuario user = snapshot.getValue(Usuario.class);
                 String nomeRemetente = (user != null) ? user.getNick() : "Alguém";
+                Log.d(TAG, "Nome do remetente: " + nomeRemetente);
 
-                DatabaseReference notificacoesRef = FirebaseDatabase.getInstance().getReference("notificacoes")
-                        .child(receiverId);
+                String notifId = "chat_" + currentUserId;
+                String mensagemNotificacao = "Nova mensagem de " + nomeRemetente;
 
-                // Query para verificar se já existe notificação deste chat
-                notificacoesRef.orderByChild("idReferencia").equalTo(currentUserId)
-                        .addListenerForSingleValueEvent(new ValueEventListener() {
-                            @Override
-                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                                boolean chatNotificationExists = false;
+                DatabaseReference notificacaoRef = FirebaseDatabase.getInstance().getReference("notificacoes")
+                        .child(receiverId).child(notifId);
 
-                                // Se encontrar, verifica se é do tipo chat e atualiza
-                                if (dataSnapshot.exists()) {
-                                    for (DataSnapshot child : dataSnapshot.getChildren()) {
-                                        Notificacao existingNotif = child.getValue(Notificacao.class);
-                                        if (existingNotif != null && "chat".equals(existingNotif.getTipo())) {
-                                            child.getRef().child("timestamp").setValue(System.currentTimeMillis());
-                                            child.getRef().child("mensagem")
-                                                    .setValue("Novas mensagens de " + nomeRemetente);
-                                            chatNotificationExists = true;
-                                            return;
-                                        }
-                                    }
-                                }
+                // Primeiro APAGA o nó antigo, depois CRIA um novo
+                // Isso garante que a Cloud Function detecte a criação como um evento novo
+                notificacaoRef.removeValue().addOnCompleteListener(task -> {
+                    Notificacao notificacao = new Notificacao(notifId, "chat",
+                            mensagemNotificacao, currentUserId, System.currentTimeMillis());
 
-                                // Se não encontrar (ou se as notificações existentes não forem de chat), cria
-                                // nova
-                                if (!chatNotificationExists) {
-                                    String notifId = notificacoesRef.push().getKey();
-                                    String mensagemNotificacao = "Nova mensagem de " + nomeRemetente;
-                                    Notificacao notificacao = new Notificacao(notifId, "chat",
-                                            mensagemNotificacao, currentUserId, System.currentTimeMillis());
-                                    notificacoesRef.child(notifId).setValue(notificacao);
-                                }
-                            }
-
-                            @Override
-                            public void onCancelled(@NonNull DatabaseError error) {
-                            }
-                        });
+                    Log.d(TAG, "Criando notificação nova após remoção. ID=" + notifId);
+                    notificacaoRef.setValue(notificacao)
+                            .addOnSuccessListener(aVoid -> Log.d(TAG, "✅ Notificação gravada no Firebase com sucesso!"))
+                            .addOnFailureListener(e -> Log.e(TAG, "❌ ERRO ao gravar notificação: " + e.getMessage()));
+                });
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Erro ao buscar dados do remetente: " + error.getMessage());
             }
         });
     }
