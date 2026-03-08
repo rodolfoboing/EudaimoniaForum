@@ -41,9 +41,9 @@ Onboarding
 
 Fluxo inicial com telas de introdução e orientações.
 
-Metas e Orientações
+Conquistas e Orientações
 
-Funcionalidades relacionadas a metas pessoais e orientações de uso.
+Funcionalidades relacionadas a conquitas pessoais e orientações de uso.
 
 
 # 🛠️ Estrutura do Projeto
@@ -67,7 +67,7 @@ PerfilActivity.java, EditarPerfilActivity.java, VisualizarPerfilActivity.java �
 
 OnboardingActivity.java, OnboardingAdapter.java, OnboardingItem.java → Onboarding.
 
-MetasWorker.java → Gerenciamento de metas.
+ConquistasWorker.java → Gerenciamento de conquistas.
 
 OrientacoesActivity.java → Orientações gerais.
 
