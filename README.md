@@ -2,7 +2,7 @@
 
 O EudaimoniaForum é um aplicativo Android desenvolvido em Java que oferece um espaço de interação, troca de mensagens e discussões em formato de fórum. Ele inclui funcionalidades de chat, postagens, denúncias, notificações e gerenciamento de perfil, com foco em criar uma comunidade saudável e moderada.
 
-#🚀 Funcionalidades Principais
+# 🚀 Funcionalidades Principais
 Autenticação de Usuário
 
 Login, registro e recuperação de senha.
