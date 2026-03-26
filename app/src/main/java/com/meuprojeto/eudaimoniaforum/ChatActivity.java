@@ -286,12 +286,13 @@ public class ChatActivity extends AppCompatActivity {
                     if (user != null) {
                         textViewNomeChat.setText(user.getNick());
                         long lastLogin = user.getLastLoginTimestamp();
-                        long daysSinceLogin = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - lastLogin);
-                        if (daysSinceLogin < 10) {
-                            textViewStatusOnline.setText("🟢 Ativo");
-                            textViewStatusOnline.setTextColor(Color.parseColor("#C5E1A5"));
+                        long timeDiff = System.currentTimeMillis() - lastLogin;
+                        // Considera ativo se logou nos últimos 5 minutos
+                        if (timeDiff < TimeUnit.MINUTES.toMillis(5)) {
+                            textViewStatusOnline.setText("🟢 Online");
+                            textViewStatusOnline.setTextColor(Color.parseColor("#4CAF50"));
                         } else {
-                            textViewStatusOnline.setText("⚪ Inativo");
+                            textViewStatusOnline.setText("⚪ Offline");
                             textViewStatusOnline.setTextColor(Color.GRAY);
                         }
                     }
@@ -315,38 +316,76 @@ public class ChatActivity extends AppCompatActivity {
         recyclerViewChat.setAdapter(chatAdapter);
     }
 
-    private ValueEventListener messagesListener;
+    private com.google.firebase.database.ChildEventListener messagesListener;
 
     private void loadMessages() {
-        messagesListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (isFinishing() || isDestroyed())
-                    return;
-                chatMessages.clear();
-                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                    ChatMessage message = dataSnapshot.getValue(ChatMessage.class);
-                    if (message != null) {
-                        chatMessages.add(message);
+        // keepSynced(true) faz com que o Firebase mantenha essas mensagens em cache local.
+        // Assim, quando a pessoa clicar na notificação de chat e entrar aqui, ele já renderiza da memória 
+        // imediatamente enquanto busca o novo no background, resolvendo a tela em branco temporária.
+        messagesRef.keepSynced(true);
 
-                        // Atualiza status de leitura localmente se necessário
-                        if (!message.getSenderId().equals(currentUserId) && !"lido".equals(message.getStatus())) {
-                            messagesRef.child(dataSnapshot.getKey()).child("status").setValue("lido");
+        messagesListener = new com.google.firebase.database.ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @androidx.annotation.Nullable String previousChildName) {
+                if (isFinishing() || isDestroyed()) return;
+
+                ChatMessage message = dataSnapshot.getValue(ChatMessage.class);
+                if (message != null) {
+                    message.setId(dataSnapshot.getKey());
+                    chatMessages.add(message);
+                    int newPosition = chatMessages.size() - 1;
+                    chatAdapter.notifyItemInserted(newPosition);
+                    recyclerViewChat.scrollToPosition(newPosition);
+
+                    // Atualiza status de leitura localmente se necessário
+                    if (!message.getSenderId().equals(currentUserId) && !"lido".equals(message.getStatus())) {
+                        messagesRef.child(message.getId()).child("status").setValue("lido");
+                    }
+
+                    atualizarStatusLidoNoChat();
+                }
+            }
+
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @androidx.annotation.Nullable String previousChildName) {
+                if (isFinishing() || isDestroyed()) return;
+                
+                ChatMessage updatedMessage = dataSnapshot.getValue(ChatMessage.class);
+                if (updatedMessage != null) {
+                    updatedMessage.setId(dataSnapshot.getKey());
+                    for (int i = 0; i < chatMessages.size(); i++) {
+                        if (chatMessages.get(i).getId() != null && chatMessages.get(i).getId().equals(updatedMessage.getId())) {
+                            chatMessages.set(i, updatedMessage);
+                            chatAdapter.notifyItemChanged(i);
+                            break;
                         }
                     }
                 }
-                chatAdapter.notifyDataSetChanged();
-                recyclerViewChat.scrollToPosition(chatMessages.size() - 1);
+            }
 
-                // Sempre que carregarem mensagens novas, atualizamos o status de leitura global
-                atualizarStatusLidoNoChat();
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+                String removedId = dataSnapshot.getKey();
+                if (removedId != null) {
+                    for (int i = 0; i < chatMessages.size(); i++) {
+                        if (removedId.equals(chatMessages.get(i).getId())) {
+                            chatMessages.remove(i);
+                            chatAdapter.notifyItemRemoved(i);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @androidx.annotation.Nullable String previousChildName) {
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
             }
         };
-        messagesRef.addValueEventListener(messagesListener);
+        messagesRef.addChildEventListener(messagesListener);
     }
 
     @Override

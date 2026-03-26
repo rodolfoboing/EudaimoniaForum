@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String CONQUISTA_WORK_TAG = "ConquistasWork";
 
     private TextView textViewTempoAbstinenciaMeses, textViewTempoAbstinenciaDias, textViewTempoAbstinenciaHoras,
-            textViewTempoAbstinenciaMinutos, textViewHabito;
+            textViewTempoAbstinenciaMinutos, textViewHabito, textViewDiasValidos;
     private ImageButton buttonNotificacao;
     private MaterialButton buttonModeracao;
     private MaterialButton buttonCheckInDiario;
@@ -257,7 +257,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         recuperarTempoInicial();
+        atualizarTempoAbstinencia(); // Força atualização imediata do cronômetro
         carregarDadosUsuario();
+        verificarCheckInDiario(); // Recalcula streak e estado do botão de check-in
+        android.util.Log.d("MainActivity", "onResume: tempoInicial=" + tempoInicial + " (diff=" + (System.currentTimeMillis() - tempoInicial) + "ms)");
     }
 
     private void inicializarUI() {
@@ -269,6 +272,7 @@ public class MainActivity extends AppCompatActivity {
         buttonNotificacao = findViewById(R.id.buttonNotificacao);
         buttonModeracao = findViewById(R.id.buttonModeracao);
         buttonCheckInDiario = findViewById(R.id.buttonCheckInDiario);
+        textViewDiasValidos = findViewById(R.id.textViewDiasValidos);
     }
 
     private void realizarCheckIn() {
@@ -278,81 +282,204 @@ public class MainActivity extends AppCompatActivity {
 
         String hoje = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                 .format(new java.util.Date());
-        DatabaseReference checkInRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid())
-                .child("checkins");
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
 
-        checkInRef.child(hoje).setValue(true).addOnSuccessListener(aVoid -> {
-            buttonCheckInDiario.setText("✅ Compromisso Feito!");
-            buttonCheckInDiario.setEnabled(false);
-            buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Integer currentStreak = snapshot.child("streakAtual").getValue(Integer.class);
+                if (currentStreak == null) currentStreak = 0;
 
-            // Incrementa Streak
-            incrementarStreak(user.getUid());
+                android.util.Log.d("MainActivity", "realizarCheckIn: lido streakAtual=" + currentStreak);
 
-            // Verifica e concede medalhas baseadas no tempo de abstinência atual
-            verificarEConcederMedalhas(user.getUid());
+                // VALIDAÇÃO CRÍTICA: o streak nunca pode ultrapassar os dias reais do cronômetro
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                long tempoInicialSalvo = prefs.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
+                int diasReaisAbstinencia = (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - tempoInicialSalvo);
 
-            new AlertDialog.Builder(this)
-                    .setTitle("Compromisso Firmado!")
-                    .setMessage(
-                            "Parabéns por renovar seu compromisso de sobriedade por mais um dia. Um dia de cada vez!")
-                    .setPositiveButton("Vamos lá!", null)
-                    .show();
+                // Se o streak atual já está inconsistente (maior que dias reais), corrige primeiro
+                if (currentStreak > diasReaisAbstinencia) {
+                    currentStreak = diasReaisAbstinencia;
+                }
+
+                int novoStreak = currentStreak + 1;
+
+                // Teto máximo: o streak com o check-in de hoje não pode exceder (diasReais + 1)
+                // porque o dia de hoje pode ainda não ter completado 24h no cronômetro
+                if (novoStreak > diasReaisAbstinencia + 1) {
+                    novoStreak = diasReaisAbstinencia + 1;
+                }
+
+                final int streakFinal = novoStreak;
+
+                Map<String, Object> updates = new HashMap<>();
+                updates.put("checkins/" + hoje, true);
+                updates.put("ultimoCheckIn", hoje);
+                updates.put("streakAtual", streakFinal);
+
+                android.util.Log.d("MainActivity", "realizarCheckIn: diasReaisAbstinencia=" + diasReaisAbstinencia + " -> Atualizando streak para " + streakFinal);
+
+                userRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                    prefs.edit().putInt("streak_atual", streakFinal).apply();
+
+                    buttonCheckInDiario.setText("✅ Compromisso Feito!");
+                    buttonCheckInDiario.setEnabled(false);
+                    buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+                    if (textViewDiasValidos != null) {
+                        textViewDiasValidos.setText("⭐ " + streakFinal);
+                    }
+
+                    verificarEConcederMedalhasEExibirMensagem(user.getUid(), streakFinal);
+                });
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
         });
     }
 
-    private void verificarEConcederMedalhas(String userId) {
-        long diferenca = System.currentTimeMillis() - tempoInicial;
-        long dias = TimeUnit.MILLISECONDS.toDays(diferenca);
-
+    private void verificarEConcederMedalhasEExibirMensagem(String userId, int dias) {
         DatabaseReference conquistasRef = FirebaseDatabase.getInstance().getReference("users")
                 .child(userId).child("conquistas");
 
-        Map<String, Object> updates = new HashMap<>();
-
-        // Milestones: 1, 3, 7, 30, 90, 180, 365
-        if (dias >= 1)
-            updates.put("badge_1_dia", true);
-        if (dias >= 3)
-            updates.put("badge_3_dias", true);
-        if (dias >= 7)
-            updates.put("badge_1_semana", true);
-        if (dias >= 30)
-            updates.put("badge_1_mes", true);
-        if (dias >= 90)
-            updates.put("badge_3_meses", true);
-        if (dias >= 180)
-            updates.put("badge_6_meses", true);
-        if (dias >= 365)
-            updates.put("badge_1_ano", true);
-
-        if (!updates.isEmpty()) {
-            conquistasRef.updateChildren(updates);
-        }
-    }
-
-    private void incrementarStreak(String userId) {
-        DatabaseReference streakRef = FirebaseDatabase.getInstance().getReference("users").child(userId)
-                .child("streakAtual");
-        streakRef.runTransaction(new com.google.firebase.database.Transaction.Handler() {
-            @NonNull
+        conquistasRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public com.google.firebase.database.Transaction.Result doTransaction(
-                    @NonNull com.google.firebase.database.MutableData currentData) {
-                Integer currentStreak = currentData.getValue(Integer.class);
-                if (currentStreak == null) {
-                    currentData.setValue(1);
-                } else {
-                    currentData.setValue(currentStreak + 1);
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Map<String, Object> updates = new HashMap<>();
+                String tituloNovaConquista = null;
+                String mensagemMotivacional = null;
+
+                android.util.Log.d("Conquistas", "Verificando conquistas para streak=" + dias);
+                android.util.Log.d("Conquistas", "Conquistas atuais no Firebase: " + snapshot.getValue());
+
+                // Checa as milestones — usa getValue(Boolean.class) em vez de hasChild()
+                // porque hasChild() retorna true mesmo se o valor for false
+                if (dias >= 1 && !isConquistaDesbloqueada(snapshot, "badge_1_dia")) {
+                    updates.put("badge_1_dia", true);
+                    tituloNovaConquista = "🥉 Medalha de 1 Dia";
+                    mensagemMotivacional = "O primeiro passo é sempre o mais importante. Você começou sua jornada de compromisso!";
                 }
-                return com.google.firebase.database.Transaction.success(currentData);
+                if (dias >= 3 && !isConquistaDesbloqueada(snapshot, "badge_3_dias")) {
+                    updates.put("badge_3_dias", true);
+                    tituloNovaConquista = "🥈 Medalha de 3 Dias";
+                    mensagemMotivacional = "Três dias firme! Sua disciplina está se consolidando. Continue assim!";
+                }
+                if (dias >= 7 && !isConquistaDesbloqueada(snapshot, "badge_1_semana")) {
+                    updates.put("badge_1_semana", true);
+                    tituloNovaConquista = "🥇 Medalha de 1 Semana";
+                    mensagemMotivacional = "Uma semana inteira de compromisso diário! Você está provando sua força interior.";
+                }
+                if (dias >= 30 && !isConquistaDesbloqueada(snapshot, "badge_1_mes")) {
+                    updates.put("badge_1_mes", true);
+                    tituloNovaConquista = "🏅 Medalha de 1 Mês";
+                    mensagemMotivacional = "30 dias de compromisso! Isso é mais do que determinação — é transformação real.";
+                }
+                if (dias >= 90 && !isConquistaDesbloqueada(snapshot, "badge_3_meses")) {
+                    updates.put("badge_3_meses", true);
+                    tituloNovaConquista = "🔥 Medalha de 3 Meses";
+                    mensagemMotivacional = "90 dias! Você já mudou hábitos profundos. Sua versão mais forte está aqui!";
+                }
+                if (dias >= 180 && !isConquistaDesbloqueada(snapshot, "badge_6_meses")) {
+                    updates.put("badge_6_meses", true);
+                    tituloNovaConquista = "💎 Medalha de 6 Meses";
+                    mensagemMotivacional = "Meio ano de compromisso diário! Você é uma inspiração para a comunidade.";
+                }
+                if (dias >= 365 && !isConquistaDesbloqueada(snapshot, "badge_1_ano")) {
+                    updates.put("badge_1_ano", true);
+                    tituloNovaConquista = "👑 Medalha de 1 Ano";
+                    mensagemMotivacional = "UM ANO! A maior conquista possível. Você é a prova viva de que a mudança é real!";
+                }
+
+                if (!updates.isEmpty()) {
+                    android.util.Log.d("Conquistas", "Novas conquistas desbloqueadas: " + updates.keySet());
+                    conquistasRef.updateChildren(updates);
+                }
+
+                if (tituloNovaConquista != null) {
+                    android.util.Log.d("Conquistas", "Exibindo dialog de conquista: " + tituloNovaConquista);
+                    exibirDialogConquista(tituloNovaConquista, mensagemMotivacional);
+                } else {
+                    android.util.Log.d("Conquistas", "Nenhuma nova conquista. Exibindo mensagem normal de check-in.");
+                    // Mensagem Normal de Check-in Regular
+                    new AlertDialog.Builder(MainActivity.this)
+                            .setTitle("Compromisso Firmado!")
+                            .setMessage("Parabéns por renovar seu compromisso de sobriedade de hoje. Você está no caminho certo!")
+                            .setPositiveButton("Vamos lá!", null)
+                            .show();
+                }
             }
 
             @Override
-            public void onComplete(@Nullable DatabaseError error, boolean committed,
-                    @Nullable DataSnapshot currentData) {
+            public void onCancelled(@NonNull DatabaseError error) {
+                android.util.Log.e("Conquistas", "Erro ao verificar conquistas: " + error.getMessage());
             }
         });
+    }
+
+    /** Verifica se uma conquista está realmente desbloqueada (valor true no Firebase) */
+    private boolean isConquistaDesbloqueada(DataSnapshot snapshot, String badgeKey) {
+        if (!snapshot.hasChild(badgeKey)) return false;
+        Boolean valor = snapshot.child(badgeKey).getValue(Boolean.class);
+        return valor != null && valor;
+    }
+
+    private void exibirDialogConquista(String titulo, String mensagem) {
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dialog.setContentView(R.layout.dialog_conquista);
+
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    android.view.WindowManager.LayoutParams.MATCH_PARENT,
+                    android.view.WindowManager.LayoutParams.WRAP_CONTENT
+            );
+        }
+
+        // Configura os textos
+        TextView textTitulo = dialog.findViewById(R.id.textViewConquistaNome);
+        TextView textMensagem = dialog.findViewById(R.id.textViewConquistaMensagem);
+        textTitulo.setText(titulo);
+        textMensagem.setText(mensagem);
+
+        // Animação de bounce-in no dialog inteiro
+        View dialogRoot = dialog.findViewById(android.R.id.content);
+        if (dialogRoot != null) {
+            android.view.animation.Animation bounceIn = android.view.animation.AnimationUtils
+                    .loadAnimation(this, R.anim.conquista_bounce_in);
+            dialogRoot.startAnimation(bounceIn);
+        }
+
+        // Animação de pulsar no troféu
+        android.widget.ImageView trofeu = dialog.findViewById(R.id.imageViewTrofeu);
+        if (trofeu != null) {
+            android.view.animation.Animation pulse = android.view.animation.AnimationUtils
+                    .loadAnimation(this, R.anim.pulse_trophy);
+            trofeu.startAnimation(pulse);
+        }
+
+        // Animação de rotação no glow de fundo
+        View glow = dialog.findViewById(R.id.viewGlowBackground);
+        if (glow != null) {
+            ObjectAnimator rotation = ObjectAnimator.ofFloat(glow, "rotation", 0f, 360f);
+            rotation.setDuration(8000);
+            rotation.setRepeatCount(ObjectAnimator.INFINITE);
+            rotation.setInterpolator(new android.view.animation.LinearInterpolator());
+            rotation.start();
+        }
+
+        // Botão Ver Perfil
+        dialog.findViewById(R.id.buttonVerPerfil).setOnClickListener(v -> {
+            dialog.dismiss();
+            startActivity(new Intent(MainActivity.this, PerfilActivity.class));
+        });
+
+        // Botão Fechar
+        dialog.findViewById(R.id.textViewFechar).setOnClickListener(v -> dialog.dismiss());
+
+        dialog.setCanceledOnTouchOutside(false);
+        dialog.show();
     }
 
     private void verificarCheckInDiario() {
@@ -362,13 +489,50 @@ public class MainActivity extends AppCompatActivity {
 
         String hoje = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                 .format(new java.util.Date());
-        DatabaseReference checkInRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid())
-                .child("checkins").child(hoje);
+                
+        java.util.Calendar cal = java.util.Calendar.getInstance();
+        cal.add(java.util.Calendar.DATE, -1);
+        String ontem = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+                .format(cal.getTime());
 
-        checkInRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
+
+        userRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
+                Integer streakAtual = snapshot.child("streakAtual").getValue(Integer.class);
+                if (streakAtual == null) streakAtual = 0;
+                
+                String ultimoCheckIn = snapshot.child("ultimoCheckIn").getValue(String.class);
+                
+                // Quebrar a streak se não houver checkin hoje nem ontem
+                if (ultimoCheckIn != null && !ultimoCheckIn.equals(hoje) && !ultimoCheckIn.equals(ontem)) {
+                    android.util.Log.d("MainActivity", "verificarCheckInDiario: Streak quebra pois faltou check-in (ultimo=" + ultimoCheckIn + ")");
+                    streakAtual = 0;
+                    userRef.child("streakAtual").setValue(0);
+                }
+
+                // VALIDAÇÃO CRÍTICA: o streak nunca pode ser maior que os dias reais do cronômetro
+                SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+                long tempoInicialSalvo = prefs.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
+                int diasReaisAbstinencia = (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - tempoInicialSalvo);
+
+                // Se o streak está maior que o cronômetro permite, corrige silenciosamente
+                if (streakAtual > diasReaisAbstinencia + 1) {
+                    android.util.Log.d("MainActivity", "verificarCheckInDiario: Streak (" + streakAtual + ") maior que permitido (" + diasReaisAbstinencia + "). Corrigindo!");
+                    streakAtual = Math.max(0, diasReaisAbstinencia);
+                    userRef.child("streakAtual").setValue(streakAtual);
+                } else {
+                    android.util.Log.d("MainActivity", "verificarCheckInDiario: Streak validado (" + streakAtual + ")");
+                }
+
+                prefs.edit().putInt("streak_atual", streakAtual).apply();
+
+                if (textViewDiasValidos != null) {
+                    textViewDiasValidos.setText("⭐ " + streakAtual);
+                }
+
+                if (snapshot.child("checkins").child(hoje).exists() || hoje.equals(ultimoCheckIn)) {
                     buttonCheckInDiario.setText("✅ Compromisso Feito!");
                     buttonCheckInDiario.setEnabled(false);
                     buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
@@ -423,45 +587,87 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void mostrarDialogoContato() {
-        android.app.AlertDialog.Builder builder = new android.app.AlertDialog.Builder(this);
-        builder.setTitle("Contato & Feedback");
+        android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
 
-        // Cria um layout personalizado para o diálogo
         android.widget.LinearLayout layout = new android.widget.LinearLayout(this);
         layout.setOrientation(android.widget.LinearLayout.VERTICAL);
-        layout.setPadding(50, 40, 50, 10);
+        layout.setPadding(60, 60, 60, 40);
+        layout.setGravity(android.view.Gravity.CENTER);
+        
+        // Fundo escuro elegante (evita bugs visuais e destaca a cor branca solicitada)
+        android.graphics.drawable.GradientDrawable shape = new android.graphics.drawable.GradientDrawable();
+        shape.setCornerRadius(32f);
+        shape.setColor(android.graphics.Color.parseColor("#1F2937")); // Cinza bem escuro
+        layout.setBackground(shape);
 
-        // Texto de ajuda
-        android.widget.TextView message = new android.widget.TextView(this);
-        message.setText("Para dúvidas, sugestões ou suporte, envie um e-mail para:\n\nrodolfo.bm.reserva@gmail.com");
-        message.setTextSize(16);
-        message.setTextColor(android.graphics.Color.BLACK);
-        message.setAutoLinkMask(android.text.util.Linkify.EMAIL_ADDRESSES); // Torna o e-mail clicável
-        message.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
-        layout.addView(message);
+        // Título
+        android.widget.TextView title = new android.widget.TextView(this);
+        title.setText("Contato & Feedback");
+        title.setTextSize(22);
+        title.setTextColor(android.graphics.Color.WHITE);
+        title.setTypeface(null, android.graphics.Typeface.BOLD);
+        title.setGravity(android.view.Gravity.CENTER);
+        layout.addView(title);
 
-        // Botão para Política de Privacidade
-        android.widget.Button btnPrivacy = new android.widget.Button(this);
-        btnPrivacy.setText("Política de Privacidade");
-        btnPrivacy.setBackgroundTintList(
-                android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E0E0E0")));
-        btnPrivacy.setTextColor(android.graphics.Color.BLACK);
-        android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(
-                android.widget.LinearLayout.LayoutParams.MATCH_PARENT,
-                android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.setMargins(0, 40, 0, 0);
-        btnPrivacy.setLayoutParams(params);
+        // Mensagem Explicativa
+        android.widget.TextView subtitle = new android.widget.TextView(this);
+        subtitle.setText("\nPara dúvidas, sugestões ou suporte técnico geral, envie um e-mail direto para nossa equipe:\n");
+        subtitle.setTextSize(15);
+        subtitle.setTextColor(android.graphics.Color.parseColor("#D1D5DB")); // Cinza clarinho
+        subtitle.setGravity(android.view.Gravity.CENTER);
+        layout.addView(subtitle);
 
+        // Email (Branco, conforme solicitado)
+        android.widget.TextView email = new android.widget.TextView(this);
+        email.setText("rodolfo.bm.reserva@gmail.com");
+        email.setTextSize(16);
+        email.setTextColor(android.graphics.Color.WHITE);
+        email.setTypeface(null, android.graphics.Typeface.BOLD);
+        email.setGravity(android.view.Gravity.CENTER);
+        email.setAutoLinkMask(android.text.util.Linkify.EMAIL_ADDRESSES);
+        email.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
+        email.setLinkTextColor(android.graphics.Color.WHITE); // Transforma link vermelho em BRANCO
+        layout.addView(email);
+
+        // Espaçador
+        android.view.View spacer = new android.view.View(this);
+        spacer.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, 40));
+        layout.addView(spacer);
+
+        // Botão Política de Privacidade
+        com.google.android.material.button.MaterialButton btnPrivacy = new com.google.android.material.button.MaterialButton(this);
+        btnPrivacy.setText("📜 Política de Privacidade");
+        btnPrivacy.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#374151")));
+        btnPrivacy.setTextColor(android.graphics.Color.WHITE);
+        btnPrivacy.setCornerRadius(16);
         btnPrivacy.setOnClickListener(v -> {
-            android.content.Intent browserIntent = new android.content.Intent(android.content.Intent.ACTION_VIEW,
-                    android.net.Uri.parse("https://gist.github.com/rodolfoboing/c68da4a7504b78036166b44b11e8c7ee"));
-            startActivity(browserIntent);
+            startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                    android.net.Uri.parse("https://gist.github.com/rodolfoboing/c68da4a7504b78036166b44b11e8c7ee")));
         });
-
         layout.addView(btnPrivacy);
-        builder.setView(layout);
-        builder.setPositiveButton("Fechar", null);
-        builder.show();
+
+        // Botão Fechar (Branco, conforme solicitado)
+        com.google.android.material.button.MaterialButton btnFechar = new com.google.android.material.button.MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle);
+        btnFechar.setText("FECHAR");
+        btnFechar.setTextColor(android.graphics.Color.WHITE); // Texto branco!
+        android.widget.LinearLayout.LayoutParams fecharParams = new android.widget.LinearLayout.LayoutParams(
+                android.widget.LinearLayout.LayoutParams.MATCH_PARENT, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+        fecharParams.setMargins(0, 20, 0, 0);
+        btnFechar.setLayoutParams(fecharParams);
+        btnFechar.setOnClickListener(v -> dialog.dismiss());
+        layout.addView(btnFechar);
+
+        dialog.setContentView(layout);
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+            dialog.getWindow().setLayout(
+                    (int) (getResources().getDisplayMetrics().widthPixels * 0.90),
+                    android.view.WindowManager.LayoutParams.WRAP_CONTENT
+            );
+        }
+        dialog.show();
     }
 
     private void deslogar() {
@@ -502,11 +708,44 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void reiniciarContador() {
+        android.util.Log.d("MainActivity", "reiniciarContador: Usuário zerou o contador de abstinência.");
         tempoInicial = System.currentTimeMillis();
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        preferences.edit().putLong(KEY_TEMPO_INICIAL, tempoInicial).apply();
+        preferences.edit()
+                .putLong(KEY_TEMPO_INICIAL, tempoInicial)
+                .putInt("streak_atual", 0)
+                // Reseta flags de notificações de marcos de abstinência
+                .remove("milestone_1_day_shown")
+                .remove("milestone_3_days_shown")
+                .remove("milestone_7_days_shown")
+                .remove("milestone_30_days_shown")
+                .remove("milestone_90_days_shown")
+                .remove("milestone_180_days_shown")
+                .remove("milestone_365_days_shown")
+                .apply();
+        
         atualizarTempoAbstinencia();
-        Toast.makeText(this, "Contador reiniciado!", Toast.LENGTH_SHORT).show();
+        
+        if (textViewDiasValidos != null) {
+            textViewDiasValidos.setText("⭐ 0");
+        }
+        
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user != null) {
+            DatabaseReference userRef = FirebaseDatabase.getInstance()
+                    .getReference("users")
+                    .child(user.getUid());
+            
+            // Reset atômico: zera streak, limpa check-ins do ciclo anterior e ultimoCheckIn
+            Map<String, Object> resetUpdates = new HashMap<>();
+            resetUpdates.put("streakAtual", 0);
+            resetUpdates.put("ultimoCheckIn", null);
+            resetUpdates.put("checkins", null);
+            userRef.updateChildren(resetUpdates);
+        }
+
+        Toast.makeText(this, "Contador e compromissos reiniciados!", Toast.LENGTH_SHORT).show();
+        verificarCheckInDiario();
     }
 
     private void atualizarTempoAbstinencia() {

@@ -47,12 +47,22 @@ public class MinhasPostagensActivity extends AppCompatActivity {
         setContentView(R.layout.tela_minhas_postagens);
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user == null) {
+        String paramUserId = getIntent().getStringExtra("USER_ID");
+
+        if (paramUserId != null && !paramUserId.isEmpty()) {
+            currentUserId = paramUserId;
+            
+            // Alterar dinamicamente caso seja o perfil de outro
+            if (user != null && !paramUserId.equals(user.getUid())) {
+                setTitle("Postagens do Usuário");
+            }
+        } else if (user != null) {
+            currentUserId = user.getUid();
+        } else {
             Toast.makeText(this, "Usuário não autenticado", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
-        currentUserId = user.getUid();
 
         inicializarUI();
         configurarRecyclerView();
@@ -77,12 +87,19 @@ public class MinhasPostagensActivity extends AppCompatActivity {
     }
 
     private void configurarBotoesFiltro() {
+        btnMinhasPostagens.setAlpha(1.0f);
+        btnComentadas.setAlpha(0.6f);
+
         btnMinhasPostagens.setOnClickListener(v -> {
+            btnMinhasPostagens.setAlpha(1.0f);
+            btnComentadas.setAlpha(0.6f);
             filtroAtual = Filtro.MINHAS_POSTAGENS;
             carregarPostagens();
         });
 
         btnComentadas.setOnClickListener(v -> {
+            btnComentadas.setAlpha(1.0f);
+            btnMinhasPostagens.setAlpha(0.6f);
             filtroAtual = Filtro.COMENTADAS;
             carregarPostagens();
         });
@@ -137,7 +154,7 @@ public class MinhasPostagensActivity extends AppCompatActivity {
                 if (snapshot.exists() && snapshot.hasChildren()) {
                     carregarPostagensPorIds(snapshot);
                 } else {
-                    carregarPostagensComentadasLegado();
+                    updateEmptyState(false);
                 }
             }
 
@@ -165,28 +182,52 @@ public class MinhasPostagensActivity extends AppCompatActivity {
         final int totalPosts = postsIds.size();
 
         for (String postId : postsIds) {
-            postsRef.child(postId).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    Post post = snapshot.getValue(Post.class);
-                    if (post != null) {
-                        post.setId(snapshot.getKey());
-                        postList.add(post);
-                    }
-                    loadedCount[0]++;
-                    if (loadedCount[0] >= totalPosts) {
-                        finalizarCarregamento();
-                    }
-                }
+            // Verifica se o usuário REALMENTE comentou no post (ajuda a limpar bugs de exclusão órfã)
+            FirebaseDatabase.getInstance().getReference("forum/comentarios").child(postId)
+                    .orderByChild("autor").equalTo(currentUserId)
+                    .addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot comentarioSnapshot) {
+                            if (comentarioSnapshot.exists()) {
+                                // Se existe comentário atual válido, baixa o Post!
+                                postsRef.child(postId).addListenerForSingleValueEvent(new ValueEventListener() {
+                                    @Override
+                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                                        Post post = snapshot.getValue(Post.class);
+                                        if (post != null) {
+                                            post.setId(snapshot.getKey());
+                                            postList.add(post);
+                                        }
+                                        loadedCount[0]++;
+                                        if (loadedCount[0] >= totalPosts) {
+                                            finalizarCarregamento();
+                                        }
+                                    }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    loadedCount[0]++;
-                    if (loadedCount[0] >= totalPosts) {
-                        finalizarCarregamento();
-                    }
-                }
-            });
+                                    @Override
+                                    public void onCancelled(@NonNull DatabaseError error) {
+                                        loadedCount[0]++;
+                                        if (loadedCount[0] >= totalPosts) finalizarCarregamento();
+                                    }
+                                });
+                            } else {
+                                // O usuário não tem mais comentário lá! Limpeza automática:
+                                FirebaseDatabase.getInstance().getReference("users")
+                                        .child(currentUserId).child("postsComentados").child(postId).removeValue();
+                                
+                                loadedCount[0]++;
+                                if (loadedCount[0] >= totalPosts) {
+                                    finalizarCarregamento();
+                                }
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            loadedCount[0]++;
+                            if (loadedCount[0] >= totalPosts) finalizarCarregamento();
+                        }
+                    });
         }
     }
 
@@ -196,51 +237,7 @@ public class MinhasPostagensActivity extends AppCompatActivity {
         updateEmptyState(false);
     }
 
-    private void carregarPostagensComentadasLegado() {
-        postsRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                postList.clear();
-                if (!snapshot.exists()) {
-                    updateEmptyState(false);
-                    return;
-                }
 
-                for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-                    Post post = postSnapshot.getValue(Post.class);
-                    if (post == null) {
-                        continue;
-                    }
-
-                    if (postSnapshot.child("comentarios").exists()) {
-                        for (DataSnapshot comentarioSnapshot : postSnapshot.child("comentarios").getChildren()) {
-                            Comentario comentario = comentarioSnapshot.getValue(Comentario.class);
-                            if (comentario != null && currentUserId.equals(comentario.getAutor())) {
-                                post.setId(postSnapshot.getKey());
-                                postList.add(post);
-                                salvarReferenciaPostComentado(post.getId());
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                finalizarCarregamento();
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(MinhasPostagensActivity.this, "Erro ao verificar comentários", Toast.LENGTH_SHORT)
-                        .show();
-                updateEmptyState(false);
-            }
-        });
-    }
-
-    private void salvarReferenciaPostComentado(String postId) {
-        FirebaseDatabase.getInstance().getReference("users")
-                .child(currentUserId).child("postsComentados").child(postId).setValue(true);
-    }
 
     private void updateEmptyState(boolean isLoading) {
         if (isLoading) {

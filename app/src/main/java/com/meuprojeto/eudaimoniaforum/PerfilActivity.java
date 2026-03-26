@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 public class PerfilActivity extends AppCompatActivity {
 
     private TextView textViewNickUsuario, textViewDataEntrada, textViewVicioUsuario, textViewApresentacao;
+    private ImageView imageViewPerfilIcon;
     private TextView textViewNumPosts, textViewNumComentarios, textViewDiasAtivos;
     private View buttonEditarPerfil, buttonConversar;
     private Button buttonMinhasPostagens;
@@ -80,6 +81,7 @@ public class PerfilActivity extends AppCompatActivity {
     }
 
     private void inicializarUI() {
+        imageViewPerfilIcon = findViewById(R.id.imageViewPerfilIcon);
         textViewNickUsuario = findViewById(R.id.textViewNickUsuario);
         textViewDataEntrada = findViewById(R.id.textViewDataEntrada);
         textViewVicioUsuario = findViewById(R.id.textViewVicioUsuario);
@@ -190,6 +192,7 @@ public class PerfilActivity extends AppCompatActivity {
                 if (dataSnapshot.exists()) {
                     Usuario usuario = dataSnapshot.getValue(Usuario.class);
                     if (usuario != null) {
+                        AvatarUtils.carregarAvatar(PerfilActivity.this, imageViewPerfilIcon, usuario.getAvatar());
                         textViewNickUsuario.setText(usuario.getNick());
                         textViewVicioUsuario.setText(usuario.getVicio() != null ? usuario.getVicio() : "Não definido");
                         textViewApresentacao.setText(
@@ -199,13 +202,12 @@ public class PerfilActivity extends AppCompatActivity {
                             long dataEntradaMillis = Long.parseLong(usuario.getDataEntrada());
                             SimpleDateFormat sdf = new SimpleDateFormat("MMMM yyyy", Locale.getDefault());
                             textViewDataEntrada.setText("📅 Membro desde " + sdf.format(new Date(dataEntradaMillis)));
-
-                            long diff = System.currentTimeMillis() - dataEntradaMillis;
-                            long dias = TimeUnit.MILLISECONDS.toDays(diff);
-                            textViewDiasAtivos.setText(String.valueOf(dias > 0 ? dias : 1));
                         } catch (Exception e) {
                             textViewDataEntrada.setText("Data inválida");
                         }
+                        
+                        long diasValidos = dataSnapshot.child("checkins").getChildrenCount();
+                        textViewDiasAtivos.setText(String.valueOf(diasValidos));
                     }
                 }
             }
@@ -228,16 +230,15 @@ public class PerfilActivity extends AppCompatActivity {
             }
         });
 
-        postsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        DatabaseReference comentariosRef = FirebaseDatabase.getInstance().getReference("forum/comentarios");
+        comentariosRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 long commentCount = 0;
-                for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-                    if (postSnapshot.hasChild("comentarios")) {
-                        for (DataSnapshot commentSnapshot : postSnapshot.child("comentarios").getChildren()) {
-                            if (userId.equals(commentSnapshot.child("autor").getValue(String.class))) {
-                                commentCount++;
-                            }
+                for (DataSnapshot postComentarios : snapshot.getChildren()) {
+                    for (DataSnapshot commentSnapshot : postComentarios.getChildren()) {
+                        if (userId.equals(commentSnapshot.child("autor").getValue(String.class))) {
+                            commentCount++;
                         }
                     }
                 }

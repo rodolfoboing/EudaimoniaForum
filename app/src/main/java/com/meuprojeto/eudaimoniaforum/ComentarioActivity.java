@@ -376,12 +376,19 @@ public class ComentarioActivity extends AppCompatActivity {
                 .setTitle("Excluir Postagem")
                 .setMessage("Tem certeza que deseja excluir esta postagem?")
                 .setPositiveButton("Sim", (dialog, which) -> {
-                    DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts")
-                            .child(postId);
-                    postRef.removeValue().addOnSuccessListener(unused -> {
-                        Toast.makeText(ComentarioActivity.this, "Postagem excluída.", Toast.LENGTH_SHORT).show();
-                        finish();
-                    });
+                    java.util.Map<String, Object> childUpdates = new java.util.HashMap<>();
+                    
+                    childUpdates.put("/forum/posts/" + postId, null);
+                    childUpdates.put("/forum/comentarios/" + postId, null);
+                    if (autorDoPostId != null) {
+                        childUpdates.put("/users/" + autorDoPostId + "/posts/" + postId, null);
+                    }
+
+                    FirebaseDatabase.getInstance().getReference().updateChildren(childUpdates)
+                            .addOnSuccessListener(unused -> {
+                                Toast.makeText(ComentarioActivity.this, "Postagem excluída.", Toast.LENGTH_SHORT).show();
+                                finish();
+                            });
                 })
                 .setNegativeButton("Não", null)
                 .show();

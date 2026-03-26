@@ -40,10 +40,34 @@ public class LoginActivity extends AppCompatActivity {
         android.util.Log.d("LoginActivity", "onCreate() chamado. Inicializando LoginActivity.");
 
         // Verificar se o usuário já está logado
-        if (FirebaseAuth.getInstance().getCurrentUser() != null) {
-            Log.d(TAG, "Usuário já está logado. Redirecionando para MainActivity.");
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
+        FirebaseUser autoLoginUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (autoLoginUser != null) {
+            Log.d(TAG, "Usuário já está logado. Verificando perfil...");
+            DatabaseReference autoRef = FirebaseDatabase.getInstance().getReference("users").child(autoLoginUser.getUid());
+            autoRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    Boolean configurado = snapshot.child("perfilConfigurado").getValue(Boolean.class);
+                    // Usuários antigos que já têm dados no banco (sobreMim, checkins, etc.)
+                    // são considerados já configurados automaticamente
+                    boolean isUsuarioAntigo = snapshot.child("sobreMim").exists()
+                            || snapshot.child("checkins").exists()
+                            || snapshot.child("conquistas").exists();
+
+                    if ((configurado != null && configurado) || isUsuarioAntigo) {
+                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    } else {
+                        startActivity(new Intent(LoginActivity.this, SetupPerfilActivity.class));
+                    }
+                    finish();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    finish();
+                }
+            });
             return;
         }
 
@@ -130,9 +154,34 @@ public class LoginActivity extends AppCompatActivity {
             DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
             userRef.child("lastLoginTimestamp").setValue(System.currentTimeMillis());
 
-            Toast.makeText(this, "Login bem-sucedido!", Toast.LENGTH_SHORT).show();
-            startActivity(new Intent(this, MainActivity.class));
-            finish();
+            // Verifica se o perfil foi configurado
+            userRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    Boolean configurado = snapshot.child("perfilConfigurado").getValue(Boolean.class);
+                    boolean isUsuarioAntigo = snapshot.child("sobreMim").exists()
+                            || snapshot.child("checkins").exists()
+                            || snapshot.child("conquistas").exists();
+
+                    if ((configurado != null && configurado) || isUsuarioAntigo) {
+                        Toast.makeText(LoginActivity.this, "Login bem-sucedido!", Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    } else {
+                        Toast.makeText(LoginActivity.this, "Configure seu perfil!", Toast.LENGTH_SHORT).show();
+                        Intent intent = new Intent(LoginActivity.this, SetupPerfilActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                    }
+                    finish();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Toast.makeText(LoginActivity.this, "Login bem-sucedido!", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(LoginActivity.this, MainActivity.class));
+                    finish();
+                }
+            });
         }
     }
 }

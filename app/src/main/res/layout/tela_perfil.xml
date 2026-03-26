@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -123,11 +124,16 @@
 
                     <TextView
                         android:id="@+id/textViewNumPosts"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:lines="1"
+                        android:maxLines="1"
+                        app:autoSizeTextType="uniform"
+                        app:autoSizeMinTextSize="12sp"
+                        app:autoSizeMaxTextSize="20sp"
                         android:text="0"
                         android:textColor="#3F51B5"
-                        android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -153,11 +159,16 @@
 
                     <TextView
                         android:id="@+id/textViewNumComentarios"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:lines="1"
+                        android:maxLines="1"
+                        app:autoSizeTextType="uniform"
+                        app:autoSizeMinTextSize="12sp"
+                        app:autoSizeMaxTextSize="20sp"
                         android:text="0"
                         android:textColor="#4CAF50"
-                        android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -183,17 +194,22 @@
 
                     <TextView
                         android:id="@+id/textViewDiasAtivos"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:lines="1"
+                        android:maxLines="1"
+                        app:autoSizeTextType="uniform"
+                        app:autoSizeMinTextSize="12sp"
+                        app:autoSizeMaxTextSize="20sp"
                         android:text="0"
                         android:textColor="#FF9800"
-                        android:textSize="20sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Dias"
+                        android:text="Check-ins"
                         android:textColor="#757575"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -383,7 +399,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:text="Editar"
+                    android:text="Editar/Excluir"
                     android:textColor="#FFFFFF"
                     android:textSize="15sp"
                     android:textStyle="bold" />

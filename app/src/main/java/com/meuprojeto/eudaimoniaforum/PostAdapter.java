@@ -70,6 +70,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         holder.textViewTituloPost.setText(post.getTitulo());
         holder.textViewResumoPost.setText(post.getResumo());
 
+        String categoria = post.getCategoria();
+        if (categoria != null && !categoria.isEmpty()) {
+            holder.textViewCategoria.setVisibility(View.VISIBLE);
+            holder.textViewCategoria.setText(categoria);
+        } else {
+            holder.textViewCategoria.setVisibility(View.GONE);
+        }
+
         holder.textViewAutor.setOnClickListener(v -> {
             if (post.getAutor() != null) {
                 Intent intent = new Intent(context, VisualizarPerfilActivity.class);
@@ -179,6 +187,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                                 }
                                 return true;
                             } else if (id == R.id.action_denunciar) {
+                                android.util.Log.d("PostAdapter", "Iniciando denúncia para o post: " + post.getId());
                                 Intent intent = new Intent(context, DenunciaActivity.class);
                                 intent.putExtra("POST_ID", post.getId());
                                 context.startActivity(intent);
@@ -188,10 +197,26 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                                         .setTitle("Excluir Postagem")
                                         .setMessage("Tem certeza que deseja excluir esta postagem?")
                                         .setPositiveButton("Sim", (dialog, which) -> {
-                                            DatabaseReference postRef = FirebaseDatabase.getInstance()
-                                                    .getReference("forum/posts").child(post.getId());
-                                            postRef.removeValue();
-                                            Toast.makeText(context, "Postagem excluída", Toast.LENGTH_SHORT).show();
+                                            String postId = post.getId();
+                                            String autorId = post.getAutor();
+                                            Map<String, Object> childUpdates = new java.util.HashMap<>();
+
+                                            childUpdates.put("/forum/posts/" + postId, null);
+                                            childUpdates.put("/forum/comentarios/" + postId, null);
+                                            if (autorId != null) {
+                                                childUpdates.put("/users/" + autorId + "/posts/" + postId, null);
+                                            }
+
+                                            android.util.Log.d("PostAdapter", "Executando exclusão atômica do post: " + postId);
+
+                                            FirebaseDatabase.getInstance().getReference().updateChildren(childUpdates)
+                                                    .addOnSuccessListener(aVoid -> {
+                                                        android.util.Log.d("PostAdapter", "Postagem excluída com sucesso: " + postId);
+                                                        Toast.makeText(context, "Postagem excluída", Toast.LENGTH_SHORT).show();
+                                                    })
+                                                    .addOnFailureListener(e -> {
+                                                        android.util.Log.e("PostAdapter", "Erro ao excluir postagem: " + postId, e);
+                                                    });
                                         })
                                         .setNegativeButton("Não", null)
                                         .show();
@@ -218,7 +243,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
     }
 
     static class PostViewHolder extends RecyclerView.ViewHolder {
-        TextView textViewTituloPost, textViewResumoPost, textViewComentarios, textViewAutor, textViewData;
+        TextView textViewTituloPost, textViewResumoPost, textViewComentarios, textViewAutor, textViewData, textViewCategoria;
         Button buttonAddComment;
         ImageView iconMenuOpcoes;
 
@@ -230,6 +255,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
             buttonAddComment = itemView.findViewById(R.id.buttonAddComment);
             textViewAutor = itemView.findViewById(R.id.textViewAutor);
             textViewData = itemView.findViewById(R.id.textViewData);
+            textViewCategoria = itemView.findViewById(R.id.textViewCategoria);
             iconMenuOpcoes = itemView.findViewById(R.id.iconMenuOpcoes);
         }
     }

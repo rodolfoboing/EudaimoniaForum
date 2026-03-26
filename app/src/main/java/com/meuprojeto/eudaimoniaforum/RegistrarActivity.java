@@ -1,6 +1,7 @@
 package com.meuprojeto.eudaimoniaforum;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ArrayAdapter;
@@ -210,6 +211,10 @@ public class RegistrarActivity extends AppCompatActivity {
 
     private void updateUI(FirebaseUser user) {
         if (user != null) {
+            // Redireciona para a tela de setup de perfil (avatar, nick, sobre mim)
+            Intent intent = new Intent(this, SetupPerfilActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
             finish();
         }
     }

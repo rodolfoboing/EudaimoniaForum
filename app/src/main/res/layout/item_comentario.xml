@@ -44,16 +44,15 @@
             android:textColor="#9E9E9E" />
 
         <ImageView
-            android:id="@+id/btnExcluirComentario"
+            android:id="@+id/btnOpcoesComentario"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@android:drawable/ic_menu_delete"
-            android:contentDescription="Excluir comentário"
+            android:src="@android:drawable/ic_menu_more"
+            android:contentDescription="Opções do comentário"
             android:background="?attr/selectableItemBackgroundBorderless"
             app:tint="#B0BEC5"
             android:clickable="true"
-            android:focusable="true"
-            android:visibility="gone" />
+            android:focusable="true" />
 
     </LinearLayout>
 

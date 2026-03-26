@@ -31,6 +31,8 @@ public class EditarPerfilActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
     private DatabaseReference userRef;
     private String nickOriginal;
+    private String avatarOriginal;
+    private String avatarEscolhido;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +52,7 @@ public class EditarPerfilActivity extends AppCompatActivity {
         if (currentUser != null) {
             String userId = currentUser.getUid();
             userRef = FirebaseDatabase.getInstance().getReference("users").child(userId);
+            configurarAvatares();
             carregarDadosAtuais();
         } else {
             Toast.makeText(this, "Erro: Usuário não autenticado!", Toast.LENGTH_SHORT).show();
@@ -146,9 +149,67 @@ public class EditarPerfilActivity extends AppCompatActivity {
     }
 
     private void carregarDadosAtuais() {
-        userRef.child("nick").get().addOnSuccessListener(snapshot -> {
-            nickOriginal = snapshot.getValue(String.class);
+        userRef.get().addOnSuccessListener(snapshot -> {
+            if (snapshot.exists()) {
+                Usuario usuario = snapshot.getValue(Usuario.class);
+                if (usuario != null) {
+                    nickOriginal = usuario.getNick();
+                    avatarOriginal = usuario.getAvatar();
+                    avatarEscolhido = avatarOriginal;
+                    destacarAvatarEscolhido(avatarEscolhido);
+                }
+            }
         });
+    }
+
+    private void configurarAvatares() {
+        android.widget.LinearLayout layoutAvatares = findViewById(R.id.layoutAvatares);
+        for (int i = 1; i <= AvatarUtils.TOTAL_AVATARES; i++) {
+            final String nomeIcone = "ic_avatar_" + i;
+
+            final android.widget.ImageView imgView = new android.widget.ImageView(this);
+            int tamanho = (int) (65 * getResources().getDisplayMetrics().density);
+            int margin = (int) (4 * getResources().getDisplayMetrics().density);
+            android.widget.LinearLayout.LayoutParams params = new android.widget.LinearLayout.LayoutParams(tamanho, tamanho);
+            params.setMargins(margin, margin, margin, margin);
+            imgView.setLayoutParams(params);
+
+            int padding = (int) (12 * getResources().getDisplayMetrics().density);
+            imgView.setPadding(padding, padding, padding, padding);
+
+            int resId = AvatarUtils.getAvatarDrawableId(this, nomeIcone);
+            imgView.setImageResource(resId);
+            imgView.setTag(nomeIcone);
+
+            // Borda circular ou background normal
+            imgView.setBackgroundResource(R.drawable.profile_circle_background);
+            imgView.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+
+            imgView.setOnClickListener(v -> {
+                avatarEscolhido = nomeIcone;
+                destacarAvatarEscolhido(nomeIcone);
+            });
+
+            layoutAvatares.addView(imgView);
+        }
+    }
+
+    private void destacarAvatarEscolhido(String avatarId) {
+        if (avatarId == null) return;
+        android.widget.LinearLayout layoutAvatares = findViewById(R.id.layoutAvatares);
+        for (int i = 0; i < layoutAvatares.getChildCount(); i++) {
+            android.view.View view = layoutAvatares.getChildAt(i);
+            if (view instanceof android.widget.ImageView) {
+                android.widget.ImageView img = (android.widget.ImageView) view;
+                if (avatarId.equals(img.getTag())) {
+                    img.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.parseColor("#E0F7FA"))); 
+                    img.setElevation(4f);
+                } else {
+                    img.setBackgroundTintList(android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE));
+                    img.setElevation(0f);
+                }
+            }
+        }
     }
 
     private void salvarAlteracoes() {
@@ -160,7 +221,8 @@ public class EditarPerfilActivity extends AppCompatActivity {
         String senhaAtual = editTextSenhaAtual.getText().toString().trim();
 
         // Verifica se ao menos uma alteração foi solicitada
-        if (TextUtils.isEmpty(novoNick) && TextUtils.isEmpty(novaApresentacao) && TextUtils.isEmpty(novaSenha)) {
+        boolean avatarMudou = avatarEscolhido != null && !avatarEscolhido.equals(avatarOriginal);
+        if (TextUtils.isEmpty(novoNick) && TextUtils.isEmpty(novaApresentacao) && TextUtils.isEmpty(novaSenha) && !avatarMudou) {
             Toast.makeText(this, "Nenhuma alteração solicitada.", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -221,6 +283,11 @@ public class EditarPerfilActivity extends AppCompatActivity {
         // Atualiza apresentação (sobreMim) SOMENTE se houver texto digitado
         if (!TextUtils.isEmpty(apresentacaoFinal)) {
             updates.put("users/" + user.getUid() + "/sobreMim", apresentacaoFinal);
+        }
+
+        // Atualiza o avatar
+        if (avatarEscolhido != null && !avatarEscolhido.equals(avatarOriginal)) {
+            updates.put("users/" + user.getUid() + "/avatar", avatarEscolhido);
         }
 
         if (!updates.isEmpty()) {

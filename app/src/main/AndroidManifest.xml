@@ -48,6 +48,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".RegistrarActivity" />
+        <activity android:name=".SetupPerfilActivity" />
         <activity android:name=".EditarAbstinenciaActivity" />
         <activity android:name=".PerfilActivity" />
         <activity android:name=".ForumActivity" />

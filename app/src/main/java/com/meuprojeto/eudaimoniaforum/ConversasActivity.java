@@ -236,6 +236,10 @@ public class ConversasActivity extends AppCompatActivity {
                         .toDays(System.currentTimeMillis() - (lastLogin != null ? lastLogin : 0));
                 conversa.setOtherUserStatus(daysSinceLogin < 10);
 
+                if (conversa.getOtherUserNick() == null) {
+                    conversa.setOtherUserNick("Usuário Desconhecido");
+                }
+
                 addOrUpdateConversa(conversa);
             }
 
@@ -248,6 +252,10 @@ public class ConversasActivity extends AppCompatActivity {
     }
 
     private void addOrUpdateConversa(Conversa novaConversa) {
+        if (novaConversa == null || novaConversa.getChatId() == null || novaConversa.getOtherUserId() == null) {
+            return;
+        }
+
         // Verifica se já existe na lista para atualizar
         int index = -1;
         for (int i = 0; i < conversasList.size(); i++) {

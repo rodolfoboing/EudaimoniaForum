@@ -45,7 +45,11 @@ public class DenunciaAdapter extends RecyclerView.Adapter<DenunciaAdapter.Denunc
 
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
         holder.textData.setText(sdf.format(new Date(denuncia.getTimestamp())));
-        holder.textPostId.setText("Post ID: " + denuncia.getPostId());
+        if ("comentario".equals(denuncia.getTipo()) && denuncia.getComentarioId() != null) {
+            holder.textPostId.setText("Comentário ID: " + denuncia.getComentarioId() + "\n(Post: " + denuncia.getPostId() + ")");
+        } else {
+            holder.textPostId.setText("Post ID: " + denuncia.getPostId());
+        }
 
         holder.btnVerPostBotao.setOnClickListener(v -> {
             Intent intent = new Intent(context, ComentarioActivity.class);
@@ -54,6 +58,7 @@ public class DenunciaAdapter extends RecyclerView.Adapter<DenunciaAdapter.Denunc
         });
 
         holder.btnResolver.setOnClickListener(v -> {
+            android.util.Log.d("DenunciaAdapter", "Moderador marcando denúncia como resolvida: " + denuncia.getId());
             DatabaseReference ref = FirebaseDatabase.getInstance().getReference("denuncias").child(denuncia.getId());
             ref.child("status").setValue("resolvido").addOnSuccessListener(aVoid -> {
                 Toast.makeText(context, "Denúncia marcada como resolvida", Toast.LENGTH_SHORT).show();
@@ -62,15 +67,25 @@ public class DenunciaAdapter extends RecyclerView.Adapter<DenunciaAdapter.Denunc
         });
 
         holder.btnApagarPost.setOnClickListener(v -> {
-            // Lógica para apagar o post denunciado (como moderador)
-            DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts")
-                    .child(denuncia.getPostId());
-            postRef.removeValue().addOnSuccessListener(aVoid -> {
-                Toast.makeText(context, "Post apagado!", Toast.LENGTH_SHORT).show();
-                // Marca denúncia como resolvida também
-                FirebaseDatabase.getInstance().getReference("denuncias").child(denuncia.getId()).child("status")
-                        .setValue("resolvido");
-            });
+            if ("comentario".equals(denuncia.getTipo()) && denuncia.getComentarioId() != null) {
+                android.util.Log.w("DenunciaAdapter", "Moderador apagando comentário ofensor: " + denuncia.getComentarioId());
+                DatabaseReference comRef = FirebaseDatabase.getInstance().getReference("forum/comentarios")
+                        .child(denuncia.getPostId()).child(denuncia.getComentarioId());
+                comRef.removeValue().addOnSuccessListener(aVoid -> {
+                    Toast.makeText(context, "Comentário apagado!", Toast.LENGTH_SHORT).show();
+                    FirebaseDatabase.getInstance().getReference("denuncias").child(denuncia.getId()).child("status")
+                            .setValue("resolvido");
+                });
+            } else {
+                android.util.Log.w("DenunciaAdapter", "Moderador apagando post ofensor: " + denuncia.getPostId());
+                DatabaseReference postRef = FirebaseDatabase.getInstance().getReference("forum/posts")
+                        .child(denuncia.getPostId());
+                postRef.removeValue().addOnSuccessListener(aVoid -> {
+                    Toast.makeText(context, "Post apagado!", Toast.LENGTH_SHORT).show();
+                    FirebaseDatabase.getInstance().getReference("denuncias").child(denuncia.getId()).child("status")
+                            .setValue("resolvido");
+                });
+            }
         });
     }
 

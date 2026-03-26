@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="25dp"
+    android:paddingEnd="25dp"
+    android:paddingTop="20dp"
+    android:paddingBottom="5dp">
+
+    <TextView
+        android:id="@+id/textFeedbackMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Para dúvidas, sugestões ou suporte, envie um e-mail para:\n\nrodolfo.bm.reserva@gmail.com"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:autoLink="email"
+        android:linksClickable="true"/>
+
+    <Button
+        android:id="@+id/buttonPrivacyPolicy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Política de Privacidade"
+        android:backgroundTint="#E0E0E0"
+        android:textColor="@android:color/black"/>
+
+</LinearLayout>

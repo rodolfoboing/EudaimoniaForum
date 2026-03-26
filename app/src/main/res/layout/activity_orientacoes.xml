@@ -45,7 +45,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="O contador na tela principal marca seu tempo de abstinência. \n\n• Use 'Novo Registro' para zerar o contador se infelizmente tiver uma recaída.\n• Use 'Editar' para ajustar a data exata se precisar corrigir.\n• Defina seu 'Vício' para manter o foco."
+                    android:text="O contador na tela principal marca seus dias reais de abstinência.\n\n• Use 'Novo Registro' para recomeçar o contador caso tenha uma recaída (isso também zera seu progresso do compromisso diário).\n• Use 'Editar' para ajustar a data exata, se precisar.\n• Defina seu 'Vício' para manter o foco bem claro no topo da tela."
                     android:textSize="15sp"
                     android:textColor="#616161"
                     android:lineSpacingExtra="4dp"/>
@@ -77,7 +77,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="É uma verificação ativa de que você está sóbrio hoje. Ao clicar no botão diariamente, você valida seu progresso real. \n\nIMPORTANTE: Apenas através do check-in diário você libera as Medalhas e Conquistas no seu perfil."
+                    android:text="É uma verificação ativa de que você manteve a sobriedade hoje. Clicar nesse botão atesta que você passou mais um dia limpo.\n\nIMPORTANTE:\n⭐ O seu número de vitórias diárias é estritamente limitado pelo seu contador de abstinência. Não é possível avançar mais rápido do que deve.\n🏆 Apenas fazendo check-ins regulares você conquista medalhas e sobe de nível!"
                     android:textSize="15sp"
                     android:textColor="#616161"
                     android:lineSpacingExtra="4dp"/>
@@ -109,7 +109,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Visite o Fórum para ler relatos, pedir ajuda e interagir nas postagens. Se quiser conversar em particular com alguém, clique no ícone de perfil da pessoa e inicie um chat. Suas conversas ficam na aba 'Conversas'."
+                    android:text="Visite o Fórum para ler os relatos de outras pessoas, pedir ajuda de emergência e interagir livremente.\n\nO Chat (na aba 'Conversas') é rápido e privado. Você ouvirá notificações instantâneas do app caso receba novas mensagens."
                     android:textSize="15sp"
                     android:textColor="#616161"
                     android:lineSpacingExtra="4dp"/>
@@ -173,7 +173,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Sua segurança é prioridade. Veja como se proteger:\n\n• Denunciar Posts: Clique no ícone de alerta ⚠️ em qualquer postagem ofensiva.\n• Bloquear Usuários: Dentro do chat privado, clique no menu superior direito e selecione 'Bloquear'. Você deixará de receber mensagens dessa pessoa."
+                    android:text="Sua segurança emocional aqui é absoluta e não toleramos abusos:\n\n• Denunciar: Clique no ícone à direita de qualquer postagem ou comentário que desrespeite as regras para chamar os moderadores.\n• Bloquear Usuários: Pelo perfil da pessoa ou no próprio chat você pode silenciá-la bloqueando futuras mensagens dela."
                     android:textSize="15sp"
                     android:textColor="#616161"
                     android:lineSpacingExtra="4dp"/>

@@ -136,7 +136,9 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
         android.util.Log.d("EditarAbstinencia", "salvarAlteracoes() chamado: gravando dados localmente e no Firebase.");
         // 1. Salvar nova data de início
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        preferences.edit().putLong(KEY_TEMPO_INICIAL, calendar.getTimeInMillis()).apply();
+        long novoTempo = calendar.getTimeInMillis();
+        preferences.edit().putLong(KEY_TEMPO_INICIAL, novoTempo).apply();
+        android.util.Log.d("EditarAbstinencia", "Novo tempo_inicial salvo: " + novoTempo + " (data: " + new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(calendar.getTime()) + ")");
 
         // 2. Salvar novo vício no Firebase
         String novoVicio = spinnerVicioEdicao.getSelectedItem().toString();

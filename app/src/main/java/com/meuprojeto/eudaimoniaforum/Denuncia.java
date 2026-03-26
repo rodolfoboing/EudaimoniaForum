@@ -8,12 +8,21 @@ public class Denuncia {
     private long timestamp;
     private String status; // "pendente", "resolvido", "ignorado"
 
+    private String tipo; // "post" ou "comentario"
+    private String comentarioId; // Pode ser null se for post
+
     public Denuncia() {
     }
 
     public Denuncia(String id, String postId, String motivo, String denuncianteId, long timestamp) {
+        this(id, postId, null, "post", motivo, denuncianteId, timestamp);
+    }
+    
+    public Denuncia(String id, String postId, String comentarioId, String tipo, String motivo, String denuncianteId, long timestamp) {
         this.id = id;
         this.postId = postId;
+        this.comentarioId = comentarioId;
+        this.tipo = tipo;
         this.motivo = motivo;
         this.denuncianteId = denuncianteId;
         this.timestamp = timestamp;
@@ -67,5 +76,21 @@ public class Denuncia {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
+    public String getComentarioId() {
+        return comentarioId;
+    }
+
+    public void setComentarioId(String comentarioId) {
+        this.comentarioId = comentarioId;
     }
 }

@@ -2,6 +2,7 @@ package com.meuprojeto.eudaimoniaforum;
 
 public class ChatMessage {
 
+    private String id;
     private String messageText;
     private String senderId;
     private String receiverId;
@@ -12,7 +13,8 @@ public class ChatMessage {
         // Construtor vazio para Firebase
     }
 
-    public ChatMessage(String messageText, String senderId, String receiverId, long timestamp) {
+    public ChatMessage(String id, String messageText, String senderId, String receiverId, long timestamp) {
+        this.id = id;
         this.messageText = messageText;
         this.senderId = senderId;
         this.receiverId = receiverId;
@@ -20,7 +22,19 @@ public class ChatMessage {
         this.status = "enviado"; // Por padrão, toda mensagem começa como "enviada"
     }
 
+    public ChatMessage(String messageText, String senderId, String receiverId, long timestamp) {
+        this(null, messageText, senderId, receiverId, timestamp);
+    }
+
     // Getters e Setters
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public String getMessageText() {
         return messageText;
     }

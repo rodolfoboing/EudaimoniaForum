@@ -123,10 +123,7 @@ public class NovoPostActivity extends AppCompatActivity {
         // Caminho 1: Lista Geral de Posts
         childUpdates.put("/forum/posts/" + postId, post);
 
-        // Caminho 2: Índice por Categoria
-        childUpdates.put("/forum/categorias/" + categoria + "/posts/" + postId, post);
-
-        // Caminho 3: Meus Posts (histórico do usuário)
+        // Caminho 2: Meus Posts (histórico do usuário)
         childUpdates.put("/users/" + autor + "/posts/" + postId, true);
 
         // Caminho 4: Atualizar Timestamp do último post (Anti-spam)

@@ -77,24 +77,56 @@ public class ComentarioAdapter extends RecyclerView.Adapter<ComentarioAdapter.Co
         boolean isDonoPost = (donoDoPostId != null && currentUserId != null && donoDoPostId.equals(currentUserId));
         boolean isAutorComentario = (comentario.getAutor() != null && currentUserId != null && comentario.getAutor().equals(currentUserId));
 
-        if (isModerador || isDonoPost || isAutorComentario) {
-            holder.btnExcluir.setVisibility(View.VISIBLE);
-            holder.btnExcluir.setOnClickListener(v -> {
-                DatabaseReference comentarioRef = FirebaseDatabase.getInstance()
-                        .getReference("forum/posts")
-                        .child(comentario.getPostId())
-                        .child("comentarios")
-                        .child(comentario.getId());
-                comentarioRef.removeValue();
-                comentarioList.remove(position);
-                notifyItemRemoved(position);
-                notifyItemRangeChanged(position, comentarioList.size());
-                
-                decrementarNumeroComentarios(comentario.getPostId());
+        holder.btnOpcoes.setOnClickListener(v -> {
+            android.widget.PopupMenu popup = new android.widget.PopupMenu(context, holder.btnOpcoes);
+            
+            boolean podeExcluir = isModerador || isDonoPost || isAutorComentario;
+            boolean podeDenunciar = !isAutorComentario;
+
+            if (podeExcluir) {
+                popup.getMenu().add(0, 1, 0, "Apagar Comentário");
+            }
+            if (podeDenunciar) {
+                popup.getMenu().add(0, 2, 0, "Denunciar");
+            }
+
+            popup.setOnMenuItemClickListener(item -> {
+                if (item.getItemId() == 1) {
+                    new androidx.appcompat.app.AlertDialog.Builder(context)
+                            .setTitle("Excluir Comentário")
+                            .setMessage("Tem certeza que deseja apagar este comentário?")
+                            .setPositiveButton("Sim", (dialog, which) -> {
+                                DatabaseReference comentarioRef = FirebaseDatabase.getInstance()
+                                        .getReference("forum/comentarios")
+                                        .child(comentario.getPostId())
+                                        .child(comentario.getId());
+                                
+                                android.util.Log.d("ComentarioAdapter", "Excluindo comentário: " + comentario.getId() + " do post: " + comentario.getPostId());
+                                
+                                comentarioRef.removeValue();
+                                comentarioList.remove(position);
+                                notifyItemRemoved(position);
+                                notifyItemRangeChanged(position, comentarioList.size());
+                                
+                                decrementarNumeroComentarios(comentario.getPostId());
+                            })
+                            .setNegativeButton("Não", null)
+                            .show();
+                    return true;
+                } else if (item.getItemId() == 2) {
+                    android.util.Log.d("ComentarioAdapter", "Iniciando denúncia para comentário: " + comentario.getId() + " do post: " + comentario.getPostId());
+                    Intent intent = new Intent(context, DenunciaActivity.class);
+                    intent.putExtra("POST_ID", comentario.getPostId());
+                    intent.putExtra("COMENTARIO_ID", comentario.getId());
+                    intent.putExtra("TIPO", "comentario");
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    context.startActivity(intent);
+                    return true;
+                }
+                return false;
             });
-        } else {
-            holder.btnExcluir.setVisibility(View.GONE);
-        }
+            popup.show();
+        });
     }
     
     private void decrementarNumeroComentarios(String postId) {
@@ -114,14 +146,14 @@ public class ComentarioAdapter extends RecyclerView.Adapter<ComentarioAdapter.Co
 
     static class ComentarioViewHolder extends RecyclerView.ViewHolder {
         TextView textViewAutor, textViewConteudo, textViewData;
-        ImageView btnExcluir; 
+        ImageView btnOpcoes;
 
         public ComentarioViewHolder(@NonNull View itemView) {
             super(itemView);
             textViewAutor = itemView.findViewById(R.id.textViewAutorComentario);
             textViewConteudo = itemView.findViewById(R.id.textViewConteudoComentario);
             textViewData = itemView.findViewById(R.id.textViewDataComentario);
-            btnExcluir = itemView.findViewById(R.id.btnExcluirComentario);
+            btnOpcoes = itemView.findViewById(R.id.btnOpcoesComentario);
         }
     }
 }

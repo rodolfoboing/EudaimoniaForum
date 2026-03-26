@@ -11,6 +11,22 @@
     android:layout_marginTop="2dp"
     android:layout_marginBottom="2dp">
 
+    <TextView
+        android:id="@+id/textViewCategoria"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Categoria"
+        android:textSize="10sp"
+        android:textColor="#FFFFFF"
+        android:background="#2196F3"
+        android:paddingStart="8dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:layout_marginBottom="4dp"
+        android:textStyle="bold"
+        android:backgroundTint="#2196F3" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -61,14 +77,20 @@
 
         <TextView
             android:id="@+id/textViewAutor"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="Autor: Nome"
             android:textSize="11sp"
             android:textColor="#757575"
             android:maxLines="1"
-            android:ellipsize="end" />
+            android:ellipsize="end"
+            android:background="?attr/selectableItemBackground"
+            android:paddingEnd="8dp" />
+
+        <Space
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" />
 
         <TextView
             android:id="@+id/textViewData"

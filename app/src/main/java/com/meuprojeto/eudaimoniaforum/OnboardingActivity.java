@@ -69,27 +69,27 @@ public class OnboardingActivity extends AppCompatActivity {
         onboardingItems.add(new OnboardingItem(
                 R.drawable.ic_eudaimoniaforum, // App logo
                 "Bem-vindo ao Eudaimonia",
-                "Seu espaço para recuperação e crescimento pessoal.\n\nAqui você encontra um Fórum de apoio, Chat privado e ferramentas para superar vícios."));
+                "Seu espaço para recuperação e crescimento pessoal.\n\nAqui você encontra um Fórum de apoio, Chat Privado, Contador de Abstinência e Sistema de Conquistas para superar vícios."));
 
         onboardingItems.add(new OnboardingItem(
                 android.R.drawable.ic_menu_edit,
-                "Seu Contador e Conquistas",
-                "Na tela principal, defina o vício que deseja superar.\n\nUse 'Novo Registro' para iniciar/reiniciar, e 'Editar' para ajustar a data se necessário."));
+                "Seu Contador de Abstinência",
+                "Na tela principal, defina o vício que deseja superar.\n\nSe recair, use 'Novo Registro' para recomeçar: seu cronômetro e seus compromissos diários zeram juntos, sempre!"));
 
         onboardingItems.add(new OnboardingItem(
                 android.R.drawable.checkbox_on_background,
                 "Compromisso Diário",
-                "Clique no botão 'Compromisso Diário' todos os dias para reafirmar sua sobriedade.\n\nEssa ação valida seu progresso e desbloqueia Medalhas e Conquistas no seu perfil!"));
+                "Clique no '✅ Compromisso Diário' todo dia para gerar vitórias contínuas (⭐).\n\nO número de estrelas acompanha e valida seu tempo real, lhe garantindo as tão sonhadas Medalhas!"));
 
         onboardingItems.add(new OnboardingItem(
                 android.R.drawable.ic_dialog_email,
-                "Comunidade e Chat",
-                "Acesse o Fórum para compartilhar, ajudar e ser ajudado.\n\nUse a aba 'Conversas' no rodapé para trocar mensagens privadas de incentivo com outros membros."));
+                "Fórum e Chat Privado",
+                "Use o Fórum para suporte coletivo e 'Conversas' para pedir ajuda em particular a alguém."));
 
         onboardingItems.add(new OnboardingItem(
                 android.R.drawable.ic_menu_myplaces,
-                "Menu e Perfil",
-                "Acesse o Menu inferior para ver seu Perfil, acompanhar suas estatísticas e encontrar mais orientações.\n\nEstamos juntos nessa jornada!"));
+                "Segurança e Moderação",
+                "Nossa comunidade virtual é blindada.\n\nVocê é encorajado a nos ajudar: denuncie posts ou comentários nocivos nos botões ao lado direito de cada Post ou Comentário e Bloqueie contas incômodas no seu próprio Chat."));
 
         onboardingAdapter = new OnboardingAdapter(onboardingItems);
         viewPagerOnboarding.setAdapter(onboardingAdapter);

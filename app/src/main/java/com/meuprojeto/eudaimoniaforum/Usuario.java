@@ -15,6 +15,8 @@ public class Usuario {
     private java.util.Map<String, Boolean> posts;
     private java.util.Map<String, Boolean> conquistas;
     private Integer streakAtual;
+    private String avatar;
+    private Boolean perfilConfigurado;
 
     public Usuario() {
         // Construtor vazio para o Firebase
@@ -141,5 +143,21 @@ public class Usuario {
 
     public void setStreakAtual(Integer streakAtual) {
         this.streakAtual = streakAtual;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public Boolean getPerfilConfigurado() {
+        return perfilConfigurado;
+    }
+
+    public void setPerfilConfigurado(Boolean perfilConfigurado) {
+        this.perfilConfigurado = perfilConfigurado;
     }
 }

@@ -172,13 +172,13 @@ public class ForumActivity extends AppCompatActivity {
         }
 
         // DEFINIÇÃO DO CAMINHO (Otimização de Custo):
-        // Se selecionou categoria, busca direto no nó da categoria.
-        // Se selecionou "Todos", busca na raiz de posts.
+        // Se selecionou categoria, filtra os posts pela categoria.
+        // Se selecionou "Todos", busca todos os posts recentes.
+        DatabaseReference postsRef = FirebaseDatabase.getInstance().getReference("forum/posts");
         if (categoriaSelecionada.equals("Todos")) {
-            postsQuery = FirebaseDatabase.getInstance().getReference("forum/posts").limitToLast(100);
+            postsQuery = postsRef.limitToLast(100);
         } else {
-            postsQuery = FirebaseDatabase.getInstance().getReference("forum/categorias")
-                    .child(categoriaSelecionada).child("posts").limitToLast(100);
+            postsQuery = postsRef.orderByChild("categoria").equalTo(categoriaSelecionada).limitToLast(100);
         }
 
         postsListener = new ValueEventListener() {

@@ -24,8 +24,10 @@ import java.util.concurrent.TimeUnit;
 public class VisualizarPerfilActivity extends AppCompatActivity {
 
     private TextView textViewNickUsuario, textViewDataEntrada, textViewVicioUsuario, textViewApresentacao;
+    private android.widget.ImageView imageViewPerfilIcon;
     private TextView textViewNumPosts, textViewNumComentarios, textViewDiasAtivos;
     private View buttonEditarPerfil, buttonConversar;
+    private android.widget.Button buttonMinhasPostagens;
     private android.widget.LinearLayout layoutBadges;
 
     private DatabaseReference userRef;
@@ -70,9 +72,17 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
         buttonEditarPerfil.setOnClickListener(v -> {
             startActivity(new Intent(this, EditarPerfilActivity.class));
         });
+
+        buttonMinhasPostagens.setText("Postagens do Usuário");
+        buttonMinhasPostagens.setOnClickListener(v -> {
+            Intent intent = new Intent(VisualizarPerfilActivity.this, MinhasPostagensActivity.class);
+            intent.putExtra("USER_ID", userId);
+            startActivity(intent);
+        });
     }
 
     private void inicializarUI() {
+        imageViewPerfilIcon = findViewById(R.id.imageViewPerfilIcon);
         textViewNickUsuario = findViewById(R.id.textViewNickUsuario);
         textViewDataEntrada = findViewById(R.id.textViewDataEntrada);
         textViewVicioUsuario = findViewById(R.id.textViewVicioUsuario);
@@ -82,6 +92,7 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
         textViewDiasAtivos = findViewById(R.id.textViewDiasAtivos);
         buttonEditarPerfil = findViewById(R.id.buttonEditarPerfil);
         buttonConversar = findViewById(R.id.buttonConversar);
+        buttonMinhasPostagens = findViewById(R.id.buttonMinhasPostagens);
         layoutBadges = findViewById(R.id.layoutBadges);
     }
 
@@ -92,6 +103,7 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
                 if (dataSnapshot.exists()) {
                     Usuario usuario = dataSnapshot.getValue(Usuario.class);
                     if (usuario != null) {
+                        AvatarUtils.carregarAvatar(VisualizarPerfilActivity.this, imageViewPerfilIcon, usuario.getAvatar());
                         textViewNickUsuario.setText(usuario.getNick());
                         textViewVicioUsuario.setText(usuario.getVicio() != null ? usuario.getVicio() : "Não definido");
                         textViewApresentacao.setText(
@@ -103,12 +115,12 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
                             textViewDataEntrada
                                     .setText("📅 Membro desde " + sdf.format(new java.util.Date(dataEntradaMillis)));
 
-                            long diff = System.currentTimeMillis() - dataEntradaMillis;
-                            long dias = TimeUnit.MILLISECONDS.toDays(diff);
-                            textViewDiasAtivos.setText(String.valueOf(dias > 0 ? dias : 1));
                         } catch (NumberFormatException e) {
                             textViewDataEntrada.setText("Data inválida");
                         }
+
+                        long diasValidos = dataSnapshot.child("checkins").getChildrenCount();
+                        textViewDiasAtivos.setText(String.valueOf(diasValidos));
                     }
                 }
             }
@@ -130,16 +142,15 @@ public class VisualizarPerfilActivity extends AppCompatActivity {
             }
         });
 
-        postsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        DatabaseReference comentariosRef = FirebaseDatabase.getInstance().getReference("forum/comentarios");
+        comentariosRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 long commentCount = 0;
-                for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-                    if (postSnapshot.hasChild("comentarios")) {
-                        for (DataSnapshot commentSnapshot : postSnapshot.child("comentarios").getChildren()) {
-                            if (userId.equals(commentSnapshot.child("autor").getValue(String.class))) {
-                                commentCount++;
-                            }
+                for (DataSnapshot postComentarios : snapshot.getChildren()) {
+                    for (DataSnapshot commentSnapshot : postComentarios.getChildren()) {
+                        if (userId.equals(commentSnapshot.child("autor").getValue(String.class))) {
+                            commentCount++;
                         }
                     }
                 }

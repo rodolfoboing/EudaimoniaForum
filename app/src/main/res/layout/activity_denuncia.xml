@@ -32,6 +32,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Detalhes adicionais (opcional)"
+        android:textColorHint="#757575"
+        android:textColor="#212121"
         android:minHeight="100dp"
         android:gravity="top"
         android:background="@android:drawable/edit_text"

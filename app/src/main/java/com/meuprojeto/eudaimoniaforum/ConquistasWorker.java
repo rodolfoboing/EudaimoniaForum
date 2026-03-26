@@ -34,44 +34,78 @@ public class ConquistasWorker extends Worker {
 
     private void verificarMarcosDeAbstinencia() {
         SharedPreferences preferences = getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-        long tempoInicial = preferences.getLong(KEY_TEMPO_INICIAL, 0);
 
+        // Calcula os dias REAIS de abstinência pelo cronômetro (tempo_inicial)
+        long tempoInicial = preferences.getLong(KEY_TEMPO_INICIAL, 0);
         if (tempoInicial == 0) {
+            android.util.Log.d("ConquistasWorker", "tempo_inicial não encontrado. Abortando.");
             return;
         }
 
-        long diferenca = System.currentTimeMillis() - tempoInicial;
-        long diasDeAbstinencia = TimeUnit.MILLISECONDS.toDays(diferenca);
+        int diasDeAbstinencia = (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - tempoInicial);
+        android.util.Log.d("ConquistasWorker", "Dias reais de abstinência: " + diasDeAbstinencia);
 
-        // Conquista de 1 dia
+        if (diasDeAbstinencia <= 0) {
+            return;
+        }
+
+        // Notificações de parabenização por tempo de abstinência (NÃO geram conquistas!)
+        // Apenas mandam notificação push local para motivar o usuário.
+
+        // 1 dia
         if (diasDeAbstinencia >= 1 && !preferences.getBoolean("milestone_1_day_shown", false)) {
-            exibirNotificacaoLocal("1 Dia de Abstinência", "Parabéns! Você atingiu 1 dia de abstinência!");
+            exibirNotificacaoLocal("🎉 1 Dia de Abstinência!",
+                    "Parabéns! Você completou seu primeiro dia livre. O começo é o passo mais importante!");
             preferences.edit().putBoolean("milestone_1_day_shown", true).apply();
         }
 
-        // Conquista de 3 dias
+        // 3 dias
         if (diasDeAbstinencia >= 3 && !preferences.getBoolean("milestone_3_days_shown", false)) {
-            exibirNotificacaoLocal("3 Dias de Abstinência", "Força! Você já superou os 3 primeiros dias!");
+            exibirNotificacaoLocal("💪 3 Dias de Abstinência!",
+                    "Força! Você já superou os 3 primeiros dias. Continue firme!");
             preferences.edit().putBoolean("milestone_3_days_shown", true).apply();
         }
 
-        // Conquista de 1 semana (7 dias)
+        // 1 semana (7 dias)
         if (diasDeAbstinencia >= 7 && !preferences.getBoolean("milestone_7_days_shown", false)) {
-            exibirNotificacaoLocal("1 Semana de Abstinência", "Você completou uma semana! Continue firme!");
+            exibirNotificacaoLocal("⭐ 1 Semana de Abstinência!",
+                    "Incrível! Uma semana inteira livre. Sua disciplina está se fortalecendo!");
             preferences.edit().putBoolean("milestone_7_days_shown", true).apply();
         }
 
-        // Conquista de 1 mês (30 dias)
+        // 1 mês (30 dias)
         if (diasDeAbstinencia >= 30 && !preferences.getBoolean("milestone_30_days_shown", false)) {
-            exibirNotificacaoLocal("1 Mês de Abstinência", "Incrível! Você atingiu 1 mês de abstinência!");
+            exibirNotificacaoLocal("🏅 1 Mês de Abstinência!",
+                    "Um mês completo! Você está provando que é mais forte que qualquer vício.");
             preferences.edit().putBoolean("milestone_30_days_shown", true).apply();
+        }
+
+        // 3 meses (90 dias)
+        if (diasDeAbstinencia >= 90 && !preferences.getBoolean("milestone_90_days_shown", false)) {
+            exibirNotificacaoLocal("🔥 3 Meses de Abstinência!",
+                    "90 dias! Seu comprometimento é inspirador. A mudança já é real!");
+            preferences.edit().putBoolean("milestone_90_days_shown", true).apply();
+        }
+
+        // 6 meses (180 dias)
+        if (diasDeAbstinencia >= 180 && !preferences.getBoolean("milestone_180_days_shown", false)) {
+            exibirNotificacaoLocal("💎 6 Meses de Abstinência!",
+                    "Meio ano livre! Você é um exemplo de perseverança e força interior.");
+            preferences.edit().putBoolean("milestone_180_days_shown", true).apply();
+        }
+
+        // 1 ano (365 dias)
+        if (diasDeAbstinencia >= 365 && !preferences.getBoolean("milestone_365_days_shown", false)) {
+            exibirNotificacaoLocal("🏆 1 Ano de Abstinência!",
+                    "UM ANO INTEIRO! Você venceu uma das batalhas mais difíceis da vida. Orgulhe-se!");
+            preferences.edit().putBoolean("milestone_365_days_shown", true).apply();
         }
     }
 
     private void exibirNotificacaoLocal(String titulo, String mensagem) {
         Context context = getApplicationContext();
         String canalId = "conquistas_notificacoes";
-        String canalNome = "Notificações de Conquistas";
+        String canalNome = "Notificações de Abstinência";
 
         NotificationManager notificationManager = (NotificationManager) context
                 .getSystemService(Context.NOTIFICATION_SERVICE);
@@ -79,6 +113,7 @@ public class ConquistasWorker extends Worker {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel canal = new NotificationChannel(canalId, canalNome,
                     NotificationManager.IMPORTANCE_HIGH);
+            canal.setDescription("Notificações de marcos de tempo de abstinência");
             notificationManager.createNotificationChannel(canal);
         }
 
@@ -92,6 +127,7 @@ public class ConquistasWorker extends Worker {
                 .setSmallIcon(R.drawable.ic_eudaimoniaforum)
                 .setContentTitle(titulo)
                 .setContentText(mensagem)
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(mensagem))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true);
