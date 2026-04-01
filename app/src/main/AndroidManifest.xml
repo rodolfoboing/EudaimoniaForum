@@ -17,29 +17,29 @@
         tools:targetApi="31">
 
         <!-- Activities Novas -->
-        <activity android:name=".ChatActivity" />
-        <activity android:name=".ConversasActivity" />
-        <activity android:name=".RecuperarSenhaActivity" />
-        <activity android:name=".MinhasPostagensActivity" />
+        <activity android:name=".chat.ChatActivity" />
+        <activity android:name=".chat.ConversasActivity" />
+        <activity android:name=".auth.RecuperarSenhaActivity" />
+        <activity android:name=".forum.MinhasPostagensActivity" />
 
         <activity
-            android:name=".NotificacaoActivity"
+            android:name=".notification.NotificacaoActivity"
             android:exported="false" />
         <activity
-            android:name=".ComentarioActivity"
+            android:name=".forum.ComentarioActivity"
             android:exported="false" />
         <activity
-            android:name=".SplashActivity"
+            android:name=".onboarding.SplashActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".VisualizarPerfilActivity" />
-        <activity android:name=".LoginActivity" />
+        <activity android:name=".perfil.VisualizarPerfilActivity" />
+        <activity android:name=".auth.LoginActivity" />
         <activity
-            android:name=".MainActivity"
+            android:name=".main.MainActivity"
             android:exported="true"
             android:launchMode="singleTop">
             <intent-filter>
@@ -47,15 +47,15 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".RegistrarActivity" />
-        <activity android:name=".SetupPerfilActivity" />
-        <activity android:name=".EditarAbstinenciaActivity" />
-        <activity android:name=".PerfilActivity" />
-        <activity android:name=".ForumActivity" />
-        <activity android:name=".EditarPerfilActivity" />
-        <activity android:name=".NovoPostActivity" />
+        <activity android:name=".auth.RegistrarActivity" />
+        <activity android:name=".perfil.SetupPerfilActivity" />
+        <activity android:name=".main.EditarAbstinenciaActivity" />
+        <activity android:name=".perfil.PerfilActivity" />
+        <activity android:name=".forum.ForumActivity" />
+        <activity android:name=".perfil.EditarPerfilActivity" />
+        <activity android:name=".forum.NovoPostActivity" />
         <service
-            android:name=".MyFirebaseMessagingService"
+            android:name=".notification.MyFirebaseMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -67,10 +67,10 @@
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="fcm_default_channel" />
         
-        <activity android:name=".OnboardingActivity" />
-        <activity android:name=".OrientacoesActivity" />
-        <activity android:name=".ModeracaoActivity" />
-        <activity android:name=".DenunciaActivity" />
+        <activity android:name=".onboarding.OnboardingActivity" />
+        <activity android:name=".orientacoes.OrientacoesActivity" />
+        <activity android:name=".moderacao.ModeracaoActivity" />
+        <activity android:name=".moderacao.DenunciaActivity" />
     </application>
 
 </manifest>
