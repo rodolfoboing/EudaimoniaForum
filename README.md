@@ -1,109 +1,60 @@
 # 📚 **EudaimoniaForum**
 
-O EudaimoniaForum é um aplicativo Android desenvolvido em Java que oferece um espaço de interação, troca de mensagens e discussões em formato de fórum de superação de vicios. Ele inclui funcionalidades de contador de abstinecia, conquistas de abstinencia, chat, postagens, denúncias, notificações e gerenciamento de perfil, com foco em criar uma comunidade saudável e moderada.
+O EudaimoniaForum é um aplicativo Android desenvolvido em Java que oferece um espaço seguro de interação, troca de mensagens e suporte mútuo focado na superação de vícios. O projeto segue princípios de **Clean Architecture**, com uma estrutura modular baseada em Managers para garantir escalabilidade, segurança e fácil manutenção.
 
 # 🚀 Funcionalidades Principais
-Autenticação de Usuário
 
-Login, registro e recuperação de senha.
+### 🔐 Autenticação e Segurança
+*   Login, registro e recuperação de senha via Firebase Auth.
+*   **Anti-Spam Nativo:** Travas de cooldown para postagens (60s), comentários (30s) e chat privado (2s).
+*   **Blindagem de Backend:** Cloud Functions otimizadas para evitar notificações duplicadas.
 
-Postagens e Fórum
+### 🏛️ Arquitetura Modular (Manager Pattern)
+O app foi totalmente refatorado para separar a lógica de negócio da interface (UI):
+*   **Managers:** Centralizam todas as chamadas ao Firebase, transações de banco e lógica de validação.
+*   **Activities:** Focam exclusivamente na experiência do usuário e exibição de dados.
 
-Criar, visualizar e editar postagens.
+### 💬 Comunidade e Interação
+*   **Fórum:** Criação e moderação de postagens com sistema de comentários em tempo real.
+*   **Chat Privado:** Conversas diretas entre usuários com criptografia lógica e sistema de bloqueio.
+*   **Notificacoes:** Push notifications multicanal (💬 Chat / 💬 Comentários) via Firebase Cloud Messaging.
 
-Listagem de posts com adaptadores personalizados.
+### 🛡️ Moderação e Administração
+*   **AppLogger:** Sistema proprietário de logs para administradores capturarem spams, erros de banco e abusos em tempo real via Firebase.
+*   **Painel Administrativo:** Interface para revisão de denúncias e banimento de usuários nocivos.
 
-Chat e Conversas
+### 📈 Recuperação e Evolução
+*   **Contador de Abstinência:** Monitoramento preciso de tempo de sobriedade.
+*   **Sistema de Conquistas:** Medalhas e Star-Rating baseados no compromisso diário do usuário.
 
-Envio e recebimento de mensagens em tempo real.
+# 🛠️ Estrutura Técnica do Projeto
 
-Gerenciamento de conversas com ChatActivity e ConversasActivity.
+### Camada de Lógica (Managers)
+*   `AuthManager.java` → Gerenciamento de sessão e tokens.
+*   `ForumManager.java` & `ComentarioManager.java` → Fluxo de dados do fórum.
+*   `ChatManager.java` & `ConversasManager.java` → Mecanismo de mensagens.
+*   `ProfileManager.java` → Estatísticas, conquistas e dados de perfil.
+*   `ModeracaoManager.java` → Denúncias e controle de acesso.
+*   `NotificacaoManager.java` → Ciclo de vida de notificações.
 
-Denúncias e Moderação
-
-Sistema de denúncia de conteúdo.
-
-Tela de moderação para administradores.
-
-Notificações
-
-Push notifications via Firebase (MyFirebaseMessagingService).
-
-Exibição de notificações dentro do app.
-
-Perfil e Configurações
-
-Edição de perfil.
-
-Visualização de perfis de outros usuários.
-
-Onboarding
-
-Fluxo inicial com telas de introdução e orientações.
-
-Conquistas e Orientações
-
-Funcionalidades relacionadas a conquitas pessoais e orientações de uso.
-
-
-# 🛠️ Estrutura do Projeto
-Principais pacotes e classes:
-
-MainActivity.java → Ponto de entrada do app.
-
-LoginActivity.java, RegistrarActivity.java, RecuperarSenhaActivity.java → Autenticação.
-
-ForumActivity.java, Post.java, PostAdapter.java → Fórum e postagens.
-
-ChatActivity.java, ChatMessage.java, ChatAdapter.java → Chat.
-
-DenunciaActivity.java, Denuncia.java, DenunciaAdapter.java → Denúncias.
-
-ModeracaoActivity.java, UsuarioModeracaoAdapter.java → Moderação.
-
-NotificacaoActivity.java, Notificacao.java, NotificacaoAdapter.java → Notificações.
-
-PerfilActivity.java, EditarPerfilActivity.java, VisualizarPerfilActivity.java → Perfis.
-
-OnboardingActivity.java, OnboardingAdapter.java, OnboardingItem.java → Onboarding.
-
-ConquistasWorker.java → Gerenciamento de conquistas.
-
-OrientacoesActivity.java → Orientações gerais.
-
+### Utilitários e Backend
+*   `AppLogger.java` → Monitoramento de saúde do app e segurança.
+*   `functions/index.js` → Lógica de servidor para Push Notifications.
+*   `ConquistasWorker.java` → Processamento em segundo plano.
 
 # 📲 Tecnologias Utilizadas
-Java para desenvolvimento Android.
-
-Firebase Cloud Messaging (FCM) para notificações.
-
-Android SDK e componentes nativos.
-
-Adapters para listas e gerenciamento de UI.
-
+*   **Java** (Android Nativo).
+*   **Firebase Realtime Database** (Dados em tempo real).
+*   **Firebase Cloud Functions** (Node.js backend).
+*   **Firebase Cloud Messaging** (Push Notifications).
+*   **WorkManager** (Tarefas agendadas).
 
 # ▶️ Como Executar
-Clone o repositório:
-
-bash
-git clone https://github.com/rodolfoboing/EudaimoniaForum.git
-Abra o projeto no Android Studio.
-
-Configure o Firebase no projeto (adicione o google-services.json).
-
-Compile e rode em um emulador ou dispositivo físico.
-
-
-# 📌 Próximos Passos
-Melhorar UI/UX das telas principais.
-
-Implementar testes automatizados.
-
-Expandir funcionalidades de moderação.
-
-Adicionar suporte multilíngue.
-
+1. Clone o repositório: `git clone https://github.com/rodolfoboing/EudaimoniaForum.git`
+2. Abra no Android Studio (Ladybug ou superior).
+3. Adicione o seu arquivo `google-services.json` na pasta `/app`.
+4. Instale as dependências via Gradle e execute.
 
 # 👨‍💻 Autor
-Desenvolvido por Rodolfo Boing.
-Contribuições e sugestões são bem-vindas!
+Desenvolvido por **Rodolfo Boing**.  
+*Transformando tecnologia em ferramenta de superação.*
