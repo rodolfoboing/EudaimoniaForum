@@ -6,22 +6,13 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.meuprojeto.eudaimoniaforum.R;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class MinhasPostagensActivity extends AppCompatActivity {
@@ -32,8 +23,8 @@ public class MinhasPostagensActivity extends AppCompatActivity {
     private TextView emptyState;
     private Button btnMinhasPostagens, btnComentadas;
 
-    private DatabaseReference postsRef;
-    private String currentUserId;
+    private ForumManager forumManager;
+    private String targetUserId;
 
     private enum Filtro {
         MINHAS_POSTAGENS, COMENTADAS
@@ -47,18 +38,17 @@ public class MinhasPostagensActivity extends AppCompatActivity {
         android.util.Log.d("MinhasPostagensAct", "onCreate() chamado. Inicializando MinhasPostagensActivity.");
         setContentView(R.layout.forum_minhas_postagens_activity);
 
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        forumManager = new ForumManager();
+        String currentMySessionUid = forumManager.getCurrentUserId();
         String paramUserId = getIntent().getStringExtra("USER_ID");
 
         if (paramUserId != null && !paramUserId.isEmpty()) {
-            currentUserId = paramUserId;
-            
-            // Alterar dinamicamente caso seja o perfil de outro
-            if (user != null && !paramUserId.equals(user.getUid())) {
+            targetUserId = paramUserId;
+            if (currentMySessionUid != null && !paramUserId.equals(currentMySessionUid)) {
                 setTitle("Postagens do Usuário");
             }
-        } else if (user != null) {
-            currentUserId = user.getUid();
+        } else if (currentMySessionUid != null) {
+            targetUserId = currentMySessionUid;
         } else {
             Toast.makeText(this, "Usuário não autenticado", Toast.LENGTH_SHORT).show();
             finish();
@@ -68,10 +58,7 @@ public class MinhasPostagensActivity extends AppCompatActivity {
         inicializarUI();
         configurarRecyclerView();
         configurarBotoesFiltro();
-
-        postsRef = FirebaseDatabase.getInstance().getReference("forum/posts");
-
-        carregarPostagens();
+        carregarPostagensContextualizadas();
     }
 
     private void inicializarUI() {
@@ -95,150 +82,46 @@ public class MinhasPostagensActivity extends AppCompatActivity {
             btnMinhasPostagens.setAlpha(1.0f);
             btnComentadas.setAlpha(0.6f);
             filtroAtual = Filtro.MINHAS_POSTAGENS;
-            carregarPostagens();
+            carregarPostagensContextualizadas();
         });
 
         btnComentadas.setOnClickListener(v -> {
             btnComentadas.setAlpha(1.0f);
             btnMinhasPostagens.setAlpha(0.6f);
             filtroAtual = Filtro.COMENTADAS;
-            carregarPostagens();
+            carregarPostagensContextualizadas();
         });
     }
 
-    private void carregarPostagens() {
+    private void carregarPostagensContextualizadas() {
         postList.clear();
         adapter.notifyDataSetChanged();
         updateEmptyState(true);
 
-        if (filtroAtual == Filtro.MINHAS_POSTAGENS) {
-            carregarMinhasPostagens();
-        } else {
-            carregarPostagensComentadas();
-        }
-    }
-
-    private void carregarMinhasPostagens() {
-        postsRef.orderByChild("autor").equalTo(currentUserId).addListenerForSingleValueEvent(new ValueEventListener() {
+        ForumManager.FeedCallback displayCallback = new ForumManager.FeedCallback() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+            public void onPostsCarregados(List<Post> posts) {
+                if(isFinishing() || isDestroyed()) return;
                 postList.clear();
-                if (snapshot.exists()) {
-                    for (DataSnapshot postSnapshot : snapshot.getChildren()) {
-                        Post post = postSnapshot.getValue(Post.class);
-                        if (post != null) {
-                            post.setId(postSnapshot.getKey());
-                            postList.add(post);
-                        }
-                    }
-                    Collections.sort(postList, (p1, p2) -> Long.compare(p2.getData(), p1.getData()));
-                }
+                postList.addAll(posts);
                 adapter.notifyDataSetChanged();
                 updateEmptyState(false);
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(MinhasPostagensActivity.this, "Erro ao carregar postagens", Toast.LENGTH_SHORT).show();
+            public void onError(String erro) {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(MinhasPostagensActivity.this, "Erro: " + erro, Toast.LENGTH_SHORT).show();
                 updateEmptyState(false);
             }
-        });
-    }
+        };
 
-    private void carregarPostagensComentadas() {
-        DatabaseReference userPostsComentadosRef = FirebaseDatabase.getInstance().getReference("users")
-                .child(currentUserId).child("postsComentados");
-
-        userPostsComentadosRef.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists() && snapshot.hasChildren()) {
-                    carregarPostagensPorIds(snapshot);
-                } else {
-                    updateEmptyState(false);
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(MinhasPostagensActivity.this, "Erro ao carregar referências", Toast.LENGTH_SHORT).show();
-                updateEmptyState(false);
-            }
-        });
-    }
-
-    private void carregarPostagensPorIds(DataSnapshot postsIdsSnapshot) {
-        postList.clear();
-        List<String> postsIds = new ArrayList<>();
-        for (DataSnapshot idSnapshot : postsIdsSnapshot.getChildren()) {
-            postsIds.add(idSnapshot.getKey());
-        }
-
-        if (postsIds.isEmpty()) {
-            updateEmptyState(false);
-            return;
-        }
-
-        final int[] loadedCount = { 0 };
-        final int totalPosts = postsIds.size();
-
-        for (String postId : postsIds) {
-            // Verifica se o usuário REALMENTE comentou no post (ajuda a limpar bugs de exclusão órfã)
-            FirebaseDatabase.getInstance().getReference("forum/comentarios").child(postId)
-                    .orderByChild("autor").equalTo(currentUserId)
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot comentarioSnapshot) {
-                            if (comentarioSnapshot.exists()) {
-                                // Se existe comentário atual válido, baixa o Post!
-                                postsRef.child(postId).addListenerForSingleValueEvent(new ValueEventListener() {
-                                    @Override
-                                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                                        Post post = snapshot.getValue(Post.class);
-                                        if (post != null) {
-                                            post.setId(snapshot.getKey());
-                                            postList.add(post);
-                                        }
-                                        loadedCount[0]++;
-                                        if (loadedCount[0] >= totalPosts) {
-                                            finalizarCarregamento();
-                                        }
-                                    }
-
-                                    @Override
-                                    public void onCancelled(@NonNull DatabaseError error) {
-                                        loadedCount[0]++;
-                                        if (loadedCount[0] >= totalPosts) finalizarCarregamento();
-                                    }
-                                });
-                            } else {
-                                // O usuário não tem mais comentário lá! Limpeza automática:
-                                FirebaseDatabase.getInstance().getReference("users")
-                                        .child(currentUserId).child("postsComentados").child(postId).removeValue();
-                                
-                                loadedCount[0]++;
-                                if (loadedCount[0] >= totalPosts) {
-                                    finalizarCarregamento();
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            loadedCount[0]++;
-                            if (loadedCount[0] >= totalPosts) finalizarCarregamento();
-                        }
-                    });
+        if (filtroAtual == Filtro.MINHAS_POSTAGENS) {
+            forumManager.carregarMinhasPostagens(targetUserId, displayCallback);
+        } else {
+            forumManager.carregarPostagensComentadas(targetUserId, displayCallback);
         }
     }
-
-    private void finalizarCarregamento() {
-        Collections.sort(postList, (p1, p2) -> Long.compare(p2.getData(), p1.getData()));
-        adapter.notifyDataSetChanged();
-        updateEmptyState(false);
-    }
-
-
 
     private void updateEmptyState(boolean isLoading) {
         if (isLoading) {

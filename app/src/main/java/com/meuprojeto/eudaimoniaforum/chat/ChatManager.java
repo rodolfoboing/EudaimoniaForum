@@ -13,6 +13,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.meuprojeto.eudaimoniaforum.perfil.Usuario;
+import com.meuprojeto.eudaimoniaforum.utils.AppLogger;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +31,8 @@ public class ChatManager {
 
     private ChildEventListener messagesListener;
     private ValueEventListener headerListener;
+
+    private static long lastMessageTimestamp = 0;
 
     public interface ChatUpdateListener {
         void onMessageAdded(ChatMessage message);
@@ -83,13 +86,21 @@ public class ChatManager {
     public void sendMessage(String messageText, ChatUpdateListener listener, Runnable onMessageSent) {
         if (TextUtils.isEmpty(messageText)) return;
 
+        long currentTime = System.currentTimeMillis();
+        long cooldownMillis = 2000; // 2 segundos
+        if (currentTime - lastMessageTimestamp < cooldownMillis) {
+            if (listener != null) listener.onActionFailure("Você está enviando mensagens rápido demais. Aguarde um instante.");
+            AppLogger.logSpam(currentUserId, "ChatPrivadoId_" + chatId);
+            return;
+        }
+
         userRef.child(receiverId).child("hasBlocked").child(currentUserId).get().addOnSuccessListener(snapshot -> {
             if (snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class))) {
                 if (listener != null) listener.onActionFailure("Você não pode enviar mensagens para este usuário.");
                 return;
             }
 
-            long timestamp = System.currentTimeMillis();
+            long timestamp = currentTime;
             ChatMessage chatMessage = new ChatMessage(messageText, currentUserId, receiverId, timestamp);
             String messageKey = messagesRef.push().getKey();
 
@@ -105,9 +116,11 @@ public class ChatManager {
 
             FirebaseDatabase.getInstance().getReference().updateChildren(updates).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
+                    lastMessageTimestamp = currentTime;
                     if (onMessageSent != null) onMessageSent.run();
                 } else {
                     if (listener != null) listener.onActionFailure("Falha ao enviar mensagem.");
+                    if (task.getException() != null) AppLogger.logDbError("Chat_SendMessage", task.getException().getMessage());
                 }
             });
         });

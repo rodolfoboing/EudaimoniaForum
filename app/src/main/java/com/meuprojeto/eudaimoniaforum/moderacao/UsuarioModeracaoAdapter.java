@@ -11,8 +11,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.meuprojeto.eudaimoniaforum.R;
 import com.meuprojeto.eudaimoniaforum.perfil.Usuario;
 import com.meuprojeto.eudaimoniaforum.perfil.VisualizarPerfilActivity;
@@ -22,9 +20,15 @@ import java.util.List;
 public class UsuarioModeracaoAdapter extends RecyclerView.Adapter<UsuarioModeracaoAdapter.UsuarioViewHolder> {
 
     private List<Usuario> usuarioList;
+    private UsuarioModeracaoAction callback;
 
-    public UsuarioModeracaoAdapter(List<Usuario> usuarioList) {
+    public interface UsuarioModeracaoAction {
+        void onBanirClicado(Usuario usuario, int position);
+    }
+
+    public UsuarioModeracaoAdapter(List<Usuario> usuarioList, UsuarioModeracaoAction callback) {
         this.usuarioList = usuarioList;
+        this.callback = callback;
     }
 
     @NonNull
@@ -42,7 +46,6 @@ public class UsuarioModeracaoAdapter extends RecyclerView.Adapter<UsuarioModerac
         holder.textViewNick.setText(usuario.getNick());
         holder.textViewUid.setText("UID: " + usuario.getUid());
 
-        // Botão para ver perfil
         holder.btnVerPerfil.setOnClickListener(v -> {
             Context context = v.getContext();
             Intent intent = new Intent(context, VisualizarPerfilActivity.class);
@@ -50,15 +53,10 @@ public class UsuarioModeracaoAdapter extends RecyclerView.Adapter<UsuarioModerac
             context.startActivity(intent);
         });
 
-        // Botão para banir o usuário
         holder.btnBanir.setOnClickListener(v -> {
-            android.util.Log.d("UsuarioModAdapter", "Banindo usuário. UID: " + usuario.getUid());
-            DatabaseReference banidosRef = FirebaseDatabase.getInstance()
-                    .getReference("banidos")
-                    .child(usuario.getUid());
-            banidosRef.setValue(true);
-            usuarioList.remove(position);
-            notifyItemRemoved(position);
+            if (callback != null) {
+                callback.onBanirClicado(usuario, position);
+            }
         });
     }
 

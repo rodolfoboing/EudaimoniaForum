@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import com.meuprojeto.eudaimoniaforum.utils.AppLogger;
+
 public class ComentarioManager {
 
     private final String postId;
@@ -29,6 +31,8 @@ public class ComentarioManager {
     private final DatabaseReference postRef;
     private final DatabaseReference comentariosRef;
     private final DatabaseReference moderadoresRef;
+
+    private static long lastCommentTimestamp = 0;
 
     private ValueEventListener comentariosListener;
 
@@ -124,20 +128,31 @@ public class ComentarioManager {
     public void adicionarComentario(String conteudo, ComentarioUpdateListener listener) {
         if (currentUserId == null) return;
         
+        long currentTime = System.currentTimeMillis();
+        long cooldownMillis = 30000; // 30 segundos
+        if (currentTime - lastCommentTimestamp < cooldownMillis) {
+            long remainingSeconds = (cooldownMillis - (currentTime - lastCommentTimestamp)) / 1000;
+            if (listener != null) listener.onActionFailure("Aguarde " + remainingSeconds + " segundos para comentar novamente.");
+            AppLogger.logSpam(currentUserId, "Comentarios");
+            return;
+        }
+        
         String comentarioId = comentariosRef.push().getKey();
         if (comentarioId != null) {
             String data = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
-            long timestamp = System.currentTimeMillis();
+            long timestamp = currentTime;
             Comentario comentario = new Comentario(currentUserId, conteudo, data, timestamp);
 
             comentariosRef.child(comentarioId).setValue(comentario)
                     .addOnSuccessListener(aVoid -> {
+                        lastCommentTimestamp = currentTime;
                         incrementarNumeroComentarios();
                         salvarReferenciaPostComentado(currentUserId, postId);
                         if (listener != null) listener.onCommentAdded(conteudo);
                     })
                     .addOnFailureListener(e -> {
                         if (listener != null) listener.onActionFailure("Erro ao enviar comentário");
+                        AppLogger.logDbError("Enviar Comentario", e.getMessage());
                     });
         }
     }

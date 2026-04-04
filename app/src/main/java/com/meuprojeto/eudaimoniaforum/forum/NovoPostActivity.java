@@ -9,10 +9,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.meuprojeto.eudaimoniaforum.R;
 
 import java.util.ArrayList;
@@ -23,8 +19,7 @@ public class NovoPostActivity extends AppCompatActivity {
     private EditText editTextTitulo;
     private EditText editTextConteudo;
     private Spinner spinnerCategoriaPost;
-    private DatabaseReference databaseReference;
-    private FirebaseAuth firebaseAuth;
+    private ForumManager forumManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,8 +31,7 @@ public class NovoPostActivity extends AppCompatActivity {
         editTextConteudo = findViewById(R.id.editTextConteudo);
         spinnerCategoriaPost = findViewById(R.id.spinnerCategoriaPost);
 
-        firebaseAuth = FirebaseAuth.getInstance();
-        databaseReference = FirebaseDatabase.getInstance().getReference("forum/posts");
+        forumManager = new ForumManager();
 
         setupSpinner();
     }
@@ -51,7 +45,6 @@ public class NovoPostActivity extends AppCompatActivity {
         categorias.add("Drogas");
         categorias.add("Cigarro");
 
-        // Usando o novo layout customizado aqui
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.forum_spinner_item_custom, categorias);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategoriaPost.setAdapter(adapter);
@@ -72,70 +65,25 @@ public class NovoPostActivity extends AppCompatActivity {
             return;
         }
 
-        FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user == null) {
-            Toast.makeText(this, "Erro: usuário não autenticado", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String autor = user.getUid();
-        DatabaseReference userLastPostRef = FirebaseDatabase.getInstance().getReference("users").child(autor)
-                .child("lastPostTimestamp");
-
-        userLastPostRef.addListenerForSingleValueEvent(new com.google.firebase.database.ValueEventListener() {
+        forumManager.publicarPost(titulo, resumo, categoria, new ForumManager.PostCallback() {
             @Override
-            public void onDataChange(@androidx.annotation.NonNull com.google.firebase.database.DataSnapshot snapshot) {
-                Long lastPostTimestamp = snapshot.getValue(Long.class);
-                long currentTime = System.currentTimeMillis();
-                long cooldownMillis = 60000; // 60 segundos
-
-                if (lastPostTimestamp != null && (currentTime - lastPostTimestamp) < cooldownMillis) {
-                    long segundosRestantes = (cooldownMillis - (currentTime - lastPostTimestamp)) / 1000;
-                    Toast.makeText(NovoPostActivity.this, "Aguarde " + segundosRestantes + "s para postar novamente.",
-                            Toast.LENGTH_SHORT).show();
-                } else {
-                    realizarPublicacao(autor, titulo, resumo, categoria, currentTime);
-                }
+            public void onSuccess() {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(NovoPostActivity.this, "Post publicado com sucesso!", Toast.LENGTH_SHORT).show();
+                finish();
             }
 
             @Override
-            public void onCancelled(@androidx.annotation.NonNull com.google.firebase.database.DatabaseError error) {
-                Toast.makeText(NovoPostActivity.this, "Erro ao verificar status: " + error.getMessage(),
-                        Toast.LENGTH_SHORT).show();
+            public void onWaitDelay(long secondsRemaining) {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(NovoPostActivity.this, "Aguarde " + secondsRemaining + "s para postar novamente.", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(String erro) {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(NovoPostActivity.this, "Erro ao publicar: " + erro, Toast.LENGTH_SHORT).show();
             }
         });
-    }
-
-    private void realizarPublicacao(String autor, String titulo, String resumo, String categoria, long data) {
-        String postId = databaseReference.push().getKey();
-        if (postId == null) {
-            Toast.makeText(this, "Erro ao gerar ID do post", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Post post = new Post(postId, titulo, resumo, 0, autor, data, categoria);
-
-        // Inicia mapa de atualizações atômicas (Atomic Writes)
-        java.util.Map<String, Object> childUpdates = new java.util.HashMap<>();
-
-        // Caminho 1: Lista Geral de Posts
-        childUpdates.put("/forum/posts/" + postId, post);
-
-        // Caminho 2: Meus Posts (histórico do usuário)
-        childUpdates.put("/users/" + autor + "/posts/" + postId, true);
-
-        // Caminho 4: Atualizar Timestamp do último post (Anti-spam)
-        childUpdates.put("/users/" + autor + "/lastPostTimestamp", data);
-
-        // Executa todas as gravações de uma vez
-        FirebaseDatabase.getInstance().getReference().updateChildren(childUpdates)
-                .addOnSuccessListener(aVoid -> {
-                    Toast.makeText(NovoPostActivity.this, "Post publicado com sucesso!", Toast.LENGTH_SHORT).show();
-                    finish();
-                })
-                .addOnFailureListener(e -> {
-                    Toast.makeText(NovoPostActivity.this, "Erro ao publicar: " + e.getMessage(), Toast.LENGTH_SHORT)
-                            .show();
-                });
     }
 }

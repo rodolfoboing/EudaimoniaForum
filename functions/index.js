@@ -2,20 +2,14 @@ const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 admin.initializeApp();
 
-// Função que escuta novos registros ou atualizações em "notificacoes/{userId}/{notificationId}"
+// Função que escuta novos registros criados em "notificacoes/{userId}/{notificationId}"
 exports.sendNotification = functions.database
     .ref("/notificacoes/{userId}/{notificationId}")
-    .onWrite(async (change, context) => {
+    .onCreate(async (snapshot, context) => {
       const userId = context.params.userId;
       const notificationId = context.params.notificationId;
 
-      // Se a notificação foi apagada do banco, ignoramos
-      if (!change.after.exists()) {
-        console.log(`[sendNotification] ℹ️ Notificação (${notificationId}) DELETADA para o usuário ${userId}. Nenhuma ação necessária.`);
-        return null;
-      }
-
-      const notification = change.after.val();
+      const notification = snapshot.val();
 
       console.log(`[sendNotification] 🚀 INÍCIO - Preparando notificação (${notificationId}) para o usuário: ${userId}`);
       console.log(`[sendNotification] 📦 Payload do banco de dados: ${JSON.stringify(notification)}`);

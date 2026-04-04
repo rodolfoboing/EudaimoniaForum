@@ -5,23 +5,15 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.meuprojeto.eudaimoniaforum.R;
 import com.meuprojeto.eudaimoniaforum.chat.ChatActivity;
 import com.meuprojeto.eudaimoniaforum.forum.ComentarioActivity;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class NotificacaoActivity extends AppCompatActivity implements NotificacaoAdapter.OnItemClickListener {
@@ -29,14 +21,23 @@ public class NotificacaoActivity extends AppCompatActivity implements Notificaca
     private RecyclerView recyclerViewNotificacoes;
     private NotificacaoAdapter notificacaoAdapter;
     private List<Notificacao> notificacoes;
-    private DatabaseReference notificacoesRef;
     private Button buttonLimparTudo;
+
+    private NotificacaoManager notificacaoManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("NotificacaoActivity", "onCreate() chamado. Inicializando NotificacaoActivity.");
         setContentView(R.layout.notificacao_activity);
+
+        notificacaoManager = new NotificacaoManager();
+
+        if (notificacaoManager.getCurrentUserId() == null) {
+            Toast.makeText(this, "Usuário não autenticado.", Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
 
         recyclerViewNotificacoes = findViewById(R.id.recyclerViewNotificacoes);
         buttonLimparTudo = findViewById(R.id.buttonLimparTudo);
@@ -46,46 +47,39 @@ public class NotificacaoActivity extends AppCompatActivity implements Notificaca
         notificacaoAdapter = new NotificacaoAdapter(notificacoes, this);
         recyclerViewNotificacoes.setAdapter(notificacaoAdapter);
 
-        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        if (userId == null) {
-            Toast.makeText(this, "Usuário não autenticado.", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
-        notificacoesRef = FirebaseDatabase.getInstance().getReference("notificacoes").child(userId);
-
         carregarNotificacoes();
 
-        // Configura o clique do botão para limpar as notificações
         buttonLimparTudo.setOnClickListener(v -> {
-            if (notificacoesRef != null) {
-                notificacoesRef.removeValue();
-                Toast.makeText(this, "Notificações limpas.", Toast.LENGTH_SHORT).show();
-            }
+            notificacaoManager.limparTodas(new NotificacaoManager.AcaoCallback() {
+                @Override
+                public void onSuccess() {
+                    if(isFinishing() || isDestroyed()) return;
+                    Toast.makeText(NotificacaoActivity.this, "Notificações limpas.", Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onError(String erro) {
+                    if(isFinishing() || isDestroyed()) return;
+                    Toast.makeText(NotificacaoActivity.this, "Erro: " + erro, Toast.LENGTH_SHORT).show();
+                }
+            });
         });
     }
 
     private void carregarNotificacoes() {
-        notificacoesRef.addValueEventListener(new ValueEventListener() {
+        notificacaoManager.monitorarNotificacoes(new NotificacaoManager.FeedCallback() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+            public void onLoaded(List<Notificacao> dados) {
+                if(isFinishing() || isDestroyed()) return;
                 notificacoes.clear();
-                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                    Notificacao notificacao = snapshot.getValue(Notificacao.class);
-                    if (notificacao != null) {
-                        notificacao.setId(snapshot.getKey());
-                        notificacoes.add(notificacao);
-                    }
-                }
-                // Inverte a lista para mostrar as mais recentes primeiro
-                Collections.reverse(notificacoes);
+                notificacoes.addAll(dados);
                 notificacaoAdapter.notifyDataSetChanged();
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                Toast.makeText(NotificacaoActivity.this, "Erro ao carregar notificações", Toast.LENGTH_SHORT).show();
+            public void onError(String erro) {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(NotificacaoActivity.this, "Erro ao carregar notificações: " + erro, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -96,8 +90,8 @@ public class NotificacaoActivity extends AppCompatActivity implements Notificaca
             return;
         }
 
-        if (notificacoesRef != null && notificacao.getId() != null) {
-            notificacoesRef.child(notificacao.getId()).child("lida").setValue(true);
+        if (notificacao.getId() != null) {
+            notificacaoManager.marcarComoLida(notificacao.getId());
         }
 
         if (notificacao.getTipo().equals("comentario")) {
@@ -106,9 +100,16 @@ public class NotificacaoActivity extends AppCompatActivity implements Notificaca
             startActivity(intent);
         } else if (notificacao.getTipo().equals("chat")) {
             Intent intent = new Intent(this, ChatActivity.class);
-            // O idReferencia para chat guarda o ID do outro usuário
             intent.putExtra("USER_ID", notificacao.getIdReferencia());
             startActivity(intent);
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if(notificacaoManager != null) {
+            notificacaoManager.removerListeners();
         }
     }
 }

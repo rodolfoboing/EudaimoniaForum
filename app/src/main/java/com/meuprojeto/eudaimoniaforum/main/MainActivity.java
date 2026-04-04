@@ -10,7 +10,6 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.PopupMenu;
@@ -19,37 +18,25 @@ import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
 import com.google.android.material.button.MaterialButton;
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
-import com.meuprojeto.eudaimoniaforum.chat.ConversasActivity;
-import com.meuprojeto.eudaimoniaforum.utils.DialogManager;
-import com.meuprojeto.eudaimoniaforum.orientacoes.OrientacoesActivity;
 import com.meuprojeto.eudaimoniaforum.R;
 import com.meuprojeto.eudaimoniaforum.auth.LoginActivity;
 import com.meuprojeto.eudaimoniaforum.chat.ChatActivity;
+import com.meuprojeto.eudaimoniaforum.chat.ConversasActivity;
 import com.meuprojeto.eudaimoniaforum.forum.ComentarioActivity;
 import com.meuprojeto.eudaimoniaforum.forum.ForumActivity;
 import com.meuprojeto.eudaimoniaforum.moderacao.ModeracaoActivity;
-import com.meuprojeto.eudaimoniaforum.notification.Notificacao;
 import com.meuprojeto.eudaimoniaforum.notification.NotificacaoActivity;
 import com.meuprojeto.eudaimoniaforum.notification.NotificationSetupHelper;
 import com.meuprojeto.eudaimoniaforum.onboarding.OnboardingActivity;
+import com.meuprojeto.eudaimoniaforum.orientacoes.OrientacoesActivity;
 import com.meuprojeto.eudaimoniaforum.perfil.PerfilActivity;
+import com.meuprojeto.eudaimoniaforum.utils.DialogManager;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String PREFS_NAME = "PrefsAbstinencia";
-    private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
     private static final String CONQUISTA_WORK_TAG = "ConquistasWork";
 
     private TextView textViewTempoAbstinenciaMeses, textViewTempoAbstinenciaDias, textViewTempoAbstinenciaHoras,
@@ -57,12 +44,10 @@ public class MainActivity extends AppCompatActivity {
     private ImageButton buttonNotificacao;
     private MaterialButton buttonModeracao;
     private MaterialButton buttonCheckInDiario;
+    
     private AbstinenceTimerHelper timerHelper;
     private CheckInManager checkInManager;
-    private FirebaseAuth firebaseAuth;
-    private DatabaseReference userRef;
-    private Map<DatabaseReference, ChildEventListener> activeChildListeners = new HashMap<>();
-    private Map<DatabaseReference, ValueEventListener> activeValueListeners = new HashMap<>();
+    private MainManager mainManager;
     private ObjectAnimator animacaoSino;
 
     @Override
@@ -71,21 +56,14 @@ public class MainActivity extends AppCompatActivity {
         android.util.Log.d("MainActivity", "onCreate() chamado. Inicializando MainActivity.");
         setContentView(R.layout.main_activity);
 
-        firebaseAuth = FirebaseAuth.getInstance();
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
+        mainManager = new MainManager();
 
-        if (currentUser != null) {
-            userRef = FirebaseDatabase.getInstance().getReference("users").child(currentUser.getUid());
-        }
-
-        // Verifica se é a primeira vez (Onboarding)
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         if (!prefs.getBoolean("onboarding_complete", false)) {
             startActivity(new Intent(this, OnboardingActivity.class));
         }
 
         inicializarUI();
-
         configurarBotoes();
 
         timerHelper = new AbstinenceTimerHelper(this, (meses, dias, horas, minutos) -> {
@@ -99,16 +77,11 @@ public class MainActivity extends AppCompatActivity {
 
         checkInManager = new CheckInManager(this);
 
-        verificarModerador();
-
+        verificarModoOperacao();
         carregarDadosUsuario();
-
-        verificarCheckInDiario(); // Verifica se já fez check-in hoje
-
+        verificarCheckInDiario();
         agendarTrabalhoDeConquistas();
-
         iniciarListenersDeNotificacao();
-
         verificarIntentDeNotificacao(getIntent());
     }
 
@@ -139,75 +112,30 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void iniciarListenersDeNotificacao() {
-        FirebaseUser currentUser = firebaseAuth.getCurrentUser();
-        if (currentUser == null)
-            return;
-        String userId = currentUser.getUid();
+        if (mainManager.getCurrentUserId() == null) return;
+        
+        animacaoSino = ObjectAnimator.ofFloat(buttonNotificacao, "rotation", 0f, 15f, -15f, 10f, -10f, 5f, -5f, 0f);
+        animacaoSino.setDuration(1200);
+        animacaoSino.setRepeatCount(ObjectAnimator.INFINITE);
 
-        monitorarStatusDoLeitor(userId);
+        mainManager.monitorarNotificacoesNaoLidas(temNaoLida -> {
+            if(isFinishing() || isDestroyed()) return;
+            if (temNaoLida) {
+                buttonNotificacao.setColorFilter(Color.parseColor("#FFD700"));
+                if (!animacaoSino.isRunning()) {
+                    animacaoSino.start();
+                }
+            } else {
+                buttonNotificacao.setColorFilter(Color.WHITE);
+                if (animacaoSino.isRunning()) {
+                    animacaoSino.cancel();
+                    buttonNotificacao.setRotation(0f);
+                }
+            }
+        });
 
         NotificationSetupHelper.setupNotifications(this);
-    }
-
-    private void monitorarStatusDoLeitor(String userId) {
-        if (animacaoSino == null) {
-            animacaoSino = ObjectAnimator.ofFloat(buttonNotificacao, "rotation", 0f, 15f, -15f, 10f, -10f, 5f, -5f, 0f);
-            animacaoSino.setDuration(1200); // 1.2 segundos por ciclo
-            animacaoSino.setRepeatCount(ObjectAnimator.INFINITE);
-        }
-
-        DatabaseReference notificacoesRef = FirebaseDatabase.getInstance().getReference("notificacoes").child(userId);
-        ValueEventListener listener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                boolean temNaoLida = false;
-                for (DataSnapshot doc : snapshot.getChildren()) {
-                    Notificacao notif = doc.getValue(Notificacao.class);
-                    if (notif != null && !notif.isLida()) {
-                        temNaoLida = true;
-                        break;
-                    }
-                }
-
-                if (temNaoLida) {
-                    buttonNotificacao.setColorFilter(Color.parseColor("#FFD700")); // Dourado mais bonito
-                    if (!animacaoSino.isRunning()) {
-                        animacaoSino.start();
-                    }
-                } else {
-                    buttonNotificacao.setColorFilter(Color.WHITE);
-                    if (animacaoSino.isRunning()) {
-                        animacaoSino.cancel();
-                        buttonNotificacao.setRotation(0f);
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-            }
-        };
-        notificacoesRef.addValueEventListener(listener);
-        activeValueListeners.put(notificacoesRef, listener);
-
         buttonNotificacao.setOnClickListener(v -> startActivity(new Intent(this, NotificacaoActivity.class)));
-    }
-
-    private void removerTodosOsListeners() {
-        for (Map.Entry<DatabaseReference, ChildEventListener> entry : activeChildListeners.entrySet()) {
-            entry.getKey().removeEventListener(entry.getValue());
-        }
-        activeChildListeners.clear();
-
-        for (Map.Entry<DatabaseReference, ValueEventListener> entry : activeValueListeners.entrySet()) {
-            entry.getKey().removeEventListener(entry.getValue());
-        }
-        activeValueListeners.clear();
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
     }
 
     @Override
@@ -216,10 +144,9 @@ public class MainActivity extends AppCompatActivity {
         if (timerHelper != null) {
             timerHelper.init();
             timerHelper.refresh();
-            android.util.Log.d("MainActivity", "onResume: tempoInicial=" + timerHelper.getTempoInicial() + " (diff=" + (System.currentTimeMillis() - timerHelper.getTempoInicial()) + "ms)");
         }
         carregarDadosUsuario();
-        verificarCheckInDiario(); // Recalcula streak e estado do botão de check-in
+        verificarCheckInDiario();
     }
 
     private void inicializarUI() {
@@ -238,9 +165,7 @@ public class MainActivity extends AppCompatActivity {
         checkInManager.performCheckIn(new CheckInManager.CheckInActionCallback() {
             @Override
             public void onCheckInSuccess(int newStreak) {
-                buttonCheckInDiario.setText("✅ Compromisso Feito!");
-                buttonCheckInDiario.setEnabled(false);
-                buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+                atualizarBtnCheckinCompleto();
                 if (textViewDiasValidos != null) {
                     textViewDiasValidos.setText("⭐ " + newStreak);
                 }
@@ -264,34 +189,32 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-
-
     private void verificarCheckInDiario() {
         checkInManager.checkCurrentStatus((isCompletedToday, streak) -> {
             if (textViewDiasValidos != null) {
                 textViewDiasValidos.setText("⭐ " + streak);
             }
             if (isCompletedToday) {
-                buttonCheckInDiario.setText("✅ Compromisso Feito!");
-                buttonCheckInDiario.setEnabled(false);
-                buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+                atualizarBtnCheckinCompleto();
             } else {
                 buttonCheckInDiario.setText("✅ Compromisso Diário");
                 buttonCheckInDiario.setEnabled(true);
-                buttonCheckInDiario.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(Color.parseColor("#673AB7"))); // Roxo
+                buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#673AB7")));
             }
         });
     }
 
+    private void atualizarBtnCheckinCompleto() {
+        buttonCheckInDiario.setText("✅ Compromisso Feito!");
+        buttonCheckInDiario.setEnabled(false);
+        buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.GRAY));
+    }
+
     private void configurarBotoes() {
         findViewById(R.id.buttonNovoRegistro).setOnClickListener(v -> reiniciarContador());
-        findViewById(R.id.buttonEditar)
-                .setOnClickListener(v -> startActivity(new Intent(this, EditarAbstinenciaActivity.class)));
-        findViewById(R.id.linearLayoutForum)
-                .setOnClickListener(v -> startActivity(new Intent(this, ForumActivity.class)));
-        findViewById(R.id.navConversas)
-                .setOnClickListener(v -> startActivity(new Intent(this, ConversasActivity.class)));
+        findViewById(R.id.buttonEditar).setOnClickListener(v -> startActivity(new Intent(this, EditarAbstinenciaActivity.class)));
+        findViewById(R.id.linearLayoutForum).setOnClickListener(v -> startActivity(new Intent(this, ForumActivity.class)));
+        findViewById(R.id.navConversas).setOnClickListener(v -> startActivity(new Intent(this, ConversasActivity.class)));
         findViewById(R.id.navMenu).setOnClickListener(this::showPopupMenu);
         buttonModeracao.setOnClickListener(v -> startActivity(new Intent(this, ModeracaoActivity.class)));
         buttonCheckInDiario.setOnClickListener(v -> realizarCheckIn());
@@ -320,11 +243,8 @@ public class MainActivity extends AppCompatActivity {
         popup.show();
     }
 
-
-
     private void deslogar() {
-        firebaseAuth.signOut();
-        removerTodosOsListeners();
+        mainManager.deslogar();
         WorkManager.getInstance(this).cancelUniqueWork(CONQUISTA_WORK_TAG);
         Toast.makeText(this, "Usuário deslogado com sucesso!", Toast.LENGTH_SHORT).show();
         Intent intent = new Intent(this, LoginActivity.class);
@@ -334,99 +254,63 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void agendarTrabalhoDeConquistas() {
-        PeriodicWorkRequest conquistasWorkRequest = new PeriodicWorkRequest.Builder(ConquistasWorker.class, 1,
-                TimeUnit.DAYS)
-                .build();
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(CONQUISTA_WORK_TAG, ExistingPeriodicWorkPolicy.KEEP,
-                conquistasWorkRequest);
+        PeriodicWorkRequest conquistasWorkRequest = new PeriodicWorkRequest.Builder(ConquistasWorker.class, 1, TimeUnit.DAYS).build();
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork(CONQUISTA_WORK_TAG, ExistingPeriodicWorkPolicy.KEEP, conquistasWorkRequest);
     }
 
-
-
     private void reiniciarContador() {
-        android.util.Log.d("MainActivity", "reiniciarContador: Usuário zerou o contador de abstinência.");
         if (timerHelper != null) {
             timerHelper.reset();
         }
-        
         if (textViewDiasValidos != null) {
             textViewDiasValidos.setText("⭐ 0");
         }
         
-        FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user != null) {
-            DatabaseReference userRef = FirebaseDatabase.getInstance()
-                    .getReference("users")
-                    .child(user.getUid());
-            
-            // Reset atômico: zera streak, limpa check-ins do ciclo anterior e ultimoCheckIn
-            Map<String, Object> resetUpdates = new HashMap<>();
-            resetUpdates.put("streakAtual", 0);
-            resetUpdates.put("ultimoCheckIn", null);
-            resetUpdates.put("checkins", null);
-            userRef.updateChildren(resetUpdates);
-        }
-
-        Toast.makeText(this, "Contador e compromissos reiniciados!", Toast.LENGTH_SHORT).show();
-        verificarCheckInDiario();
-    }
-
-
-
-    private void carregarDadosUsuario() {
-        FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user == null)
-            return;
-
-        DatabaseReference userRef = FirebaseDatabase.getInstance()
-                .getReference("users")
-                .child(user.getUid());
-
-        userRef.child("vicio").addListenerForSingleValueEvent(new ValueEventListener() {
+        mainManager.zerarContadorRastreamento(new MainManager.AcaoCallback() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                String vicio = snapshot.getValue(String.class);
-                if (vicio != null && !vicio.isEmpty()) {
-                    textViewHabito.setText(vicio);
-                } else {
-                    textViewHabito.setText("Hábito não definido");
-                }
+            public void onSuccess() {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(MainActivity.this, "Contador e compromissos reiniciados!", Toast.LENGTH_SHORT).show();
+                verificarCheckInDiario();
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+            public void onError(String erro) {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(MainActivity.this, "Falha ao zerar: " + erro, Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    private void carregarDadosUsuario() {
+        mainManager.carregarVicioDoUsuario(new MainManager.DadosUsuarioCallback() {
+            @Override
+            public void onVicioCarregado(String vicio) {
+                if(isFinishing() || isDestroyed()) return;
+                textViewHabito.setText(vicio.isEmpty() ? "Hábito não definido" : vicio);
+            }
+
+            @Override
+            public void onError(String erro) {
+                if(isFinishing() || isDestroyed()) return;
                 textViewHabito.setText("Erro ao carregar");
             }
         });
     }
 
-    private void verificarModerador() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            DatabaseReference modRef = FirebaseDatabase.getInstance().getReference("moderadores").child(user.getUid());
-            modRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class))) {
-                        buttonModeracao.setVisibility(View.VISIBLE);
-                    } else {
-                        buttonModeracao.setVisibility(View.GONE);
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                }
-            });
-        } else {
-            buttonModeracao.setVisibility(View.GONE);
-        }
+    private void verificarModoOperacao() {
+        mainManager.verificarModerador(isModerador -> {
+            if(isFinishing() || isDestroyed()) return;
+            buttonModeracao.setVisibility(isModerador ? View.VISIBLE : View.GONE);
+        });
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        removerTodosOsListeners();
+        if (mainManager != null) {
+            mainManager.removerListeners();
+        }
         if (timerHelper != null) {
             timerHelper.stop();
         }

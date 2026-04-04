@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -13,17 +12,10 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 import com.meuprojeto.eudaimoniaforum.R;
@@ -36,14 +28,17 @@ public class ForumActivity extends AppCompatActivity {
 
     private RecyclerView recyclerViewPosts;
     private PostAdapter postAdapter;
-    private List<Post> postList; // Lista que sempre contém todos os posts do Firebase
-    private List<Post> postsExibidos; // Lista para os posts que estão sendo exibidos (filtrados)
-    private DatabaseReference databaseReference;
+    private List<Post> postListRaw;
+    private List<Post> postsExibidos;
     private EditText editTextSearch;
     private Button buttonOrdenarRecentes, buttonOrdenarComentados, buttonMinhasPostagens;
     private Spinner spinnerCategorias;
-    private String categoriaSelecionada = "Todos"; // Categoria selecionada, padrão é "Todos"
+    private String categoriaSelecionada = "Todos";
     private boolean isModerador = false;
+    
+    private ForumManager forumManager;
+    private ValueEventListener postsListener;
+    private Query[] activeQueryContainer = new Query[1];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,88 +46,60 @@ public class ForumActivity extends AppCompatActivity {
         android.util.Log.d("ForumActivity", "onCreate() chamado. Inicializando ForumActivity.");
         setContentView(R.layout.forum_activity);
 
-        // Inicialização dos componentes
         editTextSearch = findViewById(R.id.editTextSearch);
         buttonOrdenarRecentes = findViewById(R.id.buttonOrdenarRecentes);
         buttonOrdenarComentados = findViewById(R.id.buttonOrdenarComentados);
         buttonMinhasPostagens = findViewById(R.id.buttonMinhasPostagens);
         spinnerCategorias = findViewById(R.id.spinnerCategorias);
         recyclerViewPosts = findViewById(R.id.recyclerViewPosts);
+        
         recyclerViewPosts.setLayoutManager(new LinearLayoutManager(this));
 
-        postList = new ArrayList<>();
+        postListRaw = new ArrayList<>();
         postsExibidos = new ArrayList<>();
-        // Inicializa com isModerador = false (será atualizado assincronamente)
+        
         postAdapter = new PostAdapter(this, postsExibidos, isModerador);
         recyclerViewPosts.setAdapter(postAdapter);
 
-        databaseReference = FirebaseDatabase.getInstance().getReference("forum/posts");
+        forumManager = new ForumManager();
 
-        // Verifica se é moderador
-        verificarModerador();
-
-        // Configura o seletor de categorias
+        verificarModeracao();
         setupSpinner();
+        carregarDadosBase();
 
-        // Carrega os posts do Firebase
-        loadPosts();
-
-        // Configura a busca
         editTextSearch.addTextChangedListener(new TextWatcher() {
             @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-            }
-
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filtrarPostsExibidos(); // Filtra a lista já exibida
+                filtrarDadosExibidos();
             }
-
             @Override
-            public void afterTextChanged(Editable s) {
-            }
+            public void afterTextChanged(Editable s) {}
         });
 
-        // Configura botões de ordenação
         buttonOrdenarRecentes.setOnClickListener(v -> ordenarPorMaisRecentes());
         buttonOrdenarComentados.setOnClickListener(v -> ordenarPorMaisComentados());
 
-        // Configura botão de criar post
         findViewById(R.id.buttonCriarPost).setOnClickListener(v -> {
             startActivity(new Intent(ForumActivity.this, NovoPostActivity.class));
         });
 
-        // Configura o novo botão "Minhas Postagens"
         buttonMinhasPostagens.setOnClickListener(v -> {
             startActivity(new Intent(ForumActivity.this, MinhasPostagensActivity.class));
         });
     }
 
-    private void verificarModerador() {
-        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
-        if (user != null) {
-            DatabaseReference modRef = FirebaseDatabase.getInstance().getReference("moderadores").child(user.getUid());
-            modRef.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    if (snapshot.exists() && Boolean.TRUE.equals(snapshot.getValue(Boolean.class))) {
-                        isModerador = true;
-                        // Recria o adapter com a permissão de moderador
-                        postAdapter = new PostAdapter(ForumActivity.this, postsExibidos, isModerador);
-                        recyclerViewPosts.setAdapter(postAdapter);
-                    }
-                }
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Log.e("ForumActivity", "Erro ao verificar moderador: " + error.getMessage());
-                }
-            });
-        }
+    private void verificarModeracao() {
+        forumManager.verificarModerador(moderador -> {
+            if(isFinishing() || isDestroyed()) return;
+            isModerador = moderador;
+            postAdapter = new PostAdapter(ForumActivity.this, postsExibidos, isModerador);
+            recyclerViewPosts.setAdapter(postAdapter);
+        });
     }
 
     private void setupSpinner() {
-        // Define as categorias
         List<String> categorias = new ArrayList<>();
         categorias.add("Todos");
         categorias.add("Pornografia");
@@ -146,103 +113,66 @@ public class ForumActivity extends AppCompatActivity {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategorias.setAdapter(adapter);
 
-        // Listener para quando uma categoria é selecionada
         spinnerCategorias.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 String novaCategoria = categorias.get(position);
                 if (!novaCategoria.equals(categoriaSelecionada)) {
                     categoriaSelecionada = novaCategoria;
-                    loadPosts(); // Recarrega do Firebase com a nova query
+                    carregarDadosBase();
                 }
+            }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {}
+        });
+    }
+
+    private void carregarDadosBase() {
+        if (activeQueryContainer[0] != null && postsListener != null) {
+            activeQueryContainer[0].removeEventListener(postsListener);
+        }
+
+        postsListener = forumManager.carregarFeed(categoriaSelecionada, activeQueryContainer, new ForumManager.FeedCallback() {
+            @Override
+            public void onPostsCarregados(List<Post> posts) {
+                if(isFinishing() || isDestroyed()) return;
+                postListRaw.clear();
+                postListRaw.addAll(posts);
+                filtrarDadosExibidos();
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
+            public void onError(String erro) {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(ForumActivity.this, "Erro: " + erro, Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    private Query postsQuery;
-    private ValueEventListener postsListener;
+    private void filtrarDadosExibidos() {
+        List<Post> postsTrabalho = new ArrayList<>();
 
-    private void loadPosts() {
-        // Remove listener antigo se existir antes de trocar a query
-        if (postsQuery != null && postsListener != null) {
-            postsQuery.removeEventListener(postsListener);
-        }
-
-        // DEFINIÇÃO DO CAMINHO (Otimização de Custo):
-        // Se selecionou categoria, filtra os posts pela categoria.
-        // Se selecionou "Todos", busca todos os posts recentes.
-        DatabaseReference postsRef = FirebaseDatabase.getInstance().getReference("forum/posts");
-        if (categoriaSelecionada.equals("Todos")) {
-            postsQuery = postsRef.limitToLast(100);
-        } else {
-            postsQuery = postsRef.orderByChild("categoria").equalTo(categoriaSelecionada).limitToLast(100);
-        }
-
-        postsListener = new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                postList.clear();
-                for (DataSnapshot postSnapshot : dataSnapshot.getChildren()) {
-                    Post post = postSnapshot.getValue(Post.class);
-                    if (post != null) {
-                        post.setId(postSnapshot.getKey());
-                        postList.add(post);
-                    }
-                }
-                Collections.reverse(postList);
-                filtrarPostsExibidos(); // Aplica busca local (texto) sobre os dados carregados
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError databaseError) {
-                if (!isFinishing() && !isDestroyed()) {
-                    Toast.makeText(ForumActivity.this, "Erro ao carregar postagens", Toast.LENGTH_SHORT).show();
-                }
-            }
-        };
-        postsQuery.addValueEventListener(postsListener);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (postsQuery != null && postsListener != null) {
-            postsQuery.removeEventListener(postsListener);
-        }
-    }
-
-    // Método unificado para aplicar todos os filtros
-    private void filtrarPostsExibidos() {
-        List<Post> postsFiltradosTemporarios = new ArrayList<>();
-
-        // 1. Filtro por Categoria
-        for (Post post : postList) {
+        for (Post post : postListRaw) {
             if (categoriaSelecionada.equals("Todos") || categoriaSelecionada.equals(post.getCategoria())) {
-                postsFiltradosTemporarios.add(post);
+                postsTrabalho.add(post);
             }
         }
 
-        // 2. Filtro por Palavra-chave (busca)
-        String palavraChave = editTextSearch.getText().toString();
+        String palavraChave = editTextSearch.getText().toString().toLowerCase();
         if (!palavraChave.isEmpty()) {
-            List<Post> postsBuscados = new ArrayList<>();
-            for (Post post : postsFiltradosTemporarios) {
-                if (post.getTitulo().toLowerCase().contains(palavraChave.toLowerCase()) ||
-                        (post.getResumo() != null
-                                && post.getResumo().toLowerCase().contains(palavraChave.toLowerCase()))) {
-                    postsBuscados.add(post);
+            List<Post> pesquisados = new ArrayList<>();
+            for (Post post : postsTrabalho) {
+                boolean matchTittle = post.getTitulo() != null && post.getTitulo().toLowerCase().contains(palavraChave);
+                boolean matchResume = post.getResumo() != null && post.getResumo().toLowerCase().contains(palavraChave);
+                if (matchTittle || matchResume) {
+                    pesquisados.add(post);
                 }
             }
-            postsFiltradosTemporarios = postsBuscados;
+            postsTrabalho = pesquisados;
         }
 
-        // Atualiza a lista de exibição e notifica o adapter
         postsExibidos.clear();
-        postsExibidos.addAll(postsFiltradosTemporarios);
+        postsExibidos.addAll(postsTrabalho);
         postAdapter.notifyDataSetChanged();
     }
 
@@ -258,5 +188,13 @@ public class ForumActivity extends AppCompatActivity {
             return Integer.compare(comentarios2, comentarios1);
         });
         postAdapter.notifyDataSetChanged();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (activeQueryContainer[0] != null && postsListener != null) {
+            activeQueryContainer[0].removeEventListener(postsListener);
+        }
     }
 }

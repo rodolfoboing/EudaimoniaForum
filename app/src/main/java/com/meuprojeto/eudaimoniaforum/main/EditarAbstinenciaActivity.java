@@ -10,16 +10,8 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.auth.FirebaseAuth;
-import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.ValueEventListener;
 import com.meuprojeto.eudaimoniaforum.R;
 
 import java.text.SimpleDateFormat;
@@ -38,9 +30,10 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
 
     private Calendar calendar;
-    private DatabaseReference userRef;
     private ArrayAdapter<String> spinnerAdapter;
     private List<String> viciosList;
+    
+    private MainManager mainManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,11 +46,9 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
         buttonSalvar = findViewById(R.id.buttonSalvar);
 
         calendar = Calendar.getInstance();
+        mainManager = new MainManager();
 
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            userRef = FirebaseDatabase.getInstance().getReference("users").child(currentUser.getUid());
-        } else {
+        if (mainManager.getCurrentUserId() == null) {
             Toast.makeText(this, "Usuário não autenticado", Toast.LENGTH_SHORT).show();
             finish();
             return;
@@ -67,7 +58,6 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
         carregarDadosDoUsuario();
 
         editTextDataInicio.setOnClickListener(v -> showDateTimePicker());
-
         buttonSalvar.setOnClickListener(v -> salvarAlteracoes());
     }
 
@@ -86,30 +76,27 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
     }
 
     private void carregarDadosDoUsuario() {
-        // Carrega tempo atual (abstinência) para o calendário não resetar
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         long tempoSalvo = preferences.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
         calendar.setTimeInMillis(tempoSalvo);
         updateLabel();
 
-        // Carrega o vício atual do Firebase
-        userRef.child("vicio").addListenerForSingleValueEvent(new ValueEventListener() {
+        mainManager.carregarVicioDoUsuario(new MainManager.DadosUsuarioCallback() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    String vicioAtual = snapshot.getValue(String.class);
-                    if (vicioAtual != null) {
-                        int position = spinnerAdapter.getPosition(vicioAtual);
-                        if (position >= 0) {
-                            spinnerVicioEdicao.setSelection(position);
-                        }
+            public void onVicioCarregado(String vicio) {
+                if(isFinishing() || isDestroyed()) return;
+                if (!vicio.isEmpty()) {
+                    int position = spinnerAdapter.getPosition(vicio);
+                    if (position >= 0) {
+                        spinnerVicioEdicao.setSelection(position);
                     }
                 }
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(EditarAbstinenciaActivity.this, "Erro ao carregar vício.", Toast.LENGTH_SHORT).show();
+            public void onError(String erro) {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(EditarAbstinenciaActivity.this, "Erro: " + erro, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -134,22 +121,26 @@ public class EditarAbstinenciaActivity extends AppCompatActivity {
     }
 
     private void salvarAlteracoes() {
-        android.util.Log.d("EditarAbstinencia", "salvarAlteracoes() chamado: gravando dados localmente e no Firebase.");
-        // 1. Salvar nova data de início
+        android.util.Log.d("EditarAbstinencia", "salvarAlteracoes() chamado.");
+
         SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         long novoTempo = calendar.getTimeInMillis();
         preferences.edit().putLong(KEY_TEMPO_INICIAL, novoTempo).apply();
-        android.util.Log.d("EditarAbstinencia", "Novo tempo_inicial salvo: " + novoTempo + " (data: " + new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(calendar.getTime()) + ")");
 
-        // 2. Salvar novo vício no Firebase
         String novoVicio = spinnerVicioEdicao.getSelectedItem().toString();
-        userRef.child("vicio").setValue(novoVicio).addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                Toast.makeText(EditarAbstinenciaActivity.this, "Alterações salvas com sucesso!", Toast.LENGTH_SHORT)
-                        .show();
+        
+        mainManager.atualizarVicio(novoVicio, new MainManager.AcaoCallback() {
+            @Override
+            public void onSuccess() {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(EditarAbstinenciaActivity.this, "Alterações salvas com sucesso!", Toast.LENGTH_SHORT).show();
                 finish();
-            } else {
-                Toast.makeText(EditarAbstinenciaActivity.this, "Erro ao salvar o vício.", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onError(String erro) {
+                if(isFinishing() || isDestroyed()) return;
+                Toast.makeText(EditarAbstinenciaActivity.this, "Erro ao salvar: " + erro, Toast.LENGTH_SHORT).show();
             }
         });
     }
