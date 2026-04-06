@@ -45,6 +45,7 @@ public class ForumManager {
     public ForumManager() {
         mAuth = FirebaseAuth.getInstance();
         rootRef = FirebaseDatabase.getInstance().getReference();
+        rootRef.child("forum").keepSynced(true);
     }
 
     public String getCurrentUserId() {

@@ -43,6 +43,11 @@ public class MainManager {
     public MainManager() {
         firebaseAuth = FirebaseAuth.getInstance();
         rootRef = FirebaseDatabase.getInstance().getReference();
+        
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user != null) {
+            rootRef.child("users").child(user.getUid()).keepSynced(true);
+        }
     }
 
     public String getCurrentUserId() {
