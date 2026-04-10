@@ -95,7 +95,7 @@ public class ChatActivity extends AppCompatActivity implements ChatManager.ChatU
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.menu_apagar_conversa) {
-                confirmOp("Apagar Conversa", "Tem certeza que deseja apagar esta conversa? A ação não pode ser desfeita.",
+                confirmOp("Apagar Conversation", "Tem certeza que deseja apagar esta conversa? A ação não pode ser desfeita.",
                         () -> chatManager.apagarConversa(this));
                 return true;
             } else if (itemId == R.id.menu_bloquear_usuario) {
@@ -177,7 +177,7 @@ public class ChatActivity extends AppCompatActivity implements ChatManager.ChatU
     public void onActionSuccess(String message) {
         if(isFinishing() || isDestroyed()) return;
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        if ("Conversa apagada.".equals(message)) {
+        if ("Conversation apagada.".equals(message)) {
             finish();
         }
     }

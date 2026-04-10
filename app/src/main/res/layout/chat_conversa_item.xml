@@ -14,7 +14,7 @@
     android:elevation="1dp"
     android:orientation="horizontal">
 
-    <!-- Barra lateral colorida - indica conversa não lida -->
+    <!-- Barra lateral colorida - indica conversation não lida -->
     <View
         android:id="@+id/barraLateralNaoLida"
         android:layout_width="4dp"
@@ -22,7 +22,7 @@
         android:background="#2196F3"
         android:visibility="gone" />
 
-    <!-- Conteúdo da conversa -->
+    <!-- Conteúdo da conversation -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -94,7 +94,7 @@
                 android:layout_weight="1"
                 android:ellipsize="end"
                 android:maxLines="2"
-                android:text="Última mensagem enviada na conversa..."
+                android:text="Última mensagem enviada na conversation..."
                 android:textColor="#616161"
                 android:textSize="14sp" />
         </LinearLayout>

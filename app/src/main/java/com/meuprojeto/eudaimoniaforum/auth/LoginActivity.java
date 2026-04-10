@@ -11,7 +11,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.meuprojeto.eudaimoniaforum.R;
 import com.meuprojeto.eudaimoniaforum.main.MainActivity;
-import com.meuprojeto.eudaimoniaforum.perfil.SetupPerfilActivity;
+import com.meuprojeto.eudaimoniaforum.profile.SetupProfileActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -44,7 +44,7 @@ public class LoginActivity extends AppCompatActivity {
             @Override
             public void onIrParaSetupPerfil() {
                 if (!isFinishing() && !isDestroyed()) {
-                    startActivity(new Intent(LoginActivity.this, SetupPerfilActivity.class));
+                    startActivity(new Intent(LoginActivity.this, SetupProfileActivity.class));
                     finish();
                 }
             }
@@ -86,11 +86,11 @@ public class LoginActivity extends AppCompatActivity {
         });
 
         textViewEsqueciSenha.setOnClickListener(v -> {
-            startActivity(new Intent(LoginActivity.this, RecuperarSenhaActivity.class));
+            startActivity(new Intent(LoginActivity.this, RecoverPasswordActivity.class));
         });
 
         buttonCadastrar.setOnClickListener(v -> {
-            startActivity(new Intent(LoginActivity.this, RegistrarActivity.class));
+            startActivity(new Intent(LoginActivity.this, RegisterActivity.class));
         });
     }
 
@@ -101,8 +101,8 @@ public class LoginActivity extends AppCompatActivity {
                 if (isFinishing() || isDestroyed()) return;
                 
                 if (irParaSetup) {
-                    Toast.makeText(LoginActivity.this, "Configure seu perfil!", Toast.LENGTH_SHORT).show();
-                    Intent intent = new Intent(LoginActivity.this, SetupPerfilActivity.class);
+                    Toast.makeText(LoginActivity.this, "Configure seu profile!", Toast.LENGTH_SHORT).show();
+                    Intent intent = new Intent(LoginActivity.this, SetupProfileActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                 } else {

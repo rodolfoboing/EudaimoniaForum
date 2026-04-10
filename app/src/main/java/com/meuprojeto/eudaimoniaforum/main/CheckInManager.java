@@ -26,22 +26,27 @@ public class CheckInManager {
 
     public interface CheckInStatusCallback {
         void onCheckInStateLoaded(boolean isCheckInCompletedToday, int correctStreak);
+        void onError(String erro);
     }
 
     public interface CheckInActionCallback {
         void onCheckInSuccess(int newStreak);
         void onNewAchievementUnlocked(String tituloNovaConquista, String mensagemMotivacional);
         void onRegularCheckInCompleted();
+        void onError(String erro);
     }
 
     public CheckInManager(Context context) {
-        this.context = context;
+        this.context = context.getApplicationContext();
         this.firebaseAuth = FirebaseAuth.getInstance();
     }
 
     public void checkCurrentStatus(CheckInStatusCallback callback) {
         FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user == null) return;
+        if (user == null) {
+            if (callback != null) callback.onError("Sessão expirada. Faça login novamente.");
+            return;
+        }
 
         String hoje = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                 .format(new java.util.Date());
@@ -63,7 +68,6 @@ public class CheckInManager {
                 
                 // Quebrar a streak se não houver checkin hoje nem ontem
                 if (ultimoCheckIn != null && !ultimoCheckIn.equals(hoje) && !ultimoCheckIn.equals(ontem)) {
-                    android.util.Log.d("CheckInManager", "checkCurrentStatus: Streak quebra pois faltou check-in (ultimo=" + ultimoCheckIn + ")");
                     streakAtual = 0;
                     userRef.child("streakAtual").setValue(0);
                 }
@@ -73,9 +77,14 @@ public class CheckInManager {
                 long tempoInicialSalvo = prefs.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
                 int diasReaisAbstinencia = (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - tempoInicialSalvo);
 
-                // Se o streak está maior que o cronômetro permite, corrige silenciosamente
-                if (streakAtual > diasReaisAbstinencia + 1) {
-                    android.util.Log.d("CheckInManager", "checkCurrentStatus: Streak (" + streakAtual + ") maior que permitido (" + diasReaisAbstinencia + "). Corrigindo!");
+                boolean isCriadoRecentemente = (System.currentTimeMillis() - tempoInicialSalvo) < TimeUnit.MINUTES.toMillis(5);
+
+                if (streakAtual > 1 && isCriadoRecentemente) {
+                    // Restaura o tempo_inicial local baseado no streak salvo na nuvem
+                    long tempoRecriado = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(streakAtual);
+                    prefs.edit().putLong(KEY_TEMPO_INICIAL, tempoRecriado).apply();
+                    diasReaisAbstinencia = streakAtual;
+                } else if (streakAtual > diasReaisAbstinencia + 1) {
                     streakAtual = Math.max(0, diasReaisAbstinencia);
                     userRef.child("streakAtual").setValue(streakAtual);
                 }
@@ -91,13 +100,17 @@ public class CheckInManager {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                if (callback != null) callback.onError(error.getMessage());
             }
         });
     }
 
     public void performCheckIn(CheckInActionCallback callback) {
         FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user == null) return;
+        if (user == null) {
+            if (callback != null) callback.onError("Sessão expirada. Faça login novamente.");
+            return;
+        }
 
         String hoje = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                 .format(new java.util.Date());
@@ -138,11 +151,14 @@ public class CheckInManager {
                     }
 
                     verificarEConcederMedalhas(user.getUid(), streakFinal, callback);
+                }).addOnFailureListener(e -> {
+                    if (callback != null) callback.onError("Falha ao salvar no banco de dados.");
                 });
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                if (callback != null) callback.onError(error.getMessage());
             }
         });
     }
@@ -195,13 +211,17 @@ public class CheckInManager {
                 }
 
                 if (!updates.isEmpty()) {
-                    conquistasRef.updateChildren(updates);
-                }
-
-                if (callback != null) {
-                    if (tituloNovaConquista != null) {
-                        callback.onNewAchievementUnlocked(tituloNovaConquista, mensagemMotivacional);
-                    } else {
+                    final String finalTitulo = tituloNovaConquista;
+                    final String finalMensagem = mensagemMotivacional;
+                    conquistasRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                        if (callback != null) {
+                            callback.onNewAchievementUnlocked(finalTitulo, finalMensagem);
+                        }
+                    }).addOnFailureListener(e -> {
+                        if (callback != null) callback.onError("Falha ao atualizar conquistas.");
+                    });
+                } else {
+                    if (callback != null) {
                         callback.onRegularCheckInCompleted();
                     }
                 }
@@ -209,6 +229,7 @@ public class CheckInManager {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                if (callback != null) callback.onError(error.getMessage());
             }
         });
     }

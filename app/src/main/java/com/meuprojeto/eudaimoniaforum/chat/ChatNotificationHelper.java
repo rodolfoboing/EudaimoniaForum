@@ -8,8 +8,8 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.meuprojeto.eudaimoniaforum.notification.Notificacao;
-import com.meuprojeto.eudaimoniaforum.perfil.Usuario;
+import com.meuprojeto.eudaimoniaforum.notification.Notification;
+import com.meuprojeto.eudaimoniaforum.profile.User;
 
 public class ChatNotificationHelper {
 
@@ -35,7 +35,7 @@ public class ChatNotificationHelper {
         currentUserRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Usuario user = snapshot.getValue(Usuario.class);
+                User user = snapshot.getValue(User.class);
                 String nomeRemetente = (user != null) ? user.getNick() : "Alguém";
                 Log.d(TAG, "Nome do remetente: " + nomeRemetente);
 
@@ -46,11 +46,11 @@ public class ChatNotificationHelper {
                         .child(receiverId).child(notifId);
 
                 notificacaoRef.removeValue().addOnCompleteListener(task -> {
-                    Notificacao notificacao = new Notificacao(notifId, "chat",
+                    Notification notification = new Notification(notifId, "chat",
                             mensagemNotificacao, currentUserId, System.currentTimeMillis());
 
                     Log.d(TAG, "Criando notificação nova após remoção. ID=" + notifId);
-                    notificacaoRef.setValue(notificacao)
+                    notificacaoRef.setValue(notification)
                             .addOnSuccessListener(aVoid -> Log.d(TAG, "✅ Notificação gravada no Firebase com sucesso!"))
                             .addOnFailureListener(e -> Log.e(TAG, "❌ ERRO ao gravar notificação: " + e.getMessage()));
                 });

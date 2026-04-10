@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:background="#F5F5F5"
     android:fillViewport="true"
-    tools:context=".perfil.PerfilActivity">
+    tools:context=".profile.ProfileActivity">
 
     <RelativeLayout
         android:layout_width="match_parent"

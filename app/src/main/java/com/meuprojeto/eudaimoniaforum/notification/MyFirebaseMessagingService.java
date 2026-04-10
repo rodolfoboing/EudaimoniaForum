@@ -19,10 +19,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
+import com.meuprojeto.eudaimoniaforum.forum.CommentActivity;
 import com.meuprojeto.eudaimoniaforum.main.MainActivity;
 import com.meuprojeto.eudaimoniaforum.R;
 import com.meuprojeto.eudaimoniaforum.chat.ChatActivity;
-import com.meuprojeto.eudaimoniaforum.forum.ComentarioActivity;
 
 public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
@@ -65,8 +65,8 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     + idReferencia);
             return true;
         }
-        if ("comentario".equals(tipo) && idReferencia != null && idReferencia.equals(ComentarioActivity.activePostId)) {
-            Log.d(TAG, "Notificação silenciada: Usuário já está interagindo ativamente na ComentarioActivity no Post "
+        if ("comentario".equals(tipo) && idReferencia != null && idReferencia.equals(CommentActivity.activePostId)) {
+            Log.d(TAG, "Notificação silenciada: Usuário já está interagindo ativamente na CommentActivity no Post "
                     + idReferencia);
             return true;
         }

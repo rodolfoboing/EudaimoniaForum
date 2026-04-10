@@ -9,7 +9,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.meuprojeto.eudaimoniaforum.notification.Notificacao;
+import com.meuprojeto.eudaimoniaforum.notification.Notification;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -131,7 +131,7 @@ public class MainManager {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 boolean temNaoLida = false;
                 for (DataSnapshot doc : snapshot.getChildren()) {
-                    Notificacao notif = doc.getValue(Notificacao.class);
+                    Notification notif = doc.getValue(Notification.class);
                     if (notif != null && !notif.isLida()) {
                         temNaoLida = true;
                         break;

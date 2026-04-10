@@ -82,11 +82,11 @@ public class ForumActivity extends AppCompatActivity {
         buttonOrdenarComentados.setOnClickListener(v -> ordenarPorMaisComentados());
 
         findViewById(R.id.buttonCriarPost).setOnClickListener(v -> {
-            startActivity(new Intent(ForumActivity.this, NovoPostActivity.class));
+            startActivity(new Intent(ForumActivity.this, NewPostActivity.class));
         });
 
         buttonMinhasPostagens.setOnClickListener(v -> {
-            startActivity(new Intent(ForumActivity.this, MinhasPostagensActivity.class));
+            startActivity(new Intent(ForumActivity.this, MyPostActivity.class));
         });
     }
 

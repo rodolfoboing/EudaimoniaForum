@@ -12,7 +12,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.meuprojeto.eudaimoniaforum.perfil.Usuario;
+import com.meuprojeto.eudaimoniaforum.profile.User;
 import com.meuprojeto.eudaimoniaforum.utils.AppLogger;
 
 import java.util.HashMap;
@@ -69,7 +69,7 @@ public class ChatManager {
         FirebaseDatabase.getInstance().getReference().updateChildren(updates)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful() && listener != null) {
-                        listener.onActionSuccess("Conversa apagada.");
+                        listener.onActionSuccess("Conversation apagada.");
                     }
                 });
     }
@@ -131,7 +131,7 @@ public class ChatManager {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    Usuario user = snapshot.getValue(Usuario.class);
+                    User user = snapshot.getValue(User.class);
                     if (user != null) {
                         long lastLogin = user.getLastLoginTimestamp();
                         long timeDiff = System.currentTimeMillis() - lastLogin;

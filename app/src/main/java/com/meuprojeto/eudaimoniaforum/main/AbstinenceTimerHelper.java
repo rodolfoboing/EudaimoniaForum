@@ -23,7 +23,7 @@ public class AbstinenceTimerHelper {
     }
 
     public AbstinenceTimerHelper(Context context, TimerCallback callback) {
-        this.context = context;
+        this.context = context.getApplicationContext();
         this.callback = callback;
     }
 

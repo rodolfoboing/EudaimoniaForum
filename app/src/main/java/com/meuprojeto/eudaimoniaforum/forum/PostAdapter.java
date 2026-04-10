@@ -22,9 +22,9 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.meuprojeto.eudaimoniaforum.moderacao.DenunciaActivity;
+import com.meuprojeto.eudaimoniaforum.moderation.ReportActivity;
 import com.meuprojeto.eudaimoniaforum.R;
-import com.meuprojeto.eudaimoniaforum.perfil.VisualizarPerfilActivity;
+import com.meuprojeto.eudaimoniaforum.profile.ViewProfileActivity;
 
 import java.util.HashMap;
 import java.util.List;
@@ -83,7 +83,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
 
         holder.textViewAutor.setOnClickListener(v -> {
             if (post.getAutor() != null) {
-                Intent intent = new Intent(context, VisualizarPerfilActivity.class);
+                Intent intent = new Intent(context, ViewProfileActivity.class);
                 intent.putExtra("USER_ID", post.getAutor());
                 context.startActivity(intent);
             }
@@ -130,14 +130,14 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
         }
 
         holder.buttonAddComment.setOnClickListener(v -> {
-            Intent intent = new Intent(context, ComentarioActivity.class);
+            Intent intent = new Intent(context, CommentActivity.class);
             intent.putExtra("POST_ID", post.getId());
             intent.putExtra("FOCUS_COMMENT", true);
             context.startActivity(intent);
         });
 
         holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, ComentarioActivity.class);
+            Intent intent = new Intent(context, CommentActivity.class);
             intent.putExtra("POST_ID", post.getId());
             context.startActivity(intent);
         });
@@ -191,7 +191,7 @@ public class PostAdapter extends RecyclerView.Adapter<PostAdapter.PostViewHolder
                                 return true;
                             } else if (id == R.id.action_denunciar) {
                                 android.util.Log.d("PostAdapter", "Iniciando denúncia para o post: " + post.getId());
-                                Intent intent = new Intent(context, DenunciaActivity.class);
+                                Intent intent = new Intent(context, ReportActivity.class);
                                 intent.putExtra("POST_ID", post.getId());
                                 context.startActivity(intent);
                                 return true;

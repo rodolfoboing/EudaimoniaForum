@@ -11,7 +11,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.meuprojeto.eudaimoniaforum.perfil.Usuario;
+import com.meuprojeto.eudaimoniaforum.profile.User;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -180,12 +180,12 @@ public class AuthManager {
 
         String userId = user.getUid();
         long dataEntradaTimestamp = System.currentTimeMillis();
-        String sobreMim = "Bem-vindo ao meu perfil!";
+        String sobreMim = "Bem-vindo ao meu profile!";
 
-        Usuario novoUsuario = new Usuario(userId, nick, String.valueOf(dataEntradaTimestamp), sobreMim, vicio);
+        User novoUser = new User(userId, nick, String.valueOf(dataEntradaTimestamp), sobreMim, vicio);
 
         Map<String, Object> updates = new HashMap<>();
-        updates.put("users/" + userId, novoUsuario);
+        updates.put("users/" + userId, novoUser);
         updates.put("usernames/" + nick, userId);
 
         FirebaseDatabase.getInstance().getReference().updateChildren(updates).addOnCompleteListener(task -> {

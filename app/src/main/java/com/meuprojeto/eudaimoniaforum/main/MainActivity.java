@@ -21,15 +21,15 @@ import com.google.android.material.button.MaterialButton;
 import com.meuprojeto.eudaimoniaforum.R;
 import com.meuprojeto.eudaimoniaforum.auth.LoginActivity;
 import com.meuprojeto.eudaimoniaforum.chat.ChatActivity;
-import com.meuprojeto.eudaimoniaforum.chat.ConversasActivity;
-import com.meuprojeto.eudaimoniaforum.forum.ComentarioActivity;
+import com.meuprojeto.eudaimoniaforum.chat.ConversationActivity;
+import com.meuprojeto.eudaimoniaforum.forum.CommentActivity;
 import com.meuprojeto.eudaimoniaforum.forum.ForumActivity;
-import com.meuprojeto.eudaimoniaforum.moderacao.ModeracaoActivity;
-import com.meuprojeto.eudaimoniaforum.notification.NotificacaoActivity;
+import com.meuprojeto.eudaimoniaforum.moderation.ModerationActivity;
+import com.meuprojeto.eudaimoniaforum.notification.NotificationActivity;
 import com.meuprojeto.eudaimoniaforum.notification.NotificationSetupHelper;
 import com.meuprojeto.eudaimoniaforum.onboarding.OnboardingActivity;
-import com.meuprojeto.eudaimoniaforum.orientacoes.OrientacoesActivity;
-import com.meuprojeto.eudaimoniaforum.perfil.PerfilActivity;
+import com.meuprojeto.eudaimoniaforum.orientation.OrientationActivity;
+import com.meuprojeto.eudaimoniaforum.profile.ProfileActivity;
 import com.meuprojeto.eudaimoniaforum.utils.DialogManager;
 
 import java.util.concurrent.TimeUnit;
@@ -103,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
                     chatIntent.putExtra("USER_ID", idReferencia);
                     startActivity(chatIntent);
                 } else if (tipo.equals("comentario")) {
-                    Intent comIntent = new Intent(this, ComentarioActivity.class);
+                    Intent comIntent = new Intent(this, CommentActivity.class);
                     comIntent.putExtra("POST_ID", idReferencia);
                     startActivity(comIntent);
                 }
@@ -135,7 +135,7 @@ public class MainActivity extends AppCompatActivity {
         });
 
         NotificationSetupHelper.setupNotifications(this);
-        buttonNotificacao.setOnClickListener(v -> startActivity(new Intent(this, NotificacaoActivity.class)));
+        buttonNotificacao.setOnClickListener(v -> startActivity(new Intent(this, NotificationActivity.class)));
     }
 
     @Override
@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onNewAchievementUnlocked(String titulo, String mensagem) {
                 DialogManager.exibirDialogConquista(MainActivity.this, titulo, mensagem, () -> {
-                    startActivity(new Intent(MainActivity.this, PerfilActivity.class));
+                    startActivity(new Intent(MainActivity.this, ProfileActivity.class));
                 });
             }
 
@@ -186,20 +186,37 @@ public class MainActivity extends AppCompatActivity {
                         .setPositiveButton("Vamos lá!", null)
                         .show();
             }
+
+            @Override
+            public void onError(String erro) {
+                if (isFinishing() || isDestroyed()) return;
+                Toast.makeText(MainActivity.this, "Erro no Check-in: " + erro, Toast.LENGTH_SHORT).show();
+                buttonCheckInDiario.setEnabled(true);
+                buttonCheckInDiario.setText("✅ Compromisso Diário");
+            }
         });
     }
 
     private void verificarCheckInDiario() {
-        checkInManager.checkCurrentStatus((isCompletedToday, streak) -> {
-            if (textViewDiasValidos != null) {
-                textViewDiasValidos.setText("⭐ " + streak);
+        checkInManager.checkCurrentStatus(new CheckInManager.CheckInStatusCallback() {
+            @Override
+            public void onCheckInStateLoaded(boolean isCompletedToday, int streak) {
+                if (textViewDiasValidos != null) {
+                    textViewDiasValidos.setText("⭐ " + streak);
+                }
+                if (isCompletedToday) {
+                    atualizarBtnCheckinCompleto();
+                } else {
+                    buttonCheckInDiario.setText("✅ Compromisso Diário");
+                    buttonCheckInDiario.setEnabled(true);
+                    buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#673AB7")));
+                }
             }
-            if (isCompletedToday) {
-                atualizarBtnCheckinCompleto();
-            } else {
-                buttonCheckInDiario.setText("✅ Compromisso Diário");
-                buttonCheckInDiario.setEnabled(true);
-                buttonCheckInDiario.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#673AB7")));
+
+            @Override
+            public void onError(String erro) {
+                if (isFinishing() || isDestroyed()) return;
+                Toast.makeText(MainActivity.this, "Erro ao carregar status: " + erro, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -212,11 +229,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void configurarBotoes() {
         findViewById(R.id.buttonNovoRegistro).setOnClickListener(v -> reiniciarContador());
-        findViewById(R.id.buttonEditar).setOnClickListener(v -> startActivity(new Intent(this, EditarAbstinenciaActivity.class)));
+        findViewById(R.id.buttonEditar).setOnClickListener(v -> startActivity(new Intent(this, EditAbstinenceActivity.class)));
         findViewById(R.id.linearLayoutForum).setOnClickListener(v -> startActivity(new Intent(this, ForumActivity.class)));
-        findViewById(R.id.navConversas).setOnClickListener(v -> startActivity(new Intent(this, ConversasActivity.class)));
+        findViewById(R.id.navConversas).setOnClickListener(v -> startActivity(new Intent(this, ConversationActivity.class)));
         findViewById(R.id.navMenu).setOnClickListener(this::showPopupMenu);
-        buttonModeracao.setOnClickListener(v -> startActivity(new Intent(this, ModeracaoActivity.class)));
+        buttonModeracao.setOnClickListener(v -> startActivity(new Intent(this, ModerationActivity.class)));
         buttonCheckInDiario.setOnClickListener(v -> realizarCheckIn());
     }
 
@@ -226,10 +243,10 @@ public class MainActivity extends AppCompatActivity {
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.menu_perfil) {
-                startActivity(new Intent(this, PerfilActivity.class));
+                startActivity(new Intent(this, ProfileActivity.class));
                 return true;
             } else if (itemId == R.id.menu_orientacoes) {
-                startActivity(new Intent(this, OrientacoesActivity.class));
+                startActivity(new Intent(this, OrientationActivity.class));
                 return true;
             } else if (itemId == R.id.menu_contato) {
                 DialogManager.mostrarDialogoContato(this);
@@ -254,7 +271,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void agendarTrabalhoDeConquistas() {
-        PeriodicWorkRequest conquistasWorkRequest = new PeriodicWorkRequest.Builder(ConquistasWorker.class, 1, TimeUnit.DAYS).build();
+        PeriodicWorkRequest conquistasWorkRequest = new PeriodicWorkRequest.Builder(AchievementWorker.class, 1, TimeUnit.DAYS).build();
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(CONQUISTA_WORK_TAG, ExistingPeriodicWorkPolicy.KEEP, conquistasWorkRequest);
     }
 
