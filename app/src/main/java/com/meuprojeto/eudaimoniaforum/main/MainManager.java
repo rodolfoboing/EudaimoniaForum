@@ -75,7 +75,7 @@ public class MainManager {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                callback.onError(error.getMessage());
+                callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(error));
             }
         });
     }
@@ -116,7 +116,7 @@ public class MainManager {
             if (task.isSuccessful()) {
                 callback.onSuccess();
             } else {
-                callback.onError(task.getException() != null ? task.getException().getMessage() : "Erro ao zerar contadores");
+                callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(task.getException()));
             }
         });
     }
@@ -157,7 +157,7 @@ public class MainManager {
             if (task.isSuccessful()) {
                 callback.onSuccess();
             } else {
-                callback.onError(task.getException() != null ? task.getException().getMessage() : "Erro ao salvar no banco");
+                callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(task.getException()));
             }
         });
     }

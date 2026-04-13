@@ -100,7 +100,7 @@ public class CheckInManager {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (callback != null) callback.onError(error.getMessage());
+                if (callback != null) callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(error));
             }
         });
     }
@@ -158,7 +158,7 @@ public class CheckInManager {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (callback != null) callback.onError(error.getMessage());
+                if (callback != null) callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(error));
             }
         });
     }
@@ -229,7 +229,7 @@ public class CheckInManager {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                if (callback != null) callback.onError(error.getMessage());
+                if (callback != null) callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(error));
             }
         });
     }
