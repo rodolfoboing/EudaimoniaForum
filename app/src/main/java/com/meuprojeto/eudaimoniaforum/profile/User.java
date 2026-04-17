@@ -17,6 +17,8 @@ public class User {
     private Integer streakAtual;
     private String avatar;
     private Boolean perfilConfigurado;
+    private long totalPosts;
+    private long totalComentarios;
 
     public User() {
         // Construtor vazio para o Firebase
@@ -159,5 +161,21 @@ public class User {
 
     public void setPerfilConfigurado(Boolean perfilConfigurado) {
         this.perfilConfigurado = perfilConfigurado;
+    }
+
+    public long getTotalPosts() {
+        return totalPosts;
+    }
+
+    public void setTotalPosts(long totalPosts) {
+        this.totalPosts = totalPosts;
+    }
+
+    public long getTotalComentarios() {
+        return totalComentarios;
+    }
+
+    public void setTotalComentarios(long totalComentarios) {
+        this.totalComentarios = totalComentarios;
     }
 }

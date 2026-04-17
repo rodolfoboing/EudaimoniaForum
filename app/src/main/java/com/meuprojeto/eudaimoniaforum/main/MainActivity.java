@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity {
         android.util.Log.d("MainActivity", "onCreate() chamado. Inicializando MainActivity.");
         setContentView(R.layout.main_activity);
 
-        mainManager = new MainManager();
+        mainManager = new MainManager(this);
 
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
         if (!prefs.getBoolean("onboarding_complete", false)) {
@@ -98,6 +98,10 @@ public class MainActivity extends AppCompatActivity {
             String idReferencia = intent.getStringExtra("idReferencia");
 
             if (tipo != null && idReferencia != null) {
+                if (mainManager != null) {
+                    mainManager.marcarNotificacaoComoLidaPorReferencia(tipo, idReferencia);
+                }
+
                 if (tipo.equals("chat")) {
                     Intent chatIntent = new Intent(this, ChatActivity.class);
                     chatIntent.putExtra("USER_ID", idReferencia);
@@ -287,7 +291,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onSuccess() {
                 if(isFinishing() || isDestroyed()) return;
-                Toast.makeText(MainActivity.this, "Contador e compromissos reiniciados!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, getString(R.string.contador_reiniciado_aviso), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, getString(R.string.contador_reiniciado_motivacao), Toast.LENGTH_LONG).show();
                 verificarCheckInDiario();
             }
 

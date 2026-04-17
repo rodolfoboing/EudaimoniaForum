@@ -14,7 +14,7 @@ public class OrientationActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.orientacoes_activity);
+        setContentView(R.layout.orientation_activity);
 
         Button buttonVerTutorial = findViewById(R.id.buttonVerTutorial);
         buttonVerTutorial.setOnClickListener(v -> {

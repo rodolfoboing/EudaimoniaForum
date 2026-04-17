@@ -42,7 +42,7 @@ public class ModerationActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("ModerationActivity", "onCreate() chamado. Inicializando ModerationActivity.");
-        setContentView(R.layout.moderacao_activity);
+        setContentView(R.layout.moderation_activity);
 
         moderationManager = new ModerationManager();
 

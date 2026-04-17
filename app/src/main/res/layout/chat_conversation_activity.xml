@@ -97,7 +97,7 @@
         android:paddingTop="4dp"
         android:paddingBottom="4dp"
         app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-        tools:listitem="@layout/chat_conversa_item" />
+        tools:listitem="@layout/chat_conversation_item" />
 
     <!-- Mensagem quando não há conversas -->
     <LinearLayout

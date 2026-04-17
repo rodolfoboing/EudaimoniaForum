@@ -41,7 +41,7 @@ public class DialogManager {
         layout.setBackground(shape);
 
         TextView title = new TextView(context);
-        title.setText("Contato & Feedback");
+        title.setText(context.getString(R.string.title_contact_feedback));
         title.setTextSize(22);
         title.setTextColor(Color.WHITE);
         title.setTypeface(null, Typeface.BOLD);
@@ -49,7 +49,7 @@ public class DialogManager {
         layout.addView(title);
 
         TextView subtitle = new TextView(context);
-        subtitle.setText("\nPara dúvidas, sugestões ou suporte técnico geral, envie um e-mail direto para nossa equipe:\n");
+        subtitle.setText(context.getString(R.string.desc_contact_feedback));
         subtitle.setTextSize(15);
         subtitle.setTextColor(Color.parseColor("#D1D5DB")); // Cinza clarinho
         subtitle.setGravity(Gravity.CENTER);
@@ -72,7 +72,7 @@ public class DialogManager {
         layout.addView(spacer);
 
         MaterialButton btnPrivacy = new MaterialButton(context);
-        btnPrivacy.setText("📜 Política de Privacidade");
+        btnPrivacy.setText(context.getString(R.string.label_privacy_policy));
         btnPrivacy.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#374151")));
         btnPrivacy.setTextColor(Color.WHITE);
         btnPrivacy.setCornerRadius(16);
@@ -83,7 +83,7 @@ public class DialogManager {
         layout.addView(btnPrivacy);
 
         MaterialButton btnFechar = new MaterialButton(context, null, com.google.android.material.R.attr.borderlessButtonStyle);
-        btnFechar.setText("FECHAR");
+        btnFechar.setText(context.getString(R.string.btn_close));
         btnFechar.setTextColor(Color.WHITE);
         LinearLayout.LayoutParams fecharParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -106,7 +106,7 @@ public class DialogManager {
     public static void exibirDialogConquista(Context context, String titulo, String mensagem, Runnable onVerPerfilClick) {
         Dialog dialog = new Dialog(context);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.main_conquista_dialog);
+        dialog.setContentView(R.layout.main_achievement_dialog);
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);

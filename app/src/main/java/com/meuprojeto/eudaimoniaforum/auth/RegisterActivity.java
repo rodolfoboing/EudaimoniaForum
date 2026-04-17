@@ -36,7 +36,7 @@ public class RegisterActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d(TAG, "onCreate() chamado. Inicializando RegisterActivity.");
-        setContentView(R.layout.auth_registrar_activity);
+        setContentView(R.layout.auth_register_activity);
 
         authManager = new AuthManager();
 

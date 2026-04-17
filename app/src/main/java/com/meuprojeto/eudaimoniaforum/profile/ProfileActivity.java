@@ -20,8 +20,8 @@ import com.meuprojeto.eudaimoniaforum.R;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -41,13 +41,13 @@ public class ProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("ProfileActivity", "onCreate() chamado. Inicializando ProfileActivity.");
-        setContentView(R.layout.perfil_activity);
+        setContentView(R.layout.profile_activity);
 
         inicializarUI();
 
         buttonConversar.setVisibility(View.GONE);
 
-        profileManager = new ProfileManager();
+        profileManager = new ProfileManager(this);
         if (profileManager.getCurrentUser() != null) {
             currentUserId = profileManager.getCurrentUser().getUid();
             carregarTudo(currentUserId);
@@ -117,7 +117,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         conquistasListener = profileManager.monitorarConquistas(userId, new ProfileManager.ConquistasCallback() {
             @Override
-            public void onConquistasLoaded(List<String> badgetIds) {
+            public void onConquistasLoaded(Set<String> badgetIds) {
                 if(isFinishing() || isDestroyed()) return;
                 preencherConquistas(badgetIds);
             }
@@ -147,7 +147,7 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void preencherConquistas(List<String> bIds) {
+    private void preencherConquistas(Set<String> bIds) {
         layoutBadges.removeAllViews();
         if (bIds.contains("badge_1_dia")) adicionarBadge("1 Dia", "#8BC34A");
         if (bIds.contains("badge_3_dias")) adicionarBadge("3 Dias", "#4CAF50");

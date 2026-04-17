@@ -20,7 +20,6 @@ public class EditProfileActivity extends AppCompatActivity {
     private EditText editTextNick;
     private EditText editTextApresentacao;
     private EditText editTextNovaSenha;
-    private EditText editTextSenhaAtual;
     private Button buttonSalvarAlteracoes;
     private Button buttonExcluirConta;
 
@@ -33,22 +32,21 @@ public class EditProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("EditarPerfilAct", "onCreate() chamado. Inicializando EditProfileActivity.");
-        setContentView(R.layout.perfil_editar_activity);
+        setContentView(R.layout.profile_edit_activity);
 
         editTextNick = findViewById(R.id.editTextNick);
         editTextApresentacao = findViewById(R.id.editTextApresentacao);
         editTextNovaSenha = findViewById(R.id.editTextNovaSenha);
-        editTextSenhaAtual = findViewById(R.id.editTextSenhaAtual);
         buttonSalvarAlteracoes = findViewById(R.id.buttonSalvarAlteracoes);
         buttonExcluirConta = findViewById(R.id.buttonExcluirConta);
 
-        profileManager = new ProfileManager();
+        profileManager = new ProfileManager(this);
 
         if (profileManager.getCurrentUser() != null) {
             configurarAvatares();
             carregarDadosAtuais();
         } else {
-            Toast.makeText(this, "Erro: Usuário não autenticado!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.error_unauthenticated), Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -76,22 +74,44 @@ public class EditProfileActivity extends AppCompatActivity {
         });
     }
 
+    private interface PasswordCallback {
+        void onPasswordEntered(String password);
+    }
+
+    private void mostrarDialogoSenha(String titulo, String mensagem, PasswordCallback callback) {
+        androidx.appcompat.app.AlertDialog.Builder builder = new androidx.appcompat.app.AlertDialog.Builder(this);
+        builder.setTitle(titulo);
+        builder.setMessage(mensagem);
+
+        final EditText input = new EditText(this);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        input.setHint(getString(R.string.hint_current_password));
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+        int padding = (int) (20 * getResources().getDisplayMetrics().density);
+        layout.setPadding(padding, padding / 2, padding, padding / 2);
+        layout.addView(input);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton(getString(R.string.confirmation_title), (dialog, which) -> {
+            String senha = input.getText().toString().trim();
+            if (TextUtils.isEmpty(senha)) {
+                Toast.makeText(this, getString(R.string.error_password_required), Toast.LENGTH_SHORT).show();
+            } else {
+                callback.onPasswordEntered(senha);
+            }
+        });
+        builder.setNegativeButton(getString(R.string.cancel), (dialog, which) -> dialog.cancel());
+
+        builder.show();
+    }
+
     private void confirmarExclusaoConta() {
-        String senhaAtual = editTextSenhaAtual.getText().toString().trim();
-
-        if (TextUtils.isEmpty(senhaAtual)) {
-            editTextSenhaAtual.setError("Senha atual é necessária para confirmar a exclusão");
-            editTextSenhaAtual.requestFocus();
-            Toast.makeText(this, "Por favor, digite sua senha atual para continuar.", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Excluir Conta Permanentemente")
-                .setMessage("Tem certeza absoluta? Esta ação apagará todos os seus dados, histórico e posts. Não pode ser desfeita.")
-                .setPositiveButton("Excluir Tudo", (dialog, which) -> deletarConta(senhaAtual))
-                .setNegativeButton("Cancelar", null)
-                .show();
+        mostrarDialogoSenha(getString(R.string.title_delete_account_dialog),
+                getString(R.string.msg_delete_account_dialog),
+                senha -> deletarConta(senha));
     }
 
     private void deletarConta(String senha) {
@@ -168,37 +188,42 @@ public class EditProfileActivity extends AppCompatActivity {
         String novoNick = editTextNick.getText().toString().trim();
         String novaApresentacao = editTextApresentacao.getText().toString().trim();
         String novaSenha = editTextNovaSenha.getText().toString().trim();
-        String senhaAtual = editTextSenhaAtual.getText().toString().trim();
 
         boolean avatarMudou = avatarEscolhido != null && !avatarEscolhido.equals(avatarOriginal);
         if (TextUtils.isEmpty(novoNick) && TextUtils.isEmpty(novaApresentacao) && TextUtils.isEmpty(novaSenha) && !avatarMudou) {
-            Toast.makeText(this, "Nenhuma alteração solicitada.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.msg_no_changes), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        if (TextUtils.isEmpty(senhaAtual)) {
-            editTextSenhaAtual.setError("Senha atual é obrigatória para salvar alterações");
-            editTextSenhaAtual.requestFocus();
+        if (novoNick.length() > 25) {
+            Toast.makeText(this, getString(R.string.error_nick_too_long), Toast.LENGTH_SHORT).show();
             return;
         }
 
-        profileManager.salvarAlteracoes(senhaAtual, novoNick, nickOriginal, novaApresentacao, avatarEscolhido, avatarOriginal, novaSenha, new ProfileManager.ProfileUpdateListener() {
-            @Override
-            public void onSuccess(String message) {
-                if(isFinishing() || isDestroyed()) return;
-                Toast.makeText(EditProfileActivity.this, message, Toast.LENGTH_SHORT).show();
-                if(!message.contains("Dados salvos, mas erro ao trocar senha")){
-                    finish();
-                } else {
-                   finish(); 
+        if (novaApresentacao.length() > 160) {
+            Toast.makeText(this, getString(R.string.error_bio_too_long), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        mostrarDialogoSenha(getString(R.string.title_confirm_changes), getString(R.string.msg_confirm_changes), senhaAtual -> {
+            profileManager.salvarAlteracoes(senhaAtual, novoNick, nickOriginal, novaApresentacao, avatarEscolhido, avatarOriginal, novaSenha, new ProfileManager.ProfileUpdateListener() {
+                @Override
+                public void onSuccess(String message) {
+                    if(isFinishing() || isDestroyed()) return;
+                    Toast.makeText(EditProfileActivity.this, message, Toast.LENGTH_SHORT).show();
+                    if(!message.contains("Dados salvos, mas erro ao trocar senha")){
+                        finish();
+                    } else {
+                       finish(); 
+                    }
                 }
-            }
 
-            @Override
-            public void onError(String error) {
-                if(isFinishing() || isDestroyed()) return;
-                Toast.makeText(EditProfileActivity.this, error, Toast.LENGTH_SHORT).show();
-            }
+                @Override
+                public void onError(String error) {
+                    if(isFinishing() || isDestroyed()) return;
+                    Toast.makeText(EditProfileActivity.this, error, Toast.LENGTH_SHORT).show();
+                }
+            });
         });
     }
 }

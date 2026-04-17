@@ -21,8 +21,8 @@ import com.meuprojeto.eudaimoniaforum.chat.ChatActivity;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 public class ViewProfileActivity extends AppCompatActivity {
 
@@ -41,7 +41,7 @@ public class ViewProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("VisualizPerfilAct", "onCreate() chamado. Inicializando ViewProfileActivity.");
-        setContentView(R.layout.perfil_activity);
+        setContentView(R.layout.profile_activity);
 
         targetUserId = getIntent().getStringExtra("USER_ID");
 
@@ -50,7 +50,7 @@ public class ViewProfileActivity extends AppCompatActivity {
         buttonEditarPerfil.setVisibility(View.GONE);
 
         if (targetUserId != null) {
-            profileManager = new ProfileManager();
+            profileManager = new ProfileManager(this);
             
             if (profileManager.getCurrentUser() != null && targetUserId.equals(profileManager.getCurrentUser().getUid())) {
                 buttonConversar.setVisibility(View.GONE);
@@ -122,7 +122,7 @@ public class ViewProfileActivity extends AppCompatActivity {
 
         conquistasListener = profileManager.monitorarConquistas(userId, new ProfileManager.ConquistasCallback() {
             @Override
-            public void onConquistasLoaded(List<String> badgetIds) {
+            public void onConquistasLoaded(Set<String> badgetIds) {
                 if(isFinishing() || isDestroyed()) return;
                 preencherConquistas(badgetIds);
             }
@@ -152,7 +152,7 @@ public class ViewProfileActivity extends AppCompatActivity {
         }
     }
 
-    private void preencherConquistas(List<String> bIds) {
+    private void preencherConquistas(Set<String> bIds) {
         layoutBadges.removeAllViews();
         if (bIds.contains("badge_1_dia")) adicionarBadge("1 Dia", "#8BC34A");
         if (bIds.contains("badge_3_dias")) adicionarBadge("3 Dias", "#4CAF50");

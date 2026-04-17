@@ -29,7 +29,7 @@ public class NotificationActivity extends AppCompatActivity implements Notificat
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("NotificationActivity", "onCreate() chamado. Inicializando NotificationActivity.");
-        setContentView(R.layout.notificacao_activity);
+        setContentView(R.layout.notification_activity);
 
         notificationManager = new NotificationManager();
 

@@ -32,7 +32,7 @@ public class ConversationActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("ConversationActivity", "onCreate() chamado. Inicializando ConversationActivity.");
-        setContentView(R.layout.chat_conversas_activity);
+        setContentView(R.layout.chat_conversation_activity);
 
         recyclerViewConversas = findViewById(R.id.recyclerViewConversas);
         emptyState = findViewById(R.id.emptyStateLayout);

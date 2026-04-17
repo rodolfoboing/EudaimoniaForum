@@ -153,6 +153,7 @@ public class ForumManager {
         childUpdates.put("/forum/posts/" + postId, post);
         childUpdates.put("/users/" + autor + "/posts/" + postId, true);
         childUpdates.put("/users/" + autor + "/lastPostTimestamp", data);
+        childUpdates.put("/users/" + autor + "/totalPosts", com.google.firebase.database.ServerValue.increment(1));
 
         rootRef.updateChildren(childUpdates).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {

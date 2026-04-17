@@ -5,9 +5,9 @@ import android.app.TimePickerDialog;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -22,8 +22,8 @@ import java.util.Locale;
 
 public class EditAbstinenceActivity extends AppCompatActivity {
 
-    private EditText editTextDataInicio;
-    private Spinner spinnerVicioEdicao;
+    private com.google.android.material.textfield.TextInputEditText editTextDataInicio;
+    private AutoCompleteTextView spinnerVicioEdicao;
     private Button buttonSalvar;
 
     private static final String PREFS_NAME = "PrefsAbstinencia";
@@ -39,14 +39,14 @@ public class EditAbstinenceActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("EditarAbstinencia", "onCreate() chamado. Inicializando EditAbstinenceActivity.");
-        setContentView(R.layout.perfil_timer_editar_activity);
+        setContentView(R.layout.profile_timer_edit_activity);
 
         editTextDataInicio = findViewById(R.id.editTextDataInicio);
         spinnerVicioEdicao = findViewById(R.id.spinnerVicioEdicao);
         buttonSalvar = findViewById(R.id.buttonSalvar);
 
         calendar = Calendar.getInstance();
-        mainManager = new MainManager();
+        mainManager = new MainManager(this);
 
         if (mainManager.getCurrentUserId() == null) {
             Toast.makeText(this, "Usuário não autenticado", Toast.LENGTH_SHORT).show();
@@ -70,8 +70,7 @@ public class EditAbstinenceActivity extends AppCompatActivity {
         viciosList.add("Drogas");
         viciosList.add("Cigarro");
 
-        spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, viciosList);
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerAdapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, viciosList);
         spinnerVicioEdicao.setAdapter(spinnerAdapter);
     }
 
@@ -86,10 +85,7 @@ public class EditAbstinenceActivity extends AppCompatActivity {
             public void onVicioCarregado(String vicio) {
                 if(isFinishing() || isDestroyed()) return;
                 if (!vicio.isEmpty()) {
-                    int position = spinnerAdapter.getPosition(vicio);
-                    if (position >= 0) {
-                        spinnerVicioEdicao.setSelection(position);
-                    }
+                    spinnerVicioEdicao.setText(vicio, false);
                 }
             }
 
@@ -127,9 +123,9 @@ public class EditAbstinenceActivity extends AppCompatActivity {
         long novoTempo = calendar.getTimeInMillis();
         preferences.edit().putLong(KEY_TEMPO_INICIAL, novoTempo).apply();
 
-        String novoVicio = spinnerVicioEdicao.getSelectedItem().toString();
+        String novoVicio = spinnerVicioEdicao.getText().toString();
         
-        mainManager.atualizarVicio(novoVicio, new MainManager.AcaoCallback() {
+        mainManager.atualizarConfiguracaoAbstinencia(novoVicio, novoTempo, new MainManager.AcaoCallback() {
             @Override
             public void onSuccess() {
                 if(isFinishing() || isDestroyed()) return;

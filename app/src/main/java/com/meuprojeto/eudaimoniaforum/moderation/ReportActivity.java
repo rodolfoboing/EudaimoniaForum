@@ -26,7 +26,7 @@ public class ReportActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("ReportActivity", "onCreate() chamado. Inicializando ReportActivity.");
-        setContentView(R.layout.moderacao_denuncia_activity);
+        setContentView(R.layout.moderation_report_activity);
 
         postId = getIntent().getStringExtra("POST_ID");
         comentarioId = getIntent().getStringExtra("COMENTARIO_ID");

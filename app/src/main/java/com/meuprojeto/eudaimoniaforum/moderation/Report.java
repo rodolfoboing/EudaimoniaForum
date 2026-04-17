@@ -10,6 +10,7 @@ public class Report {
 
     private String tipo; // "post" ou "comentario"
     private String comentarioId; // Pode ser null se for post
+    private String conteudoDenunciado; // Prévia do conteúdo reportado
 
     public Report() {
     }
@@ -92,5 +93,13 @@ public class Report {
 
     public void setComentarioId(String comentarioId) {
         this.comentarioId = comentarioId;
+    }
+
+    public String getConteudoDenunciado() {
+        return conteudoDenunciado;
+    }
+
+    public void setConteudoDenunciado(String conteudoDenunciado) {
+        this.conteudoDenunciado = conteudoDenunciado;
     }
 }

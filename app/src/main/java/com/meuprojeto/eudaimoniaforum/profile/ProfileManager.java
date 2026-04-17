@@ -1,5 +1,6 @@
 package com.meuprojeto.eudaimoniaforum.profile;
 
+import android.content.Context;
 import android.text.TextUtils;
 
 import androidx.annotation.NonNull;
@@ -12,16 +13,16 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
-import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class ProfileManager {
 
+    private final Context context;
     private final FirebaseAuth firebaseAuth;
     private final DatabaseReference rootRef;
     private final FirebaseUser currentUser;
@@ -46,11 +47,12 @@ public class ProfileManager {
     }
 
     public interface ConquistasCallback {
-        void onConquistasLoaded(List<String> badgetIds);
+        void onConquistasLoaded(Set<String> badgetIds);
         void onNenhumaConquista();
     }
 
-    public ProfileManager() {
+    public ProfileManager(Context context) {
+        this.context = context.getApplicationContext();
         firebaseAuth = FirebaseAuth.getInstance();
         currentUser = firebaseAuth.getCurrentUser();
         rootRef = FirebaseDatabase.getInstance().getReference();
@@ -64,7 +66,7 @@ public class ProfileManager {
 
     public void carregarDadosAtuais(ProfileLoadListener listener) {
         if (currentUser == null) {
-            if (listener != null) listener.onError("Usuário não autenticado");
+            if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_unauthenticated));
             return;
         }
 
@@ -75,7 +77,7 @@ public class ProfileManager {
                     listener.onProfileLoaded(user.getNick(), user.getAvatar());
                 }
             } else {
-                if (listener != null) listener.onError("Dados do usuário não encontrados");
+                if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_user_data_not_found));
             }
         }).addOnFailureListener(e -> {
             if (listener != null) listener.onError(e.getMessage());
@@ -84,20 +86,20 @@ public class ProfileManager {
 
     public void salvarAlteracoes(String senhaAtual, String novoNick, String nickOriginal, String novaApresentacao, String avatarEscolhido, String avatarOriginal, String novaSenha, ProfileUpdateListener listener) {
         if (currentUser == null) {
-            if (listener != null) listener.onError("Usuário não autenticado");
+            if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_unauthenticated));
             return;
         }
 
         AuthCredential credential = EmailAuthProvider.getCredential(currentUser.getEmail(), senhaAtual);
         currentUser.reauthenticate(credential).addOnCompleteListener(authTask -> {
             if (!authTask.isSuccessful()) {
-                if (listener != null) listener.onError("Senha atual incorreta. Verifique e tente novamente.");
+                if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_incorrect_current_password));
             } else {
                 if (!TextUtils.isEmpty(novoNick) && !novoNick.equals(nickOriginal)) {
                     DatabaseReference usernamesRef = rootRef.child("usernames");
                     usernamesRef.child(novoNick).get().addOnCompleteListener(nickTask -> {
                         if (nickTask.isSuccessful() && nickTask.getResult().exists()) {
-                            if (listener != null) listener.onError("Este nick já está em uso.");
+                            if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_nick_in_use));
                         } else {
                             aplicarMudancasFinal(novoNick, nickOriginal, novaApresentacao, avatarEscolhido, avatarOriginal, novaSenha, true, listener);
                         }
@@ -133,7 +135,7 @@ public class ProfileManager {
                 if (dbTask.isSuccessful()) {
                     atualizarSenhaSeNecessario(novaSenha, listener);
                 } else {
-                    if (listener != null) listener.onError("Erro ao salvar dados no banco.");
+                    if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_saving_db));
                 }
             });
         } else {
@@ -145,19 +147,19 @@ public class ProfileManager {
         if (!TextUtils.isEmpty(novaSenha)) {
             currentUser.updatePassword(novaSenha).addOnCompleteListener(passTask -> {
                 if (passTask.isSuccessful()) {
-                    if (listener != null) listener.onSuccess("Perfil e senha atualizados com sucesso!");
+                    if (listener != null) listener.onSuccess(context.getString(com.meuprojeto.eudaimoniaforum.R.string.msg_profile_pass_updated));
                 } else {
                     if (listener != null) listener.onError("Dados salvos, mas erro ao trocar senha: " + passTask.getException().getMessage());
                 }
             });
         } else {
-            if (listener != null) listener.onSuccess("Perfil atualizado com sucesso!");
+            if (listener != null) listener.onSuccess(context.getString(com.meuprojeto.eudaimoniaforum.R.string.msg_profile_updated));
         }
     }
 
     public void deletarConta(String senha, ProfileUpdateListener listener) {
         if (currentUser == null) {
-            if (listener != null) listener.onError("Usuário não autenticado");
+            if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_unauthenticated));
             return;
         }
 
@@ -180,20 +182,20 @@ public class ProfileManager {
                                 if (dbTask.isSuccessful()) {
                                     currentUser.delete().addOnCompleteListener(deleteTask -> {
                                         if (deleteTask.isSuccessful()) {
-                                            if (listener != null) listener.onSuccess("Conta excluída com sucesso.");
+                                            if (listener != null) listener.onSuccess(context.getString(com.meuprojeto.eudaimoniaforum.R.string.msg_account_deleted));
                                         } else {
-                                            if (listener != null) listener.onError("Erro ao excluir conta de autenticação: " + deleteTask.getException().getMessage());
+                                            if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_auth_delete_failed) + deleteTask.getException().getMessage());
                                         }
                                     });
                                 } else {
-                                    if (listener != null) listener.onError("Erro ao apagar dados do banco.");
+                                    if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_delete_db));
                                 }
                             });
                 }).addOnFailureListener(e -> {
-                    if (listener != null) listener.onError("Erro ao recuperar dados para exclusão.");
+                    if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_retrieve_delete_data));
                 });
             } else {
-                if (listener != null) listener.onError("Senha atual incorreta. Não foi possível excluir.");
+                if (listener != null) listener.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_delete_wrong_password));
             }
         });
     }
@@ -209,7 +211,7 @@ public class ProfileManager {
                     long diasValidos = snapshot.child("checkins").getChildrenCount();
                     callback.onProfileDataLoaded(user, diasValidos);
                 } else {
-                    callback.onError("Usuário não encontrado.");
+                    callback.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_user_not_found));
                 }
             }
 
@@ -229,7 +231,7 @@ public class ProfileManager {
                     return;
                 }
                 
-                List<String> keys = new ArrayList<>();
+                Set<String> keys = new HashSet<>();
                 for(DataSnapshot ds : snapshot.getChildren()) {
                     keys.add(ds.getKey()); // Ex: badge_1_dia
                 }
@@ -252,37 +254,29 @@ public class ProfileManager {
     }
 
     public void carregarProgressoEstatisticas(String userId, ProfileStatsCallback callback) {
-        Query postsQuery = rootRef.child("forum/posts").orderByChild("autor").equalTo(userId);
-        postsQuery.addListenerForSingleValueEvent(new ValueEventListener() {
+        rootRef.child("users").child(userId).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot postsSnapshot) {
-                long totalPosts = postsSnapshot.getChildrenCount();
-
-                // Busca contagem de comentários (fallback no client-side)
-                rootRef.child("forum/comentarios").addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot commentsContainerSnapshot) {
-                        long totalComments = 0;
-                        for (DataSnapshot postComentarios : commentsContainerSnapshot.getChildren()) {
-                            for (DataSnapshot comment : postComentarios.getChildren()) {
-                                if (userId.equals(comment.child("autor").getValue(String.class))) {
-                                    totalComments++;
-                                }
-                            }
-                        }
-                        callback.onStatsLoaded(totalPosts, totalComments);
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    long totalPosts = 0;
+                    long totalComments = 0;
+                    
+                    if (snapshot.hasChild("totalPosts")) {
+                        totalPosts = snapshot.child("totalPosts").getValue(Long.class);
                     }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        callback.onStatsLoaded(totalPosts, 0);
+                    if (snapshot.hasChild("totalComentarios")) {
+                        totalComments = snapshot.child("totalComentarios").getValue(Long.class);
                     }
-                });
+                    
+                    callback.onStatsLoaded(totalPosts, totalComments);
+                } else {
+                    callback.onStatsLoaded(0, 0);
+                }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                callback.onStatsLoaded(0, 0); // Graceful fallback
+                callback.onStatsLoaded(0, 0);
             }
         });
     }

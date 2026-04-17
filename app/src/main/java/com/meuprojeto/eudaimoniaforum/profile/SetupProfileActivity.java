@@ -44,7 +44,7 @@ public class SetupProfileActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("SetupProfileActivity", "onCreate() chamado. Inicializando SetupProfileActivity.");
-        setContentView(R.layout.perfil_setup_activity);
+        setContentView(R.layout.profile_setup_activity);
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {

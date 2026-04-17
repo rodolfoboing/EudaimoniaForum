@@ -53,6 +53,12 @@ public class ChatManager {
         this.receiverRef = userRef.child(receiverId);
     }
 
+    public void atualizarStatusOnline() {
+        if (currentUserId != null) {
+            userRef.child(currentUserId).child("lastLoginTimestamp").setValue(System.currentTimeMillis());
+        }
+    }
+
     public void atualizarStatusLidoNoChat() {
         DatabaseReference readRef = FirebaseDatabase.getInstance().getReference("chats").child(chatId).child("lidoPor")
                 .child(currentUserId);
@@ -85,6 +91,11 @@ public class ChatManager {
 
     public void sendMessage(String messageText, ChatUpdateListener listener, Runnable onMessageSent) {
         if (TextUtils.isEmpty(messageText)) return;
+        
+        if (messageText.length() > 500) {
+            if (listener != null) listener.onActionFailure("Muitos caracteres! O limite para cada mensagem de chat é 500.");
+            return;
+        }
 
         long currentTime = System.currentTimeMillis();
         long cooldownMillis = 2000; // 2 segundos
@@ -113,6 +124,7 @@ public class ChatManager {
             updates.put("/chats/" + chatId + "/lidoPor/" + currentUserId, timestamp);
             updates.put("/user_conversas/" + currentUserId + "/" + chatId, true);
             updates.put("/user_conversas/" + receiverId + "/" + chatId, true);
+            updates.put("/users/" + currentUserId + "/lastLoginTimestamp", timestamp);
 
             FirebaseDatabase.getInstance().getReference().updateChildren(updates).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
@@ -127,40 +139,48 @@ public class ChatManager {
     }
 
     public void carregarDadosDoCabecalho(ChatUpdateListener listener) {
-        headerListener = new ValueEventListener() {
+        // Buscamos o Nick apenas uma vez (ou poderíamos ouvir, mas o Nick muda pouco)
+        receiverRef.child("nick").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    User user = snapshot.getValue(User.class);
-                    if (user != null) {
-                        long lastLogin = user.getLastLoginTimestamp();
-                        long timeDiff = System.currentTimeMillis() - lastLogin;
-                        String statusText;
-                        int statusColor;
+                String nick = snapshot.getValue(String.class);
+                if (nick == null) nick = "Usuário";
+                
+                final String finalNick = nick;
+                
+                // Agora ouvimos apenas o status em tempo real
+                headerListener = new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot statusSnapshot) {
+                        Long lastLogin = statusSnapshot.getValue(Long.class);
+                        if (lastLogin != null) {
+                            long timeDiff = System.currentTimeMillis() - lastLogin;
+                            String statusText;
+                            int statusColor;
 
-                        if (timeDiff < TimeUnit.MINUTES.toMillis(5)) {
-                            statusText = "🟢 Online";
-                            statusColor = Color.parseColor("#4CAF50");
-                        } else {
-                            statusText = "⚪ Offline";
-                            statusColor = Color.GRAY;
-                        }
+                            if (timeDiff < TimeUnit.MINUTES.toMillis(5)) {
+                                statusText = "🟢 Online";
+                                statusColor = Color.parseColor("#4CAF50");
+                            } else {
+                                statusText = "⚪ Offline";
+                                statusColor = Color.GRAY;
+                            }
 
-                        if (listener != null) {
-                            listener.onHeaderUpdated(user.getNick(), statusText, statusColor);
+                            if (listener != null) {
+                                listener.onHeaderUpdated(finalNick, statusText, statusColor);
+                            }
                         }
                     }
-                }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {}
+                };
+                receiverRef.child("lastLoginTimestamp").addValueEventListener(headerListener);
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                if (listener != null) {
-                    listener.onHeaderUpdated("Usuário desconhecido", "", Color.GRAY);
-                }
-            }
-        };
-        receiverRef.addValueEventListener(headerListener);
+            public void onCancelled(@NonNull DatabaseError error) {}
+        });
     }
 
     public void loadMessages(ChatUpdateListener listener) {
@@ -208,7 +228,7 @@ public class ChatManager {
             @Override
             public void onCancelled(@NonNull DatabaseError error) {}
         };
-        messagesRef.addChildEventListener(messagesListener);
+        messagesRef.limitToLast(100).addChildEventListener(messagesListener);
     }
 
     public void removeListeners() {

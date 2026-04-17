@@ -1,3 +1,115 @@
 <resources>
     <string name="app_name">EudaimoniaForum</string>
+    <string name="contador_reiniciado_aviso">Contador e compromissos reiniciados!</string>
+    <string name="contador_reiniciado_motivacao">Não desanime, seja perseverante.</string>
+
+    <!-- Main Activity -->
+    <string name="content_desc_logo">Logo</string>
+    <string name="content_desc_notifications">Notificações</string>
+    <string name="label_free_time">🎯 Tempo Livre</string>
+    <string name="label_months">Meses</string>
+    <string name="label_days">Dias</string>
+    <string name="label_hours">Horas</string>
+    <string name="label_minutes_short">Min</string>
+    <string name="btn_new_entry">Novo Registro</string>
+    <string name="btn_edit">Editar</string>
+    <string name="label_access_forum">💬 Acessar Fórum</string>
+    <string name="label_moderation">🛡️ Moderação</string>
+    <string name="label_daily_checkin">✅ Compromisso Diário</string>
+    <string name="nav_conversas">Conversas</string>
+    <string name="nav_menu">Menu</string>
+
+    <!-- Profile Edit / Setup -->
+    <string name="title_edit_abstinence">Configurar Abstinência</string>
+    <string name="desc_edit_abstinence">Neste painel exclusivo, você ajusta o relógio inicial da sua jornada e também molda o foco do seu compromisso principal.</string>
+    <string name="hint_date_time_start">Data e Hora de Início</string>
+    <string name="hint_habit_to_overcome">Vício ou Hábito a superar</string>
+    <string name="btn_save_settings">💾 Salvar Configurações</string>
+    <string name="tip_adjust_start">💡 Dica: Toque no campo abaixo para abrir o calendário e ajustar o início exato da sua abstinência.</string>
+    <string name="tip_select_habit">💡 Dica: Selecione na lista abaixo qual hábito principal você deseja superar.</string>
+    <string name="label_edit_profile">Editar Perfil</string>
+    <string name="label_profile_avatar">🎨 Avatar do Perfil</string>
+    <string name="label_personal_info">📝 Informações Pessoais</string>
+    <string name="hint_new_nick">Novo Nick (Opcional)</string>
+    <string name="hint_new_apresentacao">Nova Apresentação (Opcional)</string>
+    <string name="label_security_privacy">🔒 Segurança e Privacidade</string>
+    <string name="hint_new_password">Definir Nova Senha (Opcional)</string>
+    <string name="btn_save_changes">💾 Salvar Alterações</string>
+    <string name="btn_delete_account">❌ Excluir Minha Conta (Irreversível)</string>
+
+    <!-- Auth -->
+    <string name="welcome_login">Bem-vindo! Faça login para continuar.</string>
+    <string name="hint_username">USUÁRIO</string>
+    <string name="hint_password">SENHA</string>
+    <string name="label_forgot_password">Esqueci minha senha</string>
+    <string name="btn_login">ENTRAR</string>
+    <string name="btn_register">CADASTRAR</string>
+    <string name="label_footer_copyright">© 2024 Desenvolvido por Rodolfo B.M</string>
+
+    <!-- Common / Feedback -->
+    <string name="error_unknown">Erro desconhecido.</string>
+    <string name="error_no_internet">Sem conexão com a internet. Verifique sua rede e tente novamente.</string>
+    <string name="error_no_permission">Você não tem permissão para realizar esta operação.</string>
+    <string name="error_auth_expired">Sua autenticação expirou. Por favor, deslogue e faça login novamente.</string>
+    <string name="error_timeout">Tempo de requisição esgotado. Verifique sua conexão.</string>
+    <string name="error_service_unavailable">O serviço está temporariamente indisponível.</string>
+    <string name="error_id_not_provided">Erro: ID do usuário não fornecido.</string>
+    <string name="error_unauthenticated">Usuário não autenticado ou sessão expirada.</string>
+    <string name="error_loading_data">Falha ao carregar dados do servidor.</string>
+    <string name="btn_close">FECHAR</string>
+    <string name="confirmation_title">Confirmar</string>
+    <string name="cancel">Cancelar</string>
+
+    <!-- Achievements / Medals -->
+    <string name="medal_1_day">🥉 Medalha de 1 Dia</string>
+    <string name="medal_1_day_desc">O primeiro passo é sempre o mais importante. Você começou sua jornada de compromisso!</string>
+    <string name="medal_3_days">🥈 Medalha de 3 Dias</string>
+    <string name="medal_3_days_desc">Três dias firme! Sua disciplina está se consolidando. Continue assim!</string>
+    <string name="medal_1_week">🥇 Medalha de 1 Semana</string>
+    <string name="medal_1_week_desc">Uma semana inteira de compromisso diário! Você está provando sua força interior.</string>
+    <string name="medal_1_month">🏅 Medalha de 1 Mês</string>
+    <string name="medal_1_month_desc">30 dias de compromisso! Isso é mais do que determinação — é transformação real.</string>
+    <string name="medal_3_months">🔥 Medalha de 3 Meses</string>
+    <string name="medal_3_months_desc">90 dias! Você já mudou hábitos profundos. Sua versão mais forte está aqui!</string>
+    <string name="medal_6_months">💎 Medalha de 6 Meses</string>
+    <string name="medal_6_months_desc">Meio ano de compromisso diário! Você é uma inspiração para a comunidade.</string>
+    <string name="medal_1_year">👑 Medalha de 1 Ano</string>
+    <string name="medal_1_year_desc">UM ANO! A maior conquista possível. Você é a prova viva de que a mudança é real!</string>
+    <string name="error_saving_db">Falha ao salvar no banco de dados.</string>
+    <string name="error_updating_achievements">Falha ao atualizar conquistas.</string>
+    <string name="error_user_data_not_found">Dados do usuário não encontrados.</string>
+    <string name="error_incorrect_current_password">Senha atual incorreta. Verifique e tente novamente.</string>
+    <string name="error_nick_in_use">Este nick já está em uso.</string>
+    <string name="msg_profile_pass_updated">Perfil e senha atualizados com sucesso!</string>
+    <string name="msg_profile_updated">Perfil atualizado com sucesso!</string>
+    <string name="msg_account_deleted">Conta excluída com sucesso.</string>
+    <string name="error_auth_delete_failed">Erro ao excluir conta de autenticação: </string>
+    <string name="error_delete_db">Erro ao apagar dados do banco.</string>
+    <string name="error_retrieve_delete_data">Erro ao recuperar dados para exclusão.</string>
+    <string name="error_delete_wrong_password">Senha atual incorreta. Não foi possível excluir.</string>
+    <string name="error_user_not_found">Usuário não encontrado.</string>
+    <string name="title_contact_feedback">Contato &amp; Feedback</string>
+    <string name="desc_contact_feedback">\nPara dúvidas, sugestões ou suporte técnico geral, envie um e-mail direto para nossa equipe:\n</string>
+    <string name="label_privacy_policy">📜 Política de Privacidade</string>
+    <string name="hint_current_password">Sua senha atual</string>
+    <string name="error_password_required">A senha é obrigatória.</string>
+    <string name="title_delete_account_dialog">Excluir Conta Permanentemente</string>
+    <string name="msg_delete_account_dialog">Tem certeza absoluta? Esta ação apagará todos os seus dados, histórico e posts. Não pode ser desfeita. Digite sua senha para confirmar.</string>
+    <string name="msg_no_changes">Nenhuma alteração solicitada.</string>
+    <string name="error_nick_too_long">O seu apelido não pode ter mais de 25 caracteres.</string>
+    <string name="error_bio_too_long">A sua apresentação de perfil deve ter no máximo 160 caracteres.</string>
+    <string name="title_confirm_changes">Confirmar Alterações</string>
+    <string name="msg_confirm_changes">Para sua segurança, digite sua senha atual para validar e salvar o seu novo perfil.</string>
+
+    <!-- Forum -->
+    <string name="title_new_post">Nova Postagem</string>
+    <string name="hint_post_title">Título do seu post</string>
+    <string name="hint_post_content">Escreva seu post...</string>
+    <string name="btn_publish">Publicar</string>
+    <string name="error_empty_fields">Por favor, preencha todos os campos.</string>
+    <string name="msg_post_published">Postagem publicada com sucesso!</string>
+    <string name="error_title_too_long_80">O título é muito longo (máximo 80 caracteres).</string>
+    <string name="error_post_content_too_long_280">O resumo do post não pode ter mais de 280 caracteres.</string>
+    <string name="msg_wait_to_post">Aguarde %ds para postar novamente.</string>
+    <string name="error_post_failed">Erro ao publicar: </string>
 </resources>

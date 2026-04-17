@@ -126,7 +126,12 @@ public class CommentManager {
     }
 
     public void adicionarComentario(String conteudo, ComentarioUpdateListener listener) {
-        if (currentUserId == null) return;
+        if (currentUserId == null || conteudo == null) return;
+        
+        if (conteudo.length() > 600) {
+            if (listener != null) listener.onActionFailure("Seu comentário excede o limite de 600 caracteres.");
+            return;
+        }
         
         long currentTime = System.currentTimeMillis();
         long cooldownMillis = 30000; // 30 segundos
@@ -147,6 +152,7 @@ public class CommentManager {
                     .addOnSuccessListener(aVoid -> {
                         lastCommentTimestamp = currentTime;
                         incrementarNumeroComentarios();
+                        incrementarContadorGlobalUsuario(currentUserId);
                         salvarReferenciaPostComentado(currentUserId, postId);
                         if (listener != null) listener.onCommentAdded(conteudo);
                     })
@@ -163,24 +169,14 @@ public class CommentManager {
         userPostsComentadosRef.setValue(true);
     }
 
-    private void incrementarNumeroComentarios() {
-        postRef.child("numeroComentarios").runTransaction(new Transaction.Handler() {
-            @NonNull
-            @Override
-            public Transaction.Result doTransaction(@NonNull MutableData currentData) {
-                Integer currentCount = currentData.getValue(Integer.class);
-                if (currentCount == null) {
-                    currentData.setValue(1);
-                } else {
-                    currentData.setValue(currentCount + 1);
-                }
-                return Transaction.success(currentData);
-            }
+    private void incrementarContadorGlobalUsuario(String userId) {
+        FirebaseDatabase.getInstance().getReference("users")
+                .child(userId).child("totalComentarios")
+                .setValue(com.google.firebase.database.ServerValue.increment(1));
+    }
 
-            @Override
-            public void onComplete(@Nullable DatabaseError error, boolean committed, @Nullable DataSnapshot currentData) {
-            }
-        });
+    private void incrementarNumeroComentarios() {
+        postRef.child("numeroComentarios").setValue(com.google.firebase.database.ServerValue.increment(1));
     }
 
     public void excluirPostagem(ComentarioUpdateListener listener) {

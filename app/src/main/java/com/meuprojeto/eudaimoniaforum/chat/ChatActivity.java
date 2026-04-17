@@ -81,6 +81,9 @@ public class ChatActivity extends AppCompatActivity implements ChatManager.ChatU
         super.onResume();
         activeChatUserId = receiverId;
         ChatNotificationHelper.limparNotificacaoDeChat(currentUserId, receiverId);
+        if (chatManager != null) {
+            chatManager.atualizarStatusOnline();
+        }
     }
 
     @Override

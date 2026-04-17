@@ -12,7 +12,9 @@ import com.meuprojeto.eudaimoniaforum.profile.User;
 import com.meuprojeto.eudaimoniaforum.utils.AppLogger;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ModerationManager {
 
@@ -33,7 +35,7 @@ public class ModerationManager {
     }
 
     public interface UsuariosFeedCallback {
-        void onUsuariosLoaded(List<User> listNaoBanidos, List<String> listBannedIds);
+        void onUsuariosLoaded(List<User> listNaoBanidos, Set<String> listBannedIds);
     }
 
     public interface AcaoCallback {
@@ -62,10 +64,12 @@ public class ModerationManager {
                 for (DataSnapshot ds : snapshot.getChildren()) {
                     Report d = ds.getValue(Report.class);
                     if (d != null && currentUserId.equals(d.getDenuncianteId())) {
-                        if ("comentario".equals(tipo) && "comentario".equals(d.getTipo()) && comentarioId != null && comentarioId.equals(d.getComentarioId())) {
+                        boolean isComentario = "comentario".equals(tipo) || "comment".equals(tipo);
+                        boolean dIsComentario = "comentario".equals(d.getTipo()) || "comment".equals(d.getTipo());
+                        if (isComentario && dIsComentario && comentarioId != null && comentarioId.equals(d.getComentarioId())) {
                             jaDenunciou = true;
                             break;
-                        } else if ("post".equals(tipo) && ("post".equals(d.getTipo()) || d.getTipo() == null)) {
+                        } else if (("post".equals(tipo) || tipo == null) && ("post".equals(d.getTipo()) || d.getTipo() == null)) {
                             jaDenunciou = true;
                             break;
                         }
@@ -80,14 +84,35 @@ public class ModerationManager {
                         callback.onError("Erro ao criar identificador da denúncia");
                         return;
                     }
-                    Report report = new Report(id, postId, comentarioId, tipo, motivoFinal, currentUserId, System.currentTimeMillis());
-                    denunciasRef.child(id).setValue(report).addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            AppLogger.logModAlert("Denuncia_Enviada", "Usuário UID " + currentUserId + " reportou um [" + tipo + "] com ID " + postId + "/" + comentarioId + " Motivo: " + motivoFinal);
-                            callback.onSuccess();
-                        } else {
-                            callback.onError("Erro ao registrar denúncia");
-                            if (task.getException() != null) AppLogger.logDbError("Moderacao_EnviarDenuncia", task.getException().getMessage());
+
+                    // Buscar o conteúdo denunciado para dar contexto ao moderador
+                    DatabaseReference conteudoRef;
+                    if (("comentario".equals(tipo) || "comment".equals(tipo)) && comentarioId != null) {
+                        conteudoRef = rootRef.child("forum/comentarios").child(postId).child(comentarioId).child("conteudo");
+                    } else {
+                        conteudoRef = rootRef.child("forum/posts").child(postId).child("resumo");
+                    }
+
+                    conteudoRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(@NonNull DataSnapshot conteudoSnap) {
+                            String previa = conteudoSnap.getValue(String.class);
+                            Report report = new Report(id, postId, comentarioId, tipo, motivoFinal, currentUserId, System.currentTimeMillis());
+                            report.setConteudoDenunciado(previa != null ? previa : "Conteúdo indisponível");
+                            denunciasRef.child(id).setValue(report).addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    AppLogger.logModAlert("Denuncia_Enviada", "Usuário UID " + currentUserId + " reportou um [" + tipo + "] com ID " + postId + "/" + comentarioId + " Motivo: " + motivoFinal);
+                                    callback.onSuccess();
+                                } else {
+                                    callback.onError("Erro ao registrar denúncia");
+                                    if (task.getException() != null) AppLogger.logDbError("Moderacao_EnviarDenuncia", task.getException().getMessage());
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onCancelled(@NonNull DatabaseError error) {
+                            callback.onError("Erro ao buscar conteúdo: " + error.getMessage());
                         }
                     });
                 }
@@ -124,7 +149,7 @@ public class ModerationManager {
         rootRef.child("banidos").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot banidosSnapshot) {
-                List<String> bIds = new ArrayList<>();
+                Set<String> bIds = new HashSet<>();
                 for (DataSnapshot ds : banidosSnapshot.getChildren()) {
                     bIds.add(ds.getKey());
                 }
@@ -168,15 +193,23 @@ public class ModerationManager {
     }
 
     public void apagarConteudoOfensivoEResolver(Report report, AcaoCallback callback) {
-        DatabaseReference targetRef;
-        if ("comentario".equals(report.getTipo()) && report.getComentarioId() != null) {
-            targetRef = rootRef.child("forum/comentarios").child(report.getPostId()).child(report.getComentarioId());
+        boolean isComentario = "comentario".equals(report.getTipo()) || "comment".equals(report.getTipo());
+        if (isComentario && report.getComentarioId() != null) {
+            DatabaseReference targetRef = rootRef.child("forum/comentarios").child(report.getPostId()).child(report.getComentarioId());
+            targetRef.removeValue().addOnSuccessListener(aVoid -> {
+                // Ao apagar um comentário ofensivo, diminuir o contador de comentários do post
+                rootRef.child("forum/posts").child(report.getPostId()).child("numeroComentarios")
+                        .setValue(com.google.firebase.database.ServerValue.increment(-1));
+                resolverDenuncia(report.getId(), callback);
+            }).addOnFailureListener(e -> callback.onError(e.getMessage()));
         } else {
-            targetRef = rootRef.child("forum/posts").child(report.getPostId());
+            DatabaseReference targetRef = rootRef.child("forum/posts").child(report.getPostId());
+            targetRef.removeValue().addOnSuccessListener(aVoid -> {
+                // Ao apagar um post inteiro, limpar também a arvore de comentários dele para evitar orfãos
+                rootRef.child("forum/comentarios").child(report.getPostId()).removeValue();
+                resolverDenuncia(report.getId(), callback);
+            }).addOnFailureListener(e -> callback.onError(e.getMessage()));
         }
-
-        targetRef.removeValue().addOnSuccessListener(aVoid -> resolverDenuncia(report.getId(), callback))
-                               .addOnFailureListener(e -> callback.onError(e.getMessage()));
     }
 
     public void banirUsuario(String uid, AcaoCallback callback) {

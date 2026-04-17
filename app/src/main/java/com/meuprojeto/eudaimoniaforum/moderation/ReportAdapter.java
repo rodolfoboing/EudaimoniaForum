@@ -39,7 +39,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.DenunciaVi
     @NonNull
     @Override
     public DenunciaViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.moderacao_denuncia_item, parent, false);
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.moderation_report_item, parent, false);
         return new DenunciaViewHolder(view);
     }
 
@@ -57,6 +57,23 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.DenunciaVi
             holder.textPostId.setText("Post ID: " + report.getPostId());
         }
 
+        // Exibir prévia do conteúdo denunciado
+        String conteudo = report.getConteudoDenunciado();
+        if (conteudo != null && !conteudo.isEmpty()) {
+            holder.textConteudoDenunciado.setText("\"" + conteudo + "\"");
+            holder.textConteudoDenunciado.setVisibility(View.VISIBLE);
+        } else {
+            holder.textConteudoDenunciado.setVisibility(View.GONE);
+        }
+
+        // Texto dinâmico do botão de apagar
+        boolean isComentario = "comentario".equals(report.getTipo()) || "comment".equals(report.getTipo());
+        if (isComentario) {
+            holder.btnApagarConteudo.setText("Apagar Comentário");
+        } else {
+            holder.btnApagarConteudo.setText("Apagar Post");
+        }
+
         holder.btnVerPostBotao.setOnClickListener(v -> {
             Intent intent = new Intent(context, CommentActivity.class);
             intent.putExtra("POST_ID", report.getPostId());
@@ -69,7 +86,7 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.DenunciaVi
             }
         });
 
-        holder.btnApagarPost.setOnClickListener(v -> {
+        holder.btnApagarConteudo.setOnClickListener(v -> {
             if (callback != null) {
                 callback.onApagarPostClicado(report);
             }
@@ -82,17 +99,18 @@ public class ReportAdapter extends RecyclerView.Adapter<ReportAdapter.DenunciaVi
     }
 
     static class DenunciaViewHolder extends RecyclerView.ViewHolder {
-        TextView textMotivo, textData, textPostId;
-        Button btnVerPostBotao, btnResolver, btnApagarPost;
+        TextView textMotivo, textData, textPostId, textConteudoDenunciado;
+        Button btnVerPostBotao, btnResolver, btnApagarConteudo;
 
         public DenunciaViewHolder(@NonNull View itemView) {
             super(itemView);
             textMotivo = itemView.findViewById(R.id.textMotivo);
             textData = itemView.findViewById(R.id.textData);
             textPostId = itemView.findViewById(R.id.textPostId);
+            textConteudoDenunciado = itemView.findViewById(R.id.textConteudoDenunciado);
             btnVerPostBotao = itemView.findViewById(R.id.btnVerPostBotao);
             btnResolver = itemView.findViewById(R.id.btnResolver);
-            btnApagarPost = itemView.findViewById(R.id.btnApagarPost);
+            btnApagarConteudo = itemView.findViewById(R.id.btnApagarConteudo);
         }
     }
 }

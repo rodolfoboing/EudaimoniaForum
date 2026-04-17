@@ -36,7 +36,7 @@ public class MyPostActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("MinhasPostagensAct", "onCreate() chamado. Inicializando MyPostActivity.");
-        setContentView(R.layout.forum_minhas_postagens_activity);
+        setContentView(R.layout.forum_my_post_activity);
 
         forumManager = new ForumManager();
         String currentMySessionUid = forumManager.getCurrentUserId();

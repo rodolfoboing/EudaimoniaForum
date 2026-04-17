@@ -44,7 +44,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.Comentar
     @Override
     public ComentarioViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.forum_item_comentario, parent, false);
+                .inflate(R.layout.forum_item_comment, parent, false);
         return new ComentarioViewHolder(view);
     }
 
@@ -121,7 +121,7 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.Comentar
                     Intent intent = new Intent(context, ReportActivity.class);
                     intent.putExtra("POST_ID", comment.getPostId());
                     intent.putExtra("COMENTARIO_ID", comment.getId());
-                    intent.putExtra("TIPO", "comment");
+                    intent.putExtra("TIPO", "comentario");
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     context.startActivity(intent);
                     return true;

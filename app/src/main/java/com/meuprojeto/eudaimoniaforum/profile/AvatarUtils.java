@@ -5,7 +5,7 @@ import android.widget.ImageView;
 
 public class AvatarUtils {
 
-    public static final int TOTAL_AVATARES = 35;
+    public static final int TOTAL_AVATARES = 45;
 
     /**
      * Retorna o ID do recurso em drawable baseado na string do avatar salva no banco.

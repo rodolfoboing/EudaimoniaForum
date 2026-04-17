@@ -29,7 +29,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Editar Perfil"
+                android:text="@string/label_edit_profile"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="#3F51B5"
@@ -47,7 +47,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🎨 Avatar do Perfil"
+                android:text="@string/label_profile_avatar"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#3F51B5"
@@ -80,7 +80,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="📝 Informações Pessoais"
+                android:text="@string/label_personal_info"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#3F51B5"
@@ -100,7 +100,7 @@
                     android:id="@+id/editTextNick"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Novo Nick (Opcional)"
+                    android:hint="@string/hint_new_nick"
                     android:textColor="#000000"
                     android:textSize="16sp"
                     android:inputType="text" />
@@ -120,7 +120,7 @@
                     android:id="@+id/editTextApresentacao"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Nova Apresentação (Opcional)"
+                    android:hint="@string/hint_new_apresentacao"
                     android:textColor="#000000"
                     android:textSize="16sp"
                     android:inputType="textMultiLine"
@@ -138,32 +138,11 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="🔒 Segurança"
+                android:text="@string/label_security_privacy"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#3F51B5"
                 android:layout_marginBottom="12dp" />
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                android:textColorHint="#212121"
-                app:hintTextColor="#3F51B5"
-                app:boxBackgroundColor="#FFFFFF"
-                app:passwordToggleEnabled="true"
-                app:boxStrokeColor="#3F51B5">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/editTextSenhaAtual"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="Senha Atual (Obrigatório)*"
-                    android:inputType="textPassword"
-                    android:textColor="#000000"
-                    android:textSize="16sp" />
-            </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
                 android:layout_width="match_parent"
@@ -180,22 +159,12 @@
                     android:id="@+id/editTextNovaSenha"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Nova Senha (Opcional)"
+                    android:hint="@string/hint_new_password"
                     android:inputType="textPassword"
                     android:textColor="#000000"
                     android:textSize="16sp" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="⚠️ A senha atual é necessária para salvar qualquer alteração"
-                android:textSize="12sp"
-                android:textColor="#E65100"
-                android:textStyle="bold"
-                android:layout_marginBottom="20dp"
-                android:background="#FFF3E0"
-                android:padding="10dp" />
         </LinearLayout>
 
         <Button
@@ -204,7 +173,7 @@
             android:layout_height="60dp"
             android:layout_marginTop="24dp"
             android:backgroundTint="#4CAF50"
-            android:text="💾 Salvar Alterações"
+            android:text="@string/btn_save_changes"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
@@ -216,7 +185,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
             android:backgroundTint="#F44336"
-            android:text="❌ Excluir Minha Conta (Irreversível)"
+            android:text="@string/btn_delete_account"
             android:textColor="#FFFFFF"
             android:textSize="14sp"
             android:textStyle="bold" />

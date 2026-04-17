@@ -44,7 +44,7 @@ public class CommentActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d(TAG, "onCreate() chamado. Inicializando CommentActivity.");
-        setContentView(R.layout.forum_comentarios_activity);
+        setContentView(R.layout.forum_comment_activity);
 
         postId = getIntent().getStringExtra("POST_ID");
         if (TextUtils.isEmpty(postId)) {
