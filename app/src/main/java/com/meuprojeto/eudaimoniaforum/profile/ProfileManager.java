@@ -176,6 +176,10 @@ public class ProfileManager {
                     if (nick != null) {
                         updates.put("usernames/" + nick, null);
                     }
+                    updates.put("user_conversas/" + uid, null);
+                    updates.put("notificacoes/" + uid, null);
+                    updates.put("moderadores/" + uid, null);
+                    updates.put("banidos/" + uid, null);
 
                     rootRef.updateChildren(updates)
                             .addOnCompleteListener(dbTask -> {

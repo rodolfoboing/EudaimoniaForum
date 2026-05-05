@@ -75,6 +75,17 @@ public class CommentAdapter extends RecyclerView.Adapter<CommentAdapter.Comentar
         });
 
         holder.textViewConteudo.setText(comment.getConteudo());
+
+        holder.textViewConteudo.setOnClickListener(v -> {
+            int currentMax = holder.textViewConteudo.getMaxLines();
+            if (currentMax == Integer.MAX_VALUE || currentMax == -1) {
+                holder.textViewConteudo.setMaxLines(4);
+                holder.textViewConteudo.setEllipsize(android.text.TextUtils.TruncateAt.END);
+            } else {
+                holder.textViewConteudo.setMaxLines(Integer.MAX_VALUE);
+                holder.textViewConteudo.setEllipsize(null);
+            }
+        });
         holder.textViewData.setText(comment.getData());
 
         boolean isDonoPost = (donoDoPostId != null && currentUserId != null && donoDoPostId.equals(currentUserId));

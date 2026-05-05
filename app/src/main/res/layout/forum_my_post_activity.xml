@@ -30,12 +30,15 @@
             <Button
                 android:id="@+id/buttonFiltroMinhasPostagens"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
+                android:minHeight="40dp"
                 android:layout_marginEnd="4dp"
                 android:layout_weight="1"
                 android:backgroundTint="#8BC34A"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
+                android:maxLines="2"
+                android:ellipsize="end"
                 android:text="Minhas Postagens"
                 android:textColor="#FFFFFF"
                 android:textSize="12sp" />
@@ -43,12 +46,15 @@
             <Button
                 android:id="@+id/buttonFiltroComentadas"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
+                android:minHeight="40dp"
                 android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:backgroundTint="#FF9800"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
+                android:maxLines="2"
+                android:ellipsize="end"
                 android:text="Posts que comentei"
                 android:textColor="#FFFFFF"
                 android:textSize="12sp" />

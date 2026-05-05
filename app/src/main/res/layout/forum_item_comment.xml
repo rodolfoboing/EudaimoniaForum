@@ -25,7 +25,9 @@
         android:layout_marginTop="2dp"
         android:text="Conteúdo do comentário aqui..."
         android:textColor="#212121"
-        android:textSize="13sp" />
+        android:textSize="13sp"
+        android:maxLines="4"
+        android:ellipsize="end" />
 
     <LinearLayout
         android:layout_width="match_parent"

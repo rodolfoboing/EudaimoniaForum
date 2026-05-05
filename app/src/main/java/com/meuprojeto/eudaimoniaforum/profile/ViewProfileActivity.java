@@ -154,33 +154,33 @@ public class ViewProfileActivity extends AppCompatActivity {
 
     private void preencherConquistas(Set<String> bIds) {
         layoutBadges.removeAllViews();
-        if (bIds.contains("badge_1_dia")) adicionarBadge("1 Dia", "#8BC34A");
-        if (bIds.contains("badge_3_dias")) adicionarBadge("3 Dias", "#4CAF50");
-        if (bIds.contains("badge_1_semana")) adicionarBadge("1 Semana", "#009688");
-        if (bIds.contains("badge_1_mes")) adicionarBadge("1 Mês", "#00BCD4");
-        if (bIds.contains("badge_3_meses")) adicionarBadge("3 Meses", "#2196F3");
-        if (bIds.contains("badge_6_meses")) adicionarBadge("6 Meses", "#3F51B5");
-        if (bIds.contains("badge_1_ano")) adicionarBadge("1 Ano", "#9C27B0");
+        if (bIds.contains("badge_1_dia")) adicionarBadge("1 Dia", "🛡️");
+        if (bIds.contains("badge_3_dias")) adicionarBadge("3 Dias", "⚔️");
+        if (bIds.contains("badge_1_semana")) adicionarBadge("1 Semana", "🏅");
+        if (bIds.contains("badge_1_mes")) adicionarBadge("1 Mês", "🎖️");
+        if (bIds.contains("badge_3_meses")) adicionarBadge("3 Meses", "🏆");
+        if (bIds.contains("badge_6_meses")) adicionarBadge("6 Meses", "🌟");
+        if (bIds.contains("badge_1_ano")) adicionarBadge("1 Ano", "👑");
+        if (bIds.contains("badge_3_anos")) adicionarBadge("3 Anos", "💎");
 
         if (layoutBadges.getChildCount() == 0) {
-            adicionarBadge("Iniciante", "#B0BEC5");
+            adicionarBadge("Iniciante", "🌱");
         }
     }
 
-    private void adicionarBadge(String titulo, String corHex) {
+    private void adicionarBadge(String titulo, String emojiIcon) {
         LinearLayout badgeLayout = new LinearLayout(this);
         badgeLayout.setOrientation(LinearLayout.VERTICAL);
         badgeLayout.setGravity(Gravity.CENTER);
         badgeLayout.setPadding(16, 0, 16, 0);
 
-        ImageView icon = new ImageView(this);
-        icon.setImageResource(android.R.drawable.star_big_on);
-        try {
-            icon.setColorFilter(Color.parseColor(corHex));
-        } catch (IllegalArgumentException e) {
-            icon.setColorFilter(Color.GRAY);
-        }
-        icon.setLayoutParams(new LinearLayout.LayoutParams(100, 100));
+        TextView icon = new TextView(this);
+        icon.setText(emojiIcon);
+        icon.setTextSize(40f);
+        icon.setGravity(Gravity.CENTER);
+        icon.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
 
         TextView text = new TextView(this);
         text.setText(titulo);

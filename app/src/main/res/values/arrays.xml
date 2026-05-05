@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="lista_categorias">
+        <item>Todos</item>
+        <item>Pornografia</item>
+        <item>Jogos de Azar</item>
+        <item>Videogame</item>
+        <item>Álcool</item>
+        <item>Drogas</item>
+        <item>Cigarro</item>
+    </string-array>
+    
+    <string-array name="lista_vicios_registro">
+        <item>Pornografia</item>
+        <item>Jogos de Azar</item>
+        <item>Videogame</item>
+        <item>Álcool</item>
+        <item>Drogas</item>
+        <item>Cigarro</item>
+    </string-array>
+</resources>

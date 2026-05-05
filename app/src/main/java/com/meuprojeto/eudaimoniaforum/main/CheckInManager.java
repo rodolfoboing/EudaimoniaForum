@@ -232,6 +232,11 @@ public class CheckInManager {
                     tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_year);
                     mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_year_desc);
                 }
+                if (dias >= 1095 && !isConquistaDesbloqueada(snapshot, "badge_3_anos")) {
+                    updates.put("badge_3_anos", true);
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_3_years);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_3_years_desc);
+                }
 
                 if (!updates.isEmpty()) {
                     final String finalTitulo = tituloNovaConquista;

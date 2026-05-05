@@ -65,7 +65,8 @@
         <Button
             android:id="@+id/buttonTodasConversas"
             android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_height="wrap_content"
+            android:minHeight="40dp"
             android:layout_marginEnd="4dp"
             android:layout_weight="1"
             android:backgroundTint="#2196F3"
@@ -76,7 +77,8 @@
         <Button
             android:id="@+id/buttonNaoLidas"
             android:layout_width="0dp"
-            android:layout_height="36dp"
+            android:layout_height="wrap_content"
+            android:minHeight="40dp"
             android:layout_marginStart="4dp"
             android:layout_marginEnd="4dp"
             android:layout_weight="1"

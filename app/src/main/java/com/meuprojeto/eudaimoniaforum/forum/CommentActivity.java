@@ -48,7 +48,7 @@ public class CommentActivity extends AppCompatActivity implements
 
         postId = getIntent().getStringExtra("POST_ID");
         if (TextUtils.isEmpty(postId)) {
-            Toast.makeText(this, "Erro: ID do post não encontrado", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.error_post_id_not_found), Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -66,7 +66,7 @@ public class CommentActivity extends AppCompatActivity implements
         buttonEnviarComentario.setOnClickListener(v -> {
             String conteudo = editTextComentario.getText().toString().trim();
             if (TextUtils.isEmpty(conteudo)) {
-                Toast.makeText(this, "Por favor, escreva um comentário", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, getString(R.string.error_empty_comment), Toast.LENGTH_SHORT).show();
                 return;
             }
             commentManager.adicionarComentario(conteudo, this);
@@ -117,6 +117,21 @@ public class CommentActivity extends AppCompatActivity implements
         if (tvTitulo != null && tvConteudo != null) {
             tvTitulo.setText(post.getTitulo());
             tvConteudo.setText(post.getResumo());
+
+            android.view.View.OnClickListener expandListener = v -> {
+                TextView tv = (TextView) v;
+                int currentMax = tv.getMaxLines();
+                if (currentMax == Integer.MAX_VALUE || currentMax == -1) {
+                    tv.setMaxLines(tv.getId() == R.id.textViewTituloPreview ? 2 : 3);
+                    tv.setEllipsize(android.text.TextUtils.TruncateAt.END);
+                } else {
+                    tv.setMaxLines(Integer.MAX_VALUE);
+                    tv.setEllipsize(null);
+                }
+            };
+
+            tvTitulo.setOnClickListener(expandListener);
+            tvConteudo.setOnClickListener(expandListener);
         }
     }
 
@@ -150,7 +165,9 @@ public class CommentActivity extends AppCompatActivity implements
     public void onActionSuccess(String message) {
         if(isFinishing() || isDestroyed()) return;
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        if ("Postagem excluída.".equals(message)) {
+        // A checagem abaixo é um anti-pattern baseado em string human-readable. 
+        // Foi mantido provisoriamente pois demandaria ajustar a interface e as outras passagens do ChatManager/CommentManager.
+        if (message.equals(getString(R.string.msg_post_deleted)) || message.contains("excluída")) {
             finish();
         }
     }
@@ -188,7 +205,7 @@ public class CommentActivity extends AppCompatActivity implements
         popup.getMenuInflater().inflate(R.menu.menu_opcoes_postagem, popup.getMenu());
 
         boolean currentlyReceiving = (isAcompanhando == null) ? isOwner : isAcompanhando;
-        popup.getMenu().findItem(R.id.action_acompanhar).setTitle(currentlyReceiving ? "Silenciar Notificações" : "Acompanhar Notificações");
+        popup.getMenu().findItem(R.id.action_acompanhar).setTitle(currentlyReceiving ? getString(R.string.action_mute_notifications) : getString(R.string.action_follow_notifications));
 
         if (isOwner) popup.getMenu().findItem(R.id.action_denunciar).setVisible(false);
         if (!isOwner && !isModerador) popup.getMenu().findItem(R.id.action_excluir).setVisible(false);
@@ -204,7 +221,7 @@ public class CommentActivity extends AppCompatActivity implements
                 startActivity(intent);
                 return true;
             } else if (id == R.id.action_excluir) {
-                confirmOp("Excluir Postagem", "Tem certeza que deseja excluir esta postagem?", () -> commentManager.excluirPostagem(this));
+                confirmOp(getString(R.string.action_delete_post), getString(R.string.msg_confirm_delete_post), () -> commentManager.excluirPostagem(this));
                 return true;
             }
             return false;
@@ -216,8 +233,8 @@ public class CommentActivity extends AppCompatActivity implements
         new androidx.appcompat.app.AlertDialog.Builder(this)
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton("Sim", (dialog, which) -> onConfirm.run())
-                .setNegativeButton("Não", null)
+                .setPositiveButton(R.string.dialog_yes, (dialog, which) -> onConfirm.run())
+                .setNegativeButton(R.string.dialog_no, null)
                 .show();
     }
 

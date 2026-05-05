@@ -27,6 +27,8 @@ public class RegisterActivity extends AppCompatActivity {
     private EditText editTextNome;
     private Spinner spinnerVicio;
     private EditText editTextSenhaCadastro;
+    private EditText editTextConfirmarSenhaCadastro;
+    private android.widget.CheckBox checkBoxMostrarSenha;
     private Button buttonCadastrar;
     private android.widget.CheckBox checkBoxTermos;
     private android.widget.CheckBox checkBoxMaiorIdade;
@@ -44,6 +46,8 @@ public class RegisterActivity extends AppCompatActivity {
         editTextNome = findViewById(R.id.editTextNome);
         spinnerVicio = findViewById(R.id.spinnerVicio);
         editTextSenhaCadastro = findViewById(R.id.editTextSenhaCadastro);
+        editTextConfirmarSenhaCadastro = findViewById(R.id.editTextConfirmarSenhaCadastro);
+        checkBoxMostrarSenha = findViewById(R.id.checkBoxMostrarSenha);
         buttonCadastrar = findViewById(R.id.buttonCadastrar);
         checkBoxTermos = findViewById(R.id.checkBoxTermos);
         checkBoxMaiorIdade = findViewById(R.id.checkBoxMaiorIdade);
@@ -51,11 +55,23 @@ public class RegisterActivity extends AppCompatActivity {
         configurarLinkDosTermos();
         setupSpinner();
 
+        checkBoxMostrarSenha.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (isChecked) {
+                editTextSenhaCadastro.setTransformationMethod(android.text.method.HideReturnsTransformationMethod.getInstance());
+                editTextConfirmarSenhaCadastro.setTransformationMethod(android.text.method.HideReturnsTransformationMethod.getInstance());
+            } else {
+                editTextSenhaCadastro.setTransformationMethod(android.text.method.PasswordTransformationMethod.getInstance());
+                editTextConfirmarSenhaCadastro.setTransformationMethod(android.text.method.PasswordTransformationMethod.getInstance());
+            }
+            editTextSenhaCadastro.setSelection(editTextSenhaCadastro.getText().length());
+            editTextConfirmarSenhaCadastro.setSelection(editTextConfirmarSenhaCadastro.getText().length());
+        });
+
         buttonCadastrar.setOnClickListener(v -> processarRegistro());
     }
     
     private void configurarLinkDosTermos() {
-        String textoTermos = "Li e concordo com os Termos de Uso e Política de Privacidade";
+        String textoTermos = getString(R.string.msg_terms_consent_plain);
         android.text.SpannableString ss = new android.text.SpannableString(textoTermos);
         android.text.style.ClickableSpan clickableSpan = new android.text.style.ClickableSpan() {
             @Override
@@ -73,19 +89,20 @@ public class RegisterActivity extends AppCompatActivity {
             }
         };
 
-        ss.setSpan(clickableSpan, 21, textoTermos.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        // Encontrar a palavra "Termos de Uso e Política de Privacidade" ou adaptar o índice.
+        // O texto extraído é "Li e concordo com os Termos de Uso e Política de Privacidade", com 60 chars.
+        // Índice de "Termos de Uso" começa próximo ao 21.
+        int startIndex = textoTermos.indexOf("Termos");
+        if(startIndex == -1) startIndex = 21; // fallback
+        
+        ss.setSpan(clickableSpan, startIndex, textoTermos.length(), android.text.Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         checkBoxTermos.setText(ss);
         checkBoxTermos.setMovementMethod(android.text.method.LinkMovementMethod.getInstance());
     }
 
     private void setupSpinner() {
-        List<String> vicios = new ArrayList<>();
-        vicios.add("Pornografia");
-        vicios.add("Jogos de Azar");
-        vicios.add("Videogame");
-        vicios.add("Álcool");
-        vicios.add("Drogas");
-        vicios.add("Cigarro");
+        String[] viciosArray = getResources().getStringArray(R.array.lista_vicios_registro);
+        List<String> vicios = new ArrayList<>(java.util.Arrays.asList(viciosArray));
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, vicios);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -95,31 +112,42 @@ public class RegisterActivity extends AppCompatActivity {
     private void processarRegistro() {
         String email = editTextEmail.getText().toString().trim();
         String password = editTextSenhaCadastro.getText().toString().trim();
+        String confirmPassword = editTextConfirmarSenhaCadastro.getText().toString().trim();
         String nickDesejado = editTextNome.getText().toString().trim();
         String vicioSelecionado = spinnerVicio.getSelectedItem().toString();
 
-        if (email.isEmpty() || password.isEmpty() || nickDesejado.isEmpty()) {
-            Toast.makeText(RegisterActivity.this, "Preencha todos os campos!", Toast.LENGTH_SHORT).show();
+        if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() || nickDesejado.isEmpty()) {
+            Toast.makeText(RegisterActivity.this, getString(R.string.error_fill_all_fields), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!password.equals(confirmPassword)) {
+            Toast.makeText(RegisterActivity.this, getString(R.string.error_passwords_do_not_match), Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (password.length() < 6) {
+            Toast.makeText(RegisterActivity.this, "A senha deve ter pelo menos 6 caracteres.", Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (!checkBoxTermos.isChecked()) {
-            Toast.makeText(RegisterActivity.this, "Você precisa aceitar os Termos de Uso.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(RegisterActivity.this, getString(R.string.error_accept_terms), Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (!checkBoxMaiorIdade.isChecked()) {
-            Toast.makeText(RegisterActivity.this, "Você precisa confirmar que tem 18 anos ou mais.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(RegisterActivity.this, getString(R.string.error_confirm_age), Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (nickDesejado.length() < 3) {
-            Toast.makeText(RegisterActivity.this, "O nick deve ter pelo menos 3 caracteres.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(RegisterActivity.this, getString(R.string.error_nick_min_length), Toast.LENGTH_SHORT).show();
             return;
         }
 
         progressDialog = new ProgressDialog(RegisterActivity.this);
-        progressDialog.setMessage("Verificando nick e registrando...");
+        progressDialog.setMessage(getString(R.string.msg_checking_nick_register));
         progressDialog.setCancelable(false);
         progressDialog.show();
 
@@ -127,13 +155,13 @@ public class RegisterActivity extends AppCompatActivity {
             @Override
             public void onNickExists() {
                 dispensarDialogo();
-                Toast.makeText(RegisterActivity.this, "Este nick já está em uso, escolha outro!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(RegisterActivity.this, getString(R.string.error_choose_another_nick), Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onSuccess() {
                 dispensarDialogo();
-                Toast.makeText(RegisterActivity.this, "Usuário registrado com sucesso!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(RegisterActivity.this, getString(R.string.msg_user_registered_success), Toast.LENGTH_SHORT).show();
                 irParaSetupPerfil();
             }
 

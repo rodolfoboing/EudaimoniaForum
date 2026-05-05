@@ -53,12 +53,20 @@
         android:id="@+id/editTextSenha"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="8dp"
         android:hint="@string/hint_password"
         android:inputType="textPassword"
         android:padding="12dp"
         android:textColor="#000000"
         android:textColorHint="#625F5F" />
+
+    <CheckBox
+        android:id="@+id/checkBoxMostrarSenhaLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/label_show_password"
+        android:textColor="#5A5B59" />
 
     <TextView
         android:id="@+id/textViewEsqueciSenha"

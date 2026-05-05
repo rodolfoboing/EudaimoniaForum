@@ -81,7 +81,7 @@ public class OnboardingActivity extends AppCompatActivity {
         onboardingItems.add(new OnboardingItem(
                 android.R.drawable.checkbox_on_background,
                 "Compromisso Diário",
-                "Clique no '✅ Compromisso Diário' todo dia para gerar vitórias contínuas (⭐).\n\nO número de estrelas acompanha e valida seu tempo real, lhe garantindo as tão sonhadas Medalhas!"));
+                "Clique no '✅ Compromisso Diário' todo dia para gerar vitórias contínuas.\n\nO seu progresso diário acompanha e valida seu tempo real, lhe garantindo as tão sonhadas Medalhas!"));
 
         onboardingItems.add(new OnboardingItem(
                 android.R.drawable.ic_dialog_email,

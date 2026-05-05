@@ -100,14 +100,8 @@ public class ForumActivity extends AppCompatActivity {
     }
 
     private void setupSpinner() {
-        List<String> categorias = new ArrayList<>();
-        categorias.add("Todos");
-        categorias.add("Pornografia");
-        categorias.add("Jogos de Azar");
-        categorias.add("Videogame");
-        categorias.add("Álcool");
-        categorias.add("Drogas");
-        categorias.add("Cigarro");
+        String[] categoriasArray = getResources().getStringArray(R.array.lista_categorias);
+        List<String> categorias = new ArrayList<>(java.util.Arrays.asList(categoriasArray));
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.forum_spinner_item, categorias);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -144,7 +138,7 @@ public class ForumActivity extends AppCompatActivity {
             @Override
             public void onError(String erro) {
                 if(isFinishing() || isDestroyed()) return;
-                Toast.makeText(ForumActivity.this, "Erro: " + erro, Toast.LENGTH_SHORT).show();
+                Toast.makeText(ForumActivity.this, getString(R.string.error_loading_data) + ": " + erro, Toast.LENGTH_SHORT).show();
             }
         });
     }

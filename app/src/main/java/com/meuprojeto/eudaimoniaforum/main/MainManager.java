@@ -112,7 +112,7 @@ public class MainManager {
         Map<String, Object> resetUpdates = new HashMap<>();
         resetUpdates.put("streakAtual", 0);
         resetUpdates.put("ultimoCheckIn", null);
-        resetUpdates.put("checkins", null);
+        // 'checkins' NÃO PODE ser apagado aqui para não perder os dias totais na ProfileActivity
         resetUpdates.put("tempoInicial", System.currentTimeMillis());
 
         rootRef.child("users").child(uid).updateChildren(resetUpdates).addOnCompleteListener(task -> {
@@ -179,6 +179,11 @@ public class MainManager {
 
         Map<String, Object> updates = new HashMap<>();
         updates.put("vicio", novoVicio);
+        
+        // Ao editar, quebra a streak atual, mas preserva check-ins totais e conquistas (conforme regra de negócio)
+        updates.put("streakAtual", 0);
+        updates.put("ultimoCheckIn", null);
+        
         if (novoTempo > 0) {
             updates.put("tempoInicial", novoTempo);
         }

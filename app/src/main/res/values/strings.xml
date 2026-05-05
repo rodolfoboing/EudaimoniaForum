@@ -34,6 +34,7 @@
     <string name="hint_new_apresentacao">Nova Apresentação (Opcional)</string>
     <string name="label_security_privacy">🔒 Segurança e Privacidade</string>
     <string name="hint_new_password">Definir Nova Senha (Opcional)</string>
+    <string name="hint_confirm_new_password">Confirmar Nova Senha</string>
     <string name="btn_save_changes">💾 Salvar Alterações</string>
     <string name="btn_delete_account">❌ Excluir Minha Conta (Irreversível)</string>
 
@@ -44,6 +45,30 @@
     <string name="label_forgot_password">Esqueci minha senha</string>
     <string name="btn_login">ENTRAR</string>
     <string name="btn_register">CADASTRAR</string>
+    
+    <!-- Auth Registration -->
+    <string name="title_register">REGISTRO</string>
+    <string name="hint_email">EMAIL</string>
+    <string name="hint_nick">NICK</string>
+    <string name="hint_password_min_6">SENHA (Mínimo 6 Caracteres)</string>
+    <string name="hint_confirm_password">CONFIRMAR SENHA</string>
+    <string name="label_show_password">Mostrar senha</string>
+    <string name="msg_age_consent">Tenho 18 anos ou mais e estou ciente do conteúdo deste app, se tratando de vícios e assuntos sensíveis.</string>
+    <string name="msg_terms_consent_plain">Li e concordo com os Termos de Uso e Política de Privacidade</string>
+    <string name="error_fill_all_fields">Preencha todos os campos!</string>
+    <string name="error_accept_terms">Você precisa aceitar os Termos de Uso.</string>
+    <string name="error_confirm_age">Você precisa confirmar que tem 18 anos ou mais.</string>
+    <string name="error_nick_min_length">O nick deve ter pelo menos 3 caracteres.</string>
+    <string name="error_passwords_do_not_match">As senhas não coincidem.</string>
+    <string name="msg_checking_nick_register">Verificando nick e registrando...</string>
+    <string name="error_choose_another_nick">Este nick já está em uso, escolha outro!</string>
+    <string name="msg_user_registered_success">Usuário registrado com sucesso!</string>
+
+    <!-- Auth Login Specifics -->
+    <string name="msg_setup_profile_hint">Configure seu profile!</string>
+    <string name="msg_login_success">Login bem-sucedido!</string>
+    <string name="msg_user_banned">Você está banido.</string>
+
     <string name="label_footer_copyright">© 2024 Desenvolvido por Rodolfo B.M</string>
 
     <!-- Common / Feedback -->
@@ -59,22 +84,26 @@
     <string name="btn_close">FECHAR</string>
     <string name="confirmation_title">Confirmar</string>
     <string name="cancel">Cancelar</string>
+    <string name="dialog_yes">Sim</string>
+    <string name="dialog_no">Não</string>
 
     <!-- Achievements / Medals -->
-    <string name="medal_1_day">🥉 Medalha de 1 Dia</string>
+    <string name="medal_1_day">🛡️ Medalha de 1 Dia</string>
     <string name="medal_1_day_desc">O primeiro passo é sempre o mais importante. Você começou sua jornada de compromisso!</string>
-    <string name="medal_3_days">🥈 Medalha de 3 Dias</string>
+    <string name="medal_3_days">⚔️ Medalha de 3 Dias</string>
     <string name="medal_3_days_desc">Três dias firme! Sua disciplina está se consolidando. Continue assim!</string>
-    <string name="medal_1_week">🥇 Medalha de 1 Semana</string>
+    <string name="medal_1_week">🏅 Medalha de 1 Semana</string>
     <string name="medal_1_week_desc">Uma semana inteira de compromisso diário! Você está provando sua força interior.</string>
-    <string name="medal_1_month">🏅 Medalha de 1 Mês</string>
+    <string name="medal_1_month">🎖️ Medalha de 1 Mês</string>
     <string name="medal_1_month_desc">30 dias de compromisso! Isso é mais do que determinação — é transformação real.</string>
-    <string name="medal_3_months">🔥 Medalha de 3 Meses</string>
+    <string name="medal_3_months">🏆 Medalha de 3 Meses</string>
     <string name="medal_3_months_desc">90 dias! Você já mudou hábitos profundos. Sua versão mais forte está aqui!</string>
-    <string name="medal_6_months">💎 Medalha de 6 Meses</string>
+    <string name="medal_6_months">🌟 Medalha de 6 Meses</string>
     <string name="medal_6_months_desc">Meio ano de compromisso diário! Você é uma inspiração para a comunidade.</string>
     <string name="medal_1_year">👑 Medalha de 1 Ano</string>
-    <string name="medal_1_year_desc">UM ANO! A maior conquista possível. Você é a prova viva de que a mudança é real!</string>
+    <string name="medal_1_year_desc">UM ANO! Uma conquista impressionante. Você é a prova viva de que a mudança é real!</string>
+    <string name="medal_3_years">💎 Medalha de 3 Anos</string>
+    <string name="medal_3_years_desc">TRÊS ANOS! A maior conquista possível. Mestrado absoluto da própria mente e vontade.</string>
     <string name="error_saving_db">Falha ao salvar no banco de dados.</string>
     <string name="error_updating_achievements">Falha ao atualizar conquistas.</string>
     <string name="error_user_data_not_found">Dados do usuário não encontrados.</string>
@@ -91,6 +120,7 @@
     <string name="title_contact_feedback">Contato &amp; Feedback</string>
     <string name="desc_contact_feedback">\nPara dúvidas, sugestões ou suporte técnico geral, envie um e-mail direto para nossa equipe:\n</string>
     <string name="label_privacy_policy">📜 Política de Privacidade</string>
+    <string name="label_our_website">🌐 Visite nosso Site</string>
     <string name="hint_current_password">Sua senha atual</string>
     <string name="error_password_required">A senha é obrigatória.</string>
     <string name="title_delete_account_dialog">Excluir Conta Permanentemente</string>
@@ -112,4 +142,30 @@
     <string name="error_post_content_too_long_280">O resumo do post não pode ter mais de 280 caracteres.</string>
     <string name="msg_wait_to_post">Aguarde %ds para postar novamente.</string>
     <string name="error_post_failed">Erro ao publicar: </string>
+    
+    <!-- Comment & Forum Activity -->
+    <string name="error_post_id_not_found">Erro: ID do post não encontrado</string>
+    <string name="error_empty_comment">Por favor, escreva um comentário</string>
+    <string name="action_mute_notifications">Silenciar Notificações</string>
+    <string name="action_follow_notifications">Acompanhar Notificações</string>
+    <string name="action_delete_post">Excluir Postagem</string>
+    <string name="msg_confirm_delete_post">Tem certeza que deseja excluir esta postagem?</string>
+    <string name="msg_post_deleted">Postagem excluída com sucesso.</string>
+    
+    <!-- Chat Activity -->
+    <string name="error_user_unidentified">Erro: Usuário não identificado.</string>
+    <string name="action_delete_conversation">Apagar Conversa</string>
+    <string name="msg_confirm_delete_conversation">Tem certeza que deseja apagar esta conversa? A ação não pode ser desfeita.</string>
+    <string name="action_block_user">Bloquear Usuário</string>
+    <string name="msg_confirm_block_user">Tem certeza que deseja bloquear este usuário? Você não receberá mais mensagens dele.</string>
+    <string name="msg_conversation_deleted">Conversa apagada.</string>
+    
+    <!-- Main Activity -->
+    <string name="msg_habit_not_defined">Hábito não definido</string>
+    <string name="msg_error_loading">Erro ao carregar</string>
+    <string name="msg_user_logged_out">Usuário deslogado com sucesso!</string>
+    <string name="msg_checkin_done">✅ Compromisso Feito!</string>
+    <string name="title_checkin_completed">Compromisso Firmado!</string>
+    <string name="msg_checkin_completed">Parabéns por renovar seu compromisso de sobriedade de hoje. Você está no caminho certo!</string>
+    <string name="btn_lets_go">Vamos lá!</string>
 </resources>

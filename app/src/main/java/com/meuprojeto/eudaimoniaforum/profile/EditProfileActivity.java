@@ -20,6 +20,7 @@ public class EditProfileActivity extends AppCompatActivity {
     private EditText editTextNick;
     private EditText editTextApresentacao;
     private EditText editTextNovaSenha;
+    private EditText editTextConfirmarNovaSenha;
     private Button buttonSalvarAlteracoes;
     private Button buttonExcluirConta;
 
@@ -37,6 +38,7 @@ public class EditProfileActivity extends AppCompatActivity {
         editTextNick = findViewById(R.id.editTextNick);
         editTextApresentacao = findViewById(R.id.editTextApresentacao);
         editTextNovaSenha = findViewById(R.id.editTextNovaSenha);
+        editTextConfirmarNovaSenha = findViewById(R.id.editTextConfirmarNovaSenha);
         buttonSalvarAlteracoes = findViewById(R.id.buttonSalvarAlteracoes);
         buttonExcluirConta = findViewById(R.id.buttonExcluirConta);
 
@@ -188,11 +190,23 @@ public class EditProfileActivity extends AppCompatActivity {
         String novoNick = editTextNick.getText().toString().trim();
         String novaApresentacao = editTextApresentacao.getText().toString().trim();
         String novaSenha = editTextNovaSenha.getText().toString().trim();
+        String confirmarNovaSenha = editTextConfirmarNovaSenha.getText().toString().trim();
 
         boolean avatarMudou = avatarEscolhido != null && !avatarEscolhido.equals(avatarOriginal);
         if (TextUtils.isEmpty(novoNick) && TextUtils.isEmpty(novaApresentacao) && TextUtils.isEmpty(novaSenha) && !avatarMudou) {
             Toast.makeText(this, getString(R.string.msg_no_changes), Toast.LENGTH_SHORT).show();
             return;
+        }
+
+        if (!TextUtils.isEmpty(novaSenha)) {
+            if (novaSenha.length() < 6) {
+                Toast.makeText(this, "A nova senha deve ter pelo menos 6 caracteres.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (!novaSenha.equals(confirmarNovaSenha)) {
+                Toast.makeText(this, getString(R.string.error_passwords_do_not_match), Toast.LENGTH_SHORT).show();
+                return;
+            }
         }
 
         if (novoNick.length() > 25) {

@@ -22,6 +22,7 @@ public class LoginActivity extends AppCompatActivity {
     private Button buttonEntrar;
     private Button buttonCadastrar;
     private TextView textViewEsqueciSenha;
+    private android.widget.CheckBox checkBoxMostrarSenhaLogin;
 
     private AuthManager authManager;
 
@@ -70,6 +71,7 @@ public class LoginActivity extends AppCompatActivity {
         buttonEntrar = findViewById(R.id.buttonEntrar);
         buttonCadastrar = findViewById(R.id.buttonCadastrar);
         textViewEsqueciSenha = findViewById(R.id.textViewEsqueciSenha);
+        checkBoxMostrarSenhaLogin = findViewById(R.id.checkBoxMostrarSenhaLogin);
     }
 
     private void configurarListeners() {
@@ -78,11 +80,24 @@ public class LoginActivity extends AppCompatActivity {
             String password = editTextSenha.getText().toString().trim();
 
             if (email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(LoginActivity.this, "Por favor, preencha todos os campos.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, getString(R.string.error_fill_all_fields), Toast.LENGTH_SHORT).show();
                 return;
             }
             
             realizarLogin(email, password);
+        });
+
+        checkBoxMostrarSenhaLogin.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            int selectionStart = editTextSenha.getSelectionStart();
+            int selectionEnd = editTextSenha.getSelectionEnd();
+            if (isChecked) {
+                editTextSenha.setTransformationMethod(android.text.method.HideReturnsTransformationMethod.getInstance());
+            } else {
+                editTextSenha.setTransformationMethod(android.text.method.PasswordTransformationMethod.getInstance());
+            }
+            if(selectionStart >= 0) {
+               editTextSenha.setSelection(selectionStart, selectionEnd);
+            }
         });
 
         textViewEsqueciSenha.setOnClickListener(v -> {
@@ -101,12 +116,12 @@ public class LoginActivity extends AppCompatActivity {
                 if (isFinishing() || isDestroyed()) return;
                 
                 if (irParaSetup) {
-                    Toast.makeText(LoginActivity.this, "Configure seu profile!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, getString(R.string.msg_setup_profile_hint), Toast.LENGTH_SHORT).show();
                     Intent intent = new Intent(LoginActivity.this, SetupProfileActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                 } else {
-                    Toast.makeText(LoginActivity.this, "Login bem-sucedido!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(LoginActivity.this, getString(R.string.msg_login_success), Toast.LENGTH_SHORT).show();
                     startActivity(new Intent(LoginActivity.this, MainActivity.class));
                 }
                 finish();
@@ -116,7 +131,7 @@ public class LoginActivity extends AppCompatActivity {
             public void onUserBanned() {
                 if (isFinishing() || isDestroyed()) return;
                 
-                Toast.makeText(LoginActivity.this, "Você está banido.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, getString(R.string.msg_user_banned), Toast.LENGTH_SHORT).show();
                 editTextSenha.setText("");
             }
 

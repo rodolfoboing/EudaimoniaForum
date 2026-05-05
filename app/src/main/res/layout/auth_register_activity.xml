@@ -18,7 +18,7 @@
      android:layout_alignParentTop="true"
      android:layout_centerHorizontal="true"
      android:layout_marginTop="16dp"
-     android:text="REGISTRO"
+     android:text="@string/title_register"
      android:textSize="24sp" />
 
 
@@ -28,7 +28,7 @@
      android:layout_height="wrap_content"
      android:layout_below="@+id/textViewTitulo"
      android:layout_margin="16dp"
-     android:hint="EMAIL"
+     android:hint="@string/hint_email"
      android:inputType="textEmailAddress"
      android:textColor="#FAFAFA" />
 
@@ -39,7 +39,7 @@
      android:layout_below="@+id/editTextEmail"
      android:layout_margin="16dp"
      android:textColor="#FAFAFA"
-     android:hint="NICK" />
+     android:hint="@string/hint_nick" />
 
     <Spinner
         android:id="@+id/spinnerVicio"
@@ -54,18 +54,39 @@
      android:layout_height="wrap_content"
      android:layout_below="@+id/spinnerVicio"
      android:layout_margin="16dp"
-     android:hint="SENHA (Minimo 6 Caracteres)"
+     android:hint="@string/hint_password_min_6"
      android:textColor="#FAFAFA"
      android:inputType="textPassword" />
+
+ <EditText
+     android:id="@+id/editTextConfirmarSenhaCadastro"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+     android:layout_below="@+id/editTextSenhaCadastro"
+     android:layout_margin="16dp"
+     android:hint="@string/hint_confirm_password"
+     android:textColor="#FAFAFA"
+     android:inputType="textPassword" />
+
+ <CheckBox
+     android:id="@+id/checkBoxMostrarSenha"
+     android:layout_width="wrap_content"
+     android:layout_height="wrap_content"
+     android:layout_below="@+id/editTextConfirmarSenhaCadastro"
+     android:layout_marginStart="16dp"
+     android:layout_marginEnd="16dp"
+     android:text="@string/label_show_password"
+     android:textColor="#FAFAFA" />
 
  <CheckBox
      android:id="@+id/checkBoxMaiorIdade"
      android:layout_width="wrap_content"
      android:layout_height="wrap_content"
-     android:layout_below="@+id/editTextSenhaCadastro"
+     android:layout_below="@+id/checkBoxMostrarSenha"
      android:layout_marginStart="16dp"
      android:layout_marginEnd="16dp"
-     android:text="Tenho 18 anos ou mais e estou ciente do conteúdo deste app, se tratando de vícios e assuntos sensíveis."
+     android:layout_marginTop="8dp"
+     android:text="@string/msg_age_consent"
      android:textColor="#FAFAFA" />
 
  <CheckBox
@@ -75,7 +96,8 @@
      android:layout_below="@+id/checkBoxMaiorIdade"
      android:layout_marginStart="16dp"
      android:layout_marginEnd="16dp"
-     android:text="Li e concordo com os Termos de Uso e Política de Privacidade"
+     android:layout_marginTop="8dp"
+     android:text="@string/msg_terms_consent_plain"
      android:textColor="#FAFAFA" />
 
  <Button
@@ -85,6 +107,6 @@
      android:layout_below="@+id/checkBoxTermos"
      android:layout_margin="16dp"
      android:backgroundTint="#8BC34A"
-     android:text="CADASTRAR" />
+     android:text="@string/btn_register" />
 
 </RelativeLayout>
