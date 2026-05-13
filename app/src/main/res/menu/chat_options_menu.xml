@@ -2,7 +2,7 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/menu_apagar_conversa"
-        android:title="Apagar conversation" />
+        android:title="Apagar conversa" />
     <item
         android:id="@+id/menu_bloquear_usuario"
         android:title="Bloquear usuário" />

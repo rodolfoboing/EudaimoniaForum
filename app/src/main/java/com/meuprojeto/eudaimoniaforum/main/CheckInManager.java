@@ -18,8 +18,15 @@ import java.util.concurrent.TimeUnit;
 
 public class CheckInManager {
 
-    private static final String PREFS_NAME = "PrefsAbstinencia";
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
+
+    private String getPrefsName() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            return "PrefsAbstinencia_" + user.getUid();
+        }
+        return "PrefsAbstinencia";
+    }
 
     private final Context context;
     private final FirebaseAuth firebaseAuth;
@@ -73,7 +80,7 @@ public class CheckInManager {
                 }
 
                 // VALIDAÇÃO E SINCRONIZAÇÃO DO CRONÔMETRO (TEMPO DE ABSTINÊNCIA) COM A NUVEM
-                SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                SharedPreferences prefs = context.getSharedPreferences(getPrefsName(), Context.MODE_PRIVATE);
                 long localTempoInicial = prefs.getLong(KEY_TEMPO_INICIAL, -1);
                 Long fbTempoInicial = snapshot.child("tempoInicial").getValue(Long.class);
 
@@ -135,7 +142,7 @@ public class CheckInManager {
                 if (currentStreak == null) currentStreak = 0;
 
                 // Sincronizando e lendo o tempo do cronômetro real do usuário de forma confiável
-                SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+                SharedPreferences prefs = context.getSharedPreferences(getPrefsName(), Context.MODE_PRIVATE);
                 long localTempoInicial = prefs.getLong(KEY_TEMPO_INICIAL, -1);
                 Long fbTempoInicial = snapshot.child("tempoInicial").getValue(Long.class);
 

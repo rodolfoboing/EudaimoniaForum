@@ -8,6 +8,9 @@ import android.content.Intent;
 import android.app.PendingIntent;
 import android.os.Build;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import androidx.annotation.NonNull;
 import androidx.core.app.NotificationCompat;
 import androidx.work.Worker;
@@ -19,7 +22,13 @@ import java.util.concurrent.TimeUnit;
 
 public class AchievementWorker extends Worker {
 
-    private static final String PREFS_NAME = "PrefsAbstinencia";
+    private String getPrefsName() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            return "PrefsAbstinencia_" + user.getUid();
+        }
+        return "PrefsAbstinencia";
+    }
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
 
     public AchievementWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
@@ -35,7 +44,7 @@ public class AchievementWorker extends Worker {
     }
 
     private void verificarMarcosDeAbstinencia() {
-        SharedPreferences preferences = getApplicationContext().getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences preferences = getApplicationContext().getSharedPreferences(getPrefsName(), Context.MODE_PRIVATE);
 
         // Calcula os dias REAIS de abstinência pelo cronômetro (tempo_inicial)
         long tempoInicial = preferences.getLong(KEY_TEMPO_INICIAL, 0);

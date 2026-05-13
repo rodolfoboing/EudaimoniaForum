@@ -74,22 +74,22 @@ public class OnboardingActivity extends AppCompatActivity {
                 "Seu espaço para recuperação e crescimento pessoal.\n\nAqui você encontra um Fórum de apoio, Chat Privado, Contador de Abstinência e Sistema de Conquistas para superar vícios."));
 
         onboardingItems.add(new OnboardingItem(
-                android.R.drawable.ic_menu_edit,
+                R.drawable.onboarding_timer,
                 "Seu Contador de Abstinência",
                 "Na tela principal, defina o vício que deseja superar.\n\nSe recair, use 'Novo Registro' para recomeçar: seu cronômetro e seus compromissos diários zeram juntos, sempre!"));
 
         onboardingItems.add(new OnboardingItem(
-                android.R.drawable.checkbox_on_background,
+                R.drawable.onboarding_checkin,
                 "Compromisso Diário",
                 "Clique no '✅ Compromisso Diário' todo dia para gerar vitórias contínuas.\n\nO seu progresso diário acompanha e valida seu tempo real, lhe garantindo as tão sonhadas Medalhas!"));
 
         onboardingItems.add(new OnboardingItem(
-                android.R.drawable.ic_dialog_email,
+                R.drawable.onboarding_chat,
                 "Fórum e Chat Privado",
                 "Use o Fórum para suporte coletivo e 'Conversas' para pedir ajuda em particular a alguém."));
 
         onboardingItems.add(new OnboardingItem(
-                android.R.drawable.ic_menu_myplaces,
+                R.drawable.onboarding_shield,
                 "Segurança e Moderação",
                 "Nossa comunidade virtual é blindada.\n\nVocê é encorajado a nos ajudar: denuncie posts ou comentários nocivos nos botões ao lado direito de cada Post ou Comentário e Bloqueie contas incômodas no seu próprio Chat."));
 

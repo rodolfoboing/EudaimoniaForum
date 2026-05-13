@@ -56,6 +56,7 @@
         <activity android:name=".main.EditAbstinenceActivity" />
         <activity android:name=".profile.ProfileActivity" />
         <activity android:name=".forum.ForumActivity" />
+        <activity android:name=".forum.ForumRulesActivity" />
         <activity android:name=".profile.EditProfileActivity"
             android:windowSoftInputMode="adjustResize" />
         <activity android:name=".forum.NewPostActivity"

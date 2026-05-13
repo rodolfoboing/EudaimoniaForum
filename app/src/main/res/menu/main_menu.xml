@@ -4,6 +4,9 @@
         android:id="@+id/menu_perfil"
         android:title="Meu Perfil" />
     <item
+        android:id="@+id/menu_regras"
+        android:title="Regras do Fórum" />
+    <item
         android:id="@+id/menu_contato"
         android:title="Contato / Feedback" />
     <item

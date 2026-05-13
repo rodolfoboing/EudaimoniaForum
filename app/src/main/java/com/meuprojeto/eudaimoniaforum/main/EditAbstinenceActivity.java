@@ -26,7 +26,13 @@ public class EditAbstinenceActivity extends AppCompatActivity {
     private AutoCompleteTextView spinnerVicioEdicao;
     private Button buttonSalvar;
 
-    private static final String PREFS_NAME = "PrefsAbstinencia";
+    private String getPrefsName() {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            return "PrefsAbstinencia_" + user.getUid();
+        }
+        return "PrefsAbstinencia";
+    }
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
 
     private Calendar calendar;
@@ -75,7 +81,7 @@ public class EditAbstinenceActivity extends AppCompatActivity {
     }
 
     private void carregarDadosDoUsuario() {
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(getPrefsName(), MODE_PRIVATE);
         long tempoSalvo = preferences.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
         calendar.setTimeInMillis(tempoSalvo);
         updateLabel();
@@ -119,7 +125,7 @@ public class EditAbstinenceActivity extends AppCompatActivity {
     private void salvarAlteracoes() {
         android.util.Log.d("EditarAbstinencia", "salvarAlteracoes() chamado.");
 
-        SharedPreferences preferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences preferences = getSharedPreferences(getPrefsName(), MODE_PRIVATE);
         long novoTempo = calendar.getTimeInMillis();
         preferences.edit().putLong(KEY_TEMPO_INICIAL, novoTempo).apply();
 

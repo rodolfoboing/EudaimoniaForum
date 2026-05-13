@@ -24,6 +24,7 @@ import com.meuprojeto.eudaimoniaforum.chat.ChatActivity;
 import com.meuprojeto.eudaimoniaforum.chat.ConversationActivity;
 import com.meuprojeto.eudaimoniaforum.forum.CommentActivity;
 import com.meuprojeto.eudaimoniaforum.forum.ForumActivity;
+import com.meuprojeto.eudaimoniaforum.forum.ForumRulesActivity;
 import com.meuprojeto.eudaimoniaforum.moderation.ModerationActivity;
 import com.meuprojeto.eudaimoniaforum.notification.NotificationActivity;
 import com.meuprojeto.eudaimoniaforum.notification.NotificationSetupHelper;
@@ -36,7 +37,13 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String PREFS_NAME = "PrefsAbstinencia";
+    private String getPrefsName() {
+        com.google.firebase.auth.FirebaseUser user = com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            return "PrefsAbstinencia_" + user.getUid();
+        }
+        return "PrefsAbstinencia";
+    }
     private static final String CONQUISTA_WORK_TAG = "ConquistasWork";
 
     private TextView textViewTempoAbstinenciaMeses, textViewTempoAbstinenciaDias, textViewTempoAbstinenciaHoras,
@@ -58,9 +65,11 @@ public class MainActivity extends AppCompatActivity {
 
         mainManager = new MainManager(this);
 
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences prefs = getSharedPreferences("PrefsAbstinencia", MODE_PRIVATE);
         if (!prefs.getBoolean("onboarding_complete", false)) {
             startActivity(new Intent(this, OnboardingActivity.class));
+            finish();
+            return;
         }
 
         inicializarUI();
@@ -251,6 +260,9 @@ public class MainActivity extends AppCompatActivity {
             int itemId = item.getItemId();
             if (itemId == R.id.menu_perfil) {
                 startActivity(new Intent(this, ProfileActivity.class));
+                return true;
+            } else if (itemId == R.id.menu_regras) {
+                startActivity(new Intent(this, ForumRulesActivity.class));
                 return true;
             } else if (itemId == R.id.menu_orientacoes) {
                 startActivity(new Intent(this, OrientationActivity.class));

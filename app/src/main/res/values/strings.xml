@@ -168,4 +168,28 @@
     <string name="title_checkin_completed">Compromisso Firmado!</string>
     <string name="msg_checkin_completed">Parabéns por renovar seu compromisso de sobriedade de hoje. Você está no caminho certo!</string>
     <string name="btn_lets_go">Vamos lá!</string>
+
+    <!-- Forum Rules (Senior Design) -->
+    <string name="title_forum_rules">Regras do Fórum</string>
+    <string name="nav_regras">Regras</string>
+    
+    <string name="rules_intro">Para garantir um ambiente construtivo e alinhado com nossos valores de superação, todos devem seguir estas diretrizes essenciais:</string>
+    
+    <string name="rule_1_title">1. Respeito Mútuo e Empatia</string>
+    <string name="rule_1_desc">Não toleramos discurso de ódio, assédio, bullying ou ofensas. O foco da comunidade é exclusivamente o apoio mútuo e a evolução pessoal.</string>
+    
+    <string name="rule_2_title">2. Proteção Infantil (Tolerância Zero)</string>
+    <string name="rule_2_desc">É estritamente proibido compartilhar, solicitar, promover ou incentivar Material de Abuso Sexual Infantil (CSAM). Infratores serão banidos permanentemente e reportados às autoridades competentes (Polícia Federal, NCMEC).</string>
+    
+    <string name="rule_3_title">3. Proibição de Conteúdo Explícito</string>
+    <string name="rule_3_desc">Como nosso objetivo é a superação (Eudaimonia), é proibido compartilhar textos, links ou imagens com conteúdo pornográfico ou erótico que sirva como gatilho intencional.</string>
+    
+    <string name="rule_4_title">4. Moderação e Denúncias</string>
+    <string name="rule_4_desc">A moderação reserva-se o direito de remover postagens e suspender contas que violem estas diretrizes. Use sempre o botão de denúncia ao ver abusos.</string>
+    
+    <string name="rule_5_title">5. Responsabilidade Pessoal</string>
+    <string name="rule_5_desc">Você é o único responsável pelo conteúdo que publica. O aplicativo atua cooperando com a lei para reprimir infrações.</string>
+
+    <string name="btn_agree_rules">Eu Entendi e Concordo</string>
+    <string name="msg_forum_footer_warning">⚠️ Lembre-se: Respeite as regras do fórum. Denuncie conteúdos impróprios clicando na postagem.</string>
 </resources>
