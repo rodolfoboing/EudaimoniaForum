@@ -5,12 +5,22 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+
 import java.util.concurrent.TimeUnit;
 
 public class AbstinenceTimerHelper {
 
-    private static final String PREFS_NAME = "PrefsAbstinencia";
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
+
+    private String getPrefsName() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            return "PrefsAbstinencia_" + user.getUid();
+        }
+        return "PrefsAbstinencia";
+    }
 
     private final Context context;
     private final TimerCallback callback;
@@ -23,12 +33,12 @@ public class AbstinenceTimerHelper {
     }
 
     public AbstinenceTimerHelper(Context context, TimerCallback callback) {
-        this.context = context;
+        this.context = context.getApplicationContext();
         this.callback = callback;
     }
 
     public void init() {
-        SharedPreferences preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences preferences = context.getSharedPreferences(getPrefsName(), Context.MODE_PRIVATE);
         if (!preferences.contains(KEY_TEMPO_INICIAL)) {
             tempoInicial = System.currentTimeMillis();
             preferences.edit().putLong(KEY_TEMPO_INICIAL, tempoInicial).apply();
@@ -68,7 +78,7 @@ public class AbstinenceTimerHelper {
 
     public long reset() {
         tempoInicial = System.currentTimeMillis();
-        SharedPreferences preferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
+        SharedPreferences preferences = context.getSharedPreferences(getPrefsName(), Context.MODE_PRIVATE);
         preferences.edit()
                 .putLong(KEY_TEMPO_INICIAL, tempoInicial)
                 .putInt("streak_atual", 0)

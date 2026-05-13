@@ -1,3 +1,195 @@
 <resources>
     <string name="app_name">EudaimoniaForum</string>
+    <string name="contador_reiniciado_aviso">Contador e compromissos reiniciados!</string>
+    <string name="contador_reiniciado_motivacao">Não desanime, seja perseverante.</string>
+
+    <!-- Main Activity -->
+    <string name="content_desc_logo">Logo</string>
+    <string name="content_desc_notifications">Notificações</string>
+    <string name="label_free_time">🎯 Tempo Livre</string>
+    <string name="label_months">Meses</string>
+    <string name="label_days">Dias</string>
+    <string name="label_hours">Horas</string>
+    <string name="label_minutes_short">Min</string>
+    <string name="btn_new_entry">Novo Registro</string>
+    <string name="btn_edit">Editar</string>
+    <string name="label_access_forum">💬 Acessar Fórum</string>
+    <string name="label_moderation">🛡️ Moderação</string>
+    <string name="label_daily_checkin">✅ Compromisso Diário</string>
+    <string name="nav_conversas">Conversas</string>
+    <string name="nav_menu">Menu</string>
+
+    <!-- Profile Edit / Setup -->
+    <string name="title_edit_abstinence">Configurar Abstinência</string>
+    <string name="desc_edit_abstinence">Neste painel exclusivo, você ajusta o relógio inicial da sua jornada e também molda o foco do seu compromisso principal.</string>
+    <string name="hint_date_time_start">Data e Hora de Início</string>
+    <string name="hint_habit_to_overcome">Vício ou Hábito a superar</string>
+    <string name="btn_save_settings">💾 Salvar Configurações</string>
+    <string name="tip_adjust_start">💡 Dica: Toque no campo abaixo para abrir o calendário e ajustar o início exato da sua abstinência.</string>
+    <string name="tip_select_habit">💡 Dica: Selecione na lista abaixo qual hábito principal você deseja superar.</string>
+    <string name="label_edit_profile">Editar Perfil</string>
+    <string name="label_profile_avatar">🎨 Avatar do Perfil</string>
+    <string name="label_personal_info">📝 Informações Pessoais</string>
+    <string name="hint_new_nick">Novo Nick (Opcional)</string>
+    <string name="hint_new_apresentacao">Nova Apresentação (Opcional)</string>
+    <string name="label_security_privacy">🔒 Segurança e Privacidade</string>
+    <string name="hint_new_password">Definir Nova Senha (Opcional)</string>
+    <string name="hint_confirm_new_password">Confirmar Nova Senha</string>
+    <string name="btn_save_changes">💾 Salvar Alterações</string>
+    <string name="btn_delete_account">❌ Excluir Minha Conta (Irreversível)</string>
+
+    <!-- Auth -->
+    <string name="welcome_login">Bem-vindo! Faça login para continuar.</string>
+    <string name="hint_username">USUÁRIO</string>
+    <string name="hint_password">SENHA</string>
+    <string name="label_forgot_password">Esqueci minha senha</string>
+    <string name="btn_login">ENTRAR</string>
+    <string name="btn_register">CADASTRAR</string>
+    
+    <!-- Auth Registration -->
+    <string name="title_register">REGISTRO</string>
+    <string name="hint_email">EMAIL</string>
+    <string name="hint_nick">NICK</string>
+    <string name="hint_password_min_6">SENHA (Mínimo 6 Caracteres)</string>
+    <string name="hint_confirm_password">CONFIRMAR SENHA</string>
+    <string name="label_show_password">Mostrar senha</string>
+    <string name="msg_age_consent">Tenho 18 anos ou mais e estou ciente do conteúdo deste app, se tratando de vícios e assuntos sensíveis.</string>
+    <string name="msg_terms_consent_plain">Li e concordo com os Termos de Uso e Política de Privacidade</string>
+    <string name="error_fill_all_fields">Preencha todos os campos!</string>
+    <string name="error_accept_terms">Você precisa aceitar os Termos de Uso.</string>
+    <string name="error_confirm_age">Você precisa confirmar que tem 18 anos ou mais.</string>
+    <string name="error_nick_min_length">O nick deve ter pelo menos 3 caracteres.</string>
+    <string name="error_passwords_do_not_match">As senhas não coincidem.</string>
+    <string name="msg_checking_nick_register">Verificando nick e registrando...</string>
+    <string name="error_choose_another_nick">Este nick já está em uso, escolha outro!</string>
+    <string name="msg_user_registered_success">Usuário registrado com sucesso!</string>
+
+    <!-- Auth Login Specifics -->
+    <string name="msg_setup_profile_hint">Configure seu profile!</string>
+    <string name="msg_login_success">Login bem-sucedido!</string>
+    <string name="msg_user_banned">Você está banido.</string>
+
+    <string name="label_footer_copyright">© 2024 Desenvolvido por Rodolfo B.M</string>
+
+    <!-- Common / Feedback -->
+    <string name="error_unknown">Erro desconhecido.</string>
+    <string name="error_no_internet">Sem conexão com a internet. Verifique sua rede e tente novamente.</string>
+    <string name="error_no_permission">Você não tem permissão para realizar esta operação.</string>
+    <string name="error_auth_expired">Sua autenticação expirou. Por favor, deslogue e faça login novamente.</string>
+    <string name="error_timeout">Tempo de requisição esgotado. Verifique sua conexão.</string>
+    <string name="error_service_unavailable">O serviço está temporariamente indisponível.</string>
+    <string name="error_id_not_provided">Erro: ID do usuário não fornecido.</string>
+    <string name="error_unauthenticated">Usuário não autenticado ou sessão expirada.</string>
+    <string name="error_loading_data">Falha ao carregar dados do servidor.</string>
+    <string name="btn_close">FECHAR</string>
+    <string name="confirmation_title">Confirmar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="dialog_yes">Sim</string>
+    <string name="dialog_no">Não</string>
+
+    <!-- Achievements / Medals -->
+    <string name="medal_1_day">🛡️ Medalha de 1 Dia</string>
+    <string name="medal_1_day_desc">O primeiro passo é sempre o mais importante. Você começou sua jornada de compromisso!</string>
+    <string name="medal_3_days">⚔️ Medalha de 3 Dias</string>
+    <string name="medal_3_days_desc">Três dias firme! Sua disciplina está se consolidando. Continue assim!</string>
+    <string name="medal_1_week">🏅 Medalha de 1 Semana</string>
+    <string name="medal_1_week_desc">Uma semana inteira de compromisso diário! Você está provando sua força interior.</string>
+    <string name="medal_1_month">🎖️ Medalha de 1 Mês</string>
+    <string name="medal_1_month_desc">30 dias de compromisso! Isso é mais do que determinação — é transformação real.</string>
+    <string name="medal_3_months">🏆 Medalha de 3 Meses</string>
+    <string name="medal_3_months_desc">90 dias! Você já mudou hábitos profundos. Sua versão mais forte está aqui!</string>
+    <string name="medal_6_months">🌟 Medalha de 6 Meses</string>
+    <string name="medal_6_months_desc">Meio ano de compromisso diário! Você é uma inspiração para a comunidade.</string>
+    <string name="medal_1_year">👑 Medalha de 1 Ano</string>
+    <string name="medal_1_year_desc">UM ANO! Uma conquista impressionante. Você é a prova viva de que a mudança é real!</string>
+    <string name="medal_3_years">💎 Medalha de 3 Anos</string>
+    <string name="medal_3_years_desc">TRÊS ANOS! A maior conquista possível. Mestrado absoluto da própria mente e vontade.</string>
+    <string name="error_saving_db">Falha ao salvar no banco de dados.</string>
+    <string name="error_updating_achievements">Falha ao atualizar conquistas.</string>
+    <string name="error_user_data_not_found">Dados do usuário não encontrados.</string>
+    <string name="error_incorrect_current_password">Senha atual incorreta. Verifique e tente novamente.</string>
+    <string name="error_nick_in_use">Este nick já está em uso.</string>
+    <string name="msg_profile_pass_updated">Perfil e senha atualizados com sucesso!</string>
+    <string name="msg_profile_updated">Perfil atualizado com sucesso!</string>
+    <string name="msg_account_deleted">Conta excluída com sucesso.</string>
+    <string name="error_auth_delete_failed">Erro ao excluir conta de autenticação: </string>
+    <string name="error_delete_db">Erro ao apagar dados do banco.</string>
+    <string name="error_retrieve_delete_data">Erro ao recuperar dados para exclusão.</string>
+    <string name="error_delete_wrong_password">Senha atual incorreta. Não foi possível excluir.</string>
+    <string name="error_user_not_found">Usuário não encontrado.</string>
+    <string name="title_contact_feedback">Contato &amp; Feedback</string>
+    <string name="desc_contact_feedback">\nPara dúvidas, sugestões ou suporte técnico geral, envie um e-mail direto para nossa equipe:\n</string>
+    <string name="label_privacy_policy">📜 Política de Privacidade</string>
+    <string name="label_our_website">🌐 Visite nosso Site</string>
+    <string name="hint_current_password">Sua senha atual</string>
+    <string name="error_password_required">A senha é obrigatória.</string>
+    <string name="title_delete_account_dialog">Excluir Conta Permanentemente</string>
+    <string name="msg_delete_account_dialog">Tem certeza absoluta? Esta ação apagará todos os seus dados, histórico e posts. Não pode ser desfeita. Digite sua senha para confirmar.</string>
+    <string name="msg_no_changes">Nenhuma alteração solicitada.</string>
+    <string name="error_nick_too_long">O seu apelido não pode ter mais de 25 caracteres.</string>
+    <string name="error_bio_too_long">A sua apresentação de perfil deve ter no máximo 160 caracteres.</string>
+    <string name="title_confirm_changes">Confirmar Alterações</string>
+    <string name="msg_confirm_changes">Para sua segurança, digite sua senha atual para validar e salvar o seu novo perfil.</string>
+
+    <!-- Forum -->
+    <string name="title_new_post">Nova Postagem</string>
+    <string name="hint_post_title">Título do seu post</string>
+    <string name="hint_post_content">Escreva seu post...</string>
+    <string name="btn_publish">Publicar</string>
+    <string name="error_empty_fields">Por favor, preencha todos os campos.</string>
+    <string name="msg_post_published">Postagem publicada com sucesso!</string>
+    <string name="error_title_too_long_80">O título é muito longo (máximo 80 caracteres).</string>
+    <string name="error_post_content_too_long_280">O resumo do post não pode ter mais de 280 caracteres.</string>
+    <string name="msg_wait_to_post">Aguarde %ds para postar novamente.</string>
+    <string name="error_post_failed">Erro ao publicar: </string>
+    
+    <!-- Comment & Forum Activity -->
+    <string name="error_post_id_not_found">Erro: ID do post não encontrado</string>
+    <string name="error_empty_comment">Por favor, escreva um comentário</string>
+    <string name="action_mute_notifications">Silenciar Notificações</string>
+    <string name="action_follow_notifications">Acompanhar Notificações</string>
+    <string name="action_delete_post">Excluir Postagem</string>
+    <string name="msg_confirm_delete_post">Tem certeza que deseja excluir esta postagem?</string>
+    <string name="msg_post_deleted">Postagem excluída com sucesso.</string>
+    
+    <!-- Chat Activity -->
+    <string name="error_user_unidentified">Erro: Usuário não identificado.</string>
+    <string name="action_delete_conversation">Apagar Conversa</string>
+    <string name="msg_confirm_delete_conversation">Tem certeza que deseja apagar esta conversa? A ação não pode ser desfeita.</string>
+    <string name="action_block_user">Bloquear Usuário</string>
+    <string name="msg_confirm_block_user">Tem certeza que deseja bloquear este usuário? Você não receberá mais mensagens dele.</string>
+    <string name="msg_conversation_deleted">Conversa apagada.</string>
+    
+    <!-- Main Activity -->
+    <string name="msg_habit_not_defined">Hábito não definido</string>
+    <string name="msg_error_loading">Erro ao carregar</string>
+    <string name="msg_user_logged_out">Usuário deslogado com sucesso!</string>
+    <string name="msg_checkin_done">✅ Compromisso Feito!</string>
+    <string name="title_checkin_completed">Compromisso Firmado!</string>
+    <string name="msg_checkin_completed">Parabéns por renovar seu compromisso de sobriedade de hoje. Você está no caminho certo!</string>
+    <string name="btn_lets_go">Vamos lá!</string>
+
+    <!-- Forum Rules (Senior Design) -->
+    <string name="title_forum_rules">Regras do Fórum</string>
+    <string name="nav_regras">Regras</string>
+    
+    <string name="rules_intro">Para garantir um ambiente construtivo e alinhado com nossos valores de superação, todos devem seguir estas diretrizes essenciais:</string>
+    
+    <string name="rule_1_title">1. Respeito Mútuo e Empatia</string>
+    <string name="rule_1_desc">Não toleramos discurso de ódio, assédio, bullying ou ofensas. O foco da comunidade é exclusivamente o apoio mútuo e a evolução pessoal.</string>
+    
+    <string name="rule_2_title">2. Proteção Infantil (Tolerância Zero)</string>
+    <string name="rule_2_desc">É estritamente proibido compartilhar, solicitar, promover ou incentivar Material de Abuso Sexual Infantil (CSAM). Infratores serão banidos permanentemente e reportados às autoridades competentes (Polícia Federal, NCMEC).</string>
+    
+    <string name="rule_3_title">3. Proibição de Conteúdo Explícito</string>
+    <string name="rule_3_desc">Como nosso objetivo é a superação (Eudaimonia), é proibido compartilhar textos, links ou imagens com conteúdo pornográfico ou erótico que sirva como gatilho intencional.</string>
+    
+    <string name="rule_4_title">4. Moderação e Denúncias</string>
+    <string name="rule_4_desc">A moderação reserva-se o direito de remover postagens e suspender contas que violem estas diretrizes. Use sempre o botão de denúncia ao ver abusos.</string>
+    
+    <string name="rule_5_title">5. Responsabilidade Pessoal</string>
+    <string name="rule_5_desc">Você é o único responsável pelo conteúdo que publica. O aplicativo atua cooperando com a lei para reprimir infrações.</string>
+
+    <string name="btn_agree_rules">Eu Entendi e Concordo</string>
+    <string name="msg_forum_footer_warning">⚠️ Lembre-se: Respeite as regras do fórum. Denuncie conteúdos impróprios clicando na postagem.</string>
 </resources>

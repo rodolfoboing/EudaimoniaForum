@@ -32,7 +32,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="Bem-vindo! Faça login para continuar."
+        android:text="@string/welcome_login"
         android:textSize="16sp"
         android:textColor="#666666"
         android:layout_marginBottom="24dp" />
@@ -43,7 +43,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:hint="USUARIO"
+        android:hint="@string/hint_username"
         android:padding="12dp"
         android:textColor="#000000"
         android:textColorHint="#5A5B59" />
@@ -53,12 +53,20 @@
         android:id="@+id/editTextSenha"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:hint="SENHA"
+        android:layout_marginBottom="8dp"
+        android:hint="@string/hint_password"
         android:inputType="textPassword"
         android:padding="12dp"
         android:textColor="#000000"
         android:textColorHint="#625F5F" />
+
+    <CheckBox
+        android:id="@+id/checkBoxMostrarSenhaLogin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/label_show_password"
+        android:textColor="#5A5B59" />
 
     <TextView
         android:id="@+id/textViewEsqueciSenha"
@@ -66,7 +74,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="right"
         android:layout_marginBottom="16dp"
-        android:text="Esqueci minha senha"
+        android:text="@string/label_forgot_password"
         android:textColor="#03A9F4"
         android:textSize="14sp"
         android:textStyle="bold"
@@ -78,7 +86,7 @@
         android:id="@+id/buttonEntrar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="ENTRAR"
+        android:text="@string/btn_login"
         android:backgroundTint="#4CAF50"
         android:textColor="#FFFFFF"
         android:layout_marginBottom="16dp" />
@@ -88,7 +96,7 @@
         android:id="@+id/buttonCadastrar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="CADASTRAR"
+        android:text="@string/btn_register"
         android:backgroundTint="#2196F3"
         android:textColor="#FFFFFF" />
 
@@ -98,7 +106,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:text="© 2024 Desenvolvido por Rodolfo B.M"
+        android:text="@string/label_footer_copyright"
         android:textSize="12sp"
         android:textColor="#999999"
         android:layout_marginTop="24dp" />

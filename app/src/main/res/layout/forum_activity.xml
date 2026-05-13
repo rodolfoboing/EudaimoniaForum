@@ -66,6 +66,7 @@
                 android:background="@drawable/edit_text_background"
                 android:hint="Buscar por palavra-chave"
                 android:inputType="text"
+                android:imeOptions="actionSearch"
                 android:paddingStart="8dp"
                 android:paddingTop="0dp"
                 android:paddingEnd="8dp"
@@ -84,7 +85,8 @@
                 <Spinner
                     android:id="@+id/spinnerCategorias"
                     android:layout_width="0dp"
-                    android:layout_height="32dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="36dp"
                     android:layout_marginEnd="4dp"
                     android:layout_weight="1"
                     android:background="@drawable/edit_text_background" />
@@ -92,12 +94,12 @@
                 <Button
                     android:id="@+id/buttonOrdenarRecentes"
                     android:layout_width="wrap_content"
-                    android:layout_height="30dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="36dp"
                     android:layout_marginEnd="4dp"
                     android:backgroundTint="#8BC34A"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    android:minHeight="0dp"
                     android:paddingStart="8dp"
                     android:paddingTop="0dp"
                     android:paddingEnd="8dp"
@@ -109,11 +111,11 @@
                 <Button
                     android:id="@+id/buttonOrdenarComentados"
                     android:layout_width="wrap_content"
-                    android:layout_height="30dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="36dp"
                     android:backgroundTint="#FF9800"
                     android:insetTop="0dp"
                     android:insetBottom="0dp"
-                    android:minHeight="0dp"
                     android:paddingStart="8dp"
                     android:paddingTop="0dp"
                     android:paddingEnd="8dp"
@@ -135,6 +137,20 @@
         android:paddingTop="2dp"
         android:paddingBottom="2dp" />
 
+    <TextView
+        android:id="@+id/textViewEmptyState"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/linearLayoutRodape"
+        android:layout_below="@id/linearLayoutCabecalho"
+        android:gravity="center"
+        android:padding="32dp"
+        android:text="Nenhuma postagem encontrada.\n\nTente usar outras palavras-chave ou mude a categoria acima."
+        android:textColor="#757575"
+        android:textSize="15sp"
+        android:textAlignment="center"
+        android:visibility="gone" />
+
     <LinearLayout
         android:id="@+id/linearLayoutRodape"
         android:layout_width="match_parent"
@@ -148,11 +164,12 @@
             android:id="@+id/textViewContato"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="2dp"
+            android:layout_marginBottom="4dp"
             android:gravity="center"
-            android:text="📧 Feedback: Rodolfo.bm.reserva@gmail.com"
-            android:textColor="#757575"
-            android:textSize="10sp" />
+            android:text="@string/msg_forum_footer_warning"
+            android:textColor="#F44336"
+            android:textSize="10sp"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -162,7 +179,8 @@
             <Button
                 android:id="@+id/buttonCriarPost"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
+                android:minHeight="44dp"
                 android:layout_marginEnd="2dp"
                 android:layout_weight="1"
                 android:backgroundTint="#03A9F4"
@@ -175,7 +193,8 @@
             <Button
                 android:id="@+id/buttonMinhasPostagens"
                 android:layout_width="0dp"
-                android:layout_height="36dp"
+                android:layout_height="wrap_content"
+                android:minHeight="44dp"
                 android:layout_marginStart="2dp"
                 android:layout_weight="1"
                 android:backgroundTint="#FFC107"

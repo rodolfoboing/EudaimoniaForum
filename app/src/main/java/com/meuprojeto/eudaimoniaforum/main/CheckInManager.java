@@ -18,30 +18,42 @@ import java.util.concurrent.TimeUnit;
 
 public class CheckInManager {
 
-    private static final String PREFS_NAME = "PrefsAbstinencia";
     private static final String KEY_TEMPO_INICIAL = "tempo_inicial";
+
+    private String getPrefsName() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user != null) {
+            return "PrefsAbstinencia_" + user.getUid();
+        }
+        return "PrefsAbstinencia";
+    }
 
     private final Context context;
     private final FirebaseAuth firebaseAuth;
 
     public interface CheckInStatusCallback {
         void onCheckInStateLoaded(boolean isCheckInCompletedToday, int correctStreak);
+        void onError(String erro);
     }
 
     public interface CheckInActionCallback {
         void onCheckInSuccess(int newStreak);
         void onNewAchievementUnlocked(String tituloNovaConquista, String mensagemMotivacional);
         void onRegularCheckInCompleted();
+        void onError(String erro);
     }
 
     public CheckInManager(Context context) {
-        this.context = context;
+        this.context = context.getApplicationContext();
         this.firebaseAuth = FirebaseAuth.getInstance();
     }
 
     public void checkCurrentStatus(CheckInStatusCallback callback) {
         FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user == null) return;
+        if (user == null) {
+            if (callback != null) callback.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_unauthenticated));
+            return;
+        }
 
         String hoje = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                 .format(new java.util.Date());
@@ -63,19 +75,36 @@ public class CheckInManager {
                 
                 // Quebrar a streak se não houver checkin hoje nem ontem
                 if (ultimoCheckIn != null && !ultimoCheckIn.equals(hoje) && !ultimoCheckIn.equals(ontem)) {
-                    android.util.Log.d("CheckInManager", "checkCurrentStatus: Streak quebra pois faltou check-in (ultimo=" + ultimoCheckIn + ")");
                     streakAtual = 0;
                     userRef.child("streakAtual").setValue(0);
                 }
 
-                // VALIDAÇÃO CRÍTICA: o streak nunca pode ser maior que os dias reais do cronômetro
-                SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-                long tempoInicialSalvo = prefs.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
-                int diasReaisAbstinencia = (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - tempoInicialSalvo);
+                // VALIDAÇÃO E SINCRONIZAÇÃO DO CRONÔMETRO (TEMPO DE ABSTINÊNCIA) COM A NUVEM
+                SharedPreferences prefs = context.getSharedPreferences(getPrefsName(), Context.MODE_PRIVATE);
+                long localTempoInicial = prefs.getLong(KEY_TEMPO_INICIAL, -1);
+                Long fbTempoInicial = snapshot.child("tempoInicial").getValue(Long.class);
 
-                // Se o streak está maior que o cronômetro permite, corrige silenciosamente
+                if (fbTempoInicial != null && fbTempoInicial > 0) {
+                    // Se o Firebase tem um tempo (ex: usuário trocou de telefone), sobrescrever o local, a menos que o erro seja ínfimo (sincronizando)
+                    if (localTempoInicial == -1 || Math.abs(fbTempoInicial - localTempoInicial) > TimeUnit.MINUTES.toMillis(5)) {
+                        prefs.edit().putLong(KEY_TEMPO_INICIAL, fbTempoInicial).apply();
+                        localTempoInicial = fbTempoInicial;
+                    }
+                } else {
+                    // Se Firebase não tem (usuário antigo), tentar retroalimentar do SharedPreferences local
+                    if (localTempoInicial > 0) {
+                        userRef.child("tempoInicial").setValue(localTempoInicial);
+                    } else {
+                        // Se não tem em nenhum lugar, iniciar agora.
+                        localTempoInicial = System.currentTimeMillis();
+                        prefs.edit().putLong(KEY_TEMPO_INICIAL, localTempoInicial).apply();
+                        userRef.child("tempoInicial").setValue(localTempoInicial);
+                    }
+                }
+
+                int diasReaisAbstinencia = (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - localTempoInicial);
+
                 if (streakAtual > diasReaisAbstinencia + 1) {
-                    android.util.Log.d("CheckInManager", "checkCurrentStatus: Streak (" + streakAtual + ") maior que permitido (" + diasReaisAbstinencia + "). Corrigindo!");
                     streakAtual = Math.max(0, diasReaisAbstinencia);
                     userRef.child("streakAtual").setValue(streakAtual);
                 }
@@ -89,15 +118,18 @@ public class CheckInManager {
                 }
             }
 
-            @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                if (callback != null) callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(context, error));
             }
         });
     }
 
     public void performCheckIn(CheckInActionCallback callback) {
         FirebaseUser user = firebaseAuth.getCurrentUser();
-        if (user == null) return;
+        if (user == null) {
+            if (callback != null) callback.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_unauthenticated));
+            return;
+        }
 
         String hoje = new java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
                 .format(new java.util.Date());
@@ -109,9 +141,21 @@ public class CheckInManager {
                 Integer currentStreak = snapshot.child("streakAtual").getValue(Integer.class);
                 if (currentStreak == null) currentStreak = 0;
 
-                SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
-                long tempoInicialSalvo = prefs.getLong(KEY_TEMPO_INICIAL, System.currentTimeMillis());
-                int diasReaisAbstinencia = (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - tempoInicialSalvo);
+                // Sincronizando e lendo o tempo do cronômetro real do usuário de forma confiável
+                SharedPreferences prefs = context.getSharedPreferences(getPrefsName(), Context.MODE_PRIVATE);
+                long localTempoInicial = prefs.getLong(KEY_TEMPO_INICIAL, -1);
+                Long fbTempoInicial = snapshot.child("tempoInicial").getValue(Long.class);
+
+                if (localTempoInicial == -1 && fbTempoInicial != null && fbTempoInicial > 0) {
+                    localTempoInicial = fbTempoInicial;
+                    prefs.edit().putLong(KEY_TEMPO_INICIAL, localTempoInicial).apply();
+                } else if (localTempoInicial == -1) {
+                    localTempoInicial = System.currentTimeMillis();
+                    prefs.edit().putLong(KEY_TEMPO_INICIAL, localTempoInicial).apply();
+                    userRef.child("tempoInicial").setValue(localTempoInicial);
+                }
+
+                int diasReaisAbstinencia = (int) TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - localTempoInicial);
 
                 if (currentStreak > diasReaisAbstinencia) {
                     currentStreak = diasReaisAbstinencia;
@@ -138,11 +182,13 @@ public class CheckInManager {
                     }
 
                     verificarEConcederMedalhas(user.getUid(), streakFinal, callback);
+                }).addOnFailureListener(e -> {
+                    if (callback != null) callback.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_saving_db));
                 });
             }
 
-            @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                if (callback != null) callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(context, error));
             }
         });
     }
@@ -160,55 +206,64 @@ public class CheckInManager {
 
                 if (dias >= 1 && !isConquistaDesbloqueada(snapshot, "badge_1_dia")) {
                     updates.put("badge_1_dia", true);
-                    tituloNovaConquista = "🥉 Medalha de 1 Dia";
-                    mensagemMotivacional = "O primeiro passo é sempre o mais importante. Você começou sua jornada de compromisso!";
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_day);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_day_desc);
                 }
                 if (dias >= 3 && !isConquistaDesbloqueada(snapshot, "badge_3_dias")) {
                     updates.put("badge_3_dias", true);
-                    tituloNovaConquista = "🥈 Medalha de 3 Dias";
-                    mensagemMotivacional = "Três dias firme! Sua disciplina está se consolidando. Continue assim!";
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_3_days);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_3_days_desc);
                 }
                 if (dias >= 7 && !isConquistaDesbloqueada(snapshot, "badge_1_semana")) {
                     updates.put("badge_1_semana", true);
-                    tituloNovaConquista = "🥇 Medalha de 1 Semana";
-                    mensagemMotivacional = "Uma semana inteira de compromisso diário! Você está provando sua força interior.";
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_week);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_week_desc);
                 }
                 if (dias >= 30 && !isConquistaDesbloqueada(snapshot, "badge_1_mes")) {
                     updates.put("badge_1_mes", true);
-                    tituloNovaConquista = "🏅 Medalha de 1 Mês";
-                    mensagemMotivacional = "30 dias de compromisso! Isso é mais do que determinação — é transformação real.";
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_month);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_month_desc);
                 }
                 if (dias >= 90 && !isConquistaDesbloqueada(snapshot, "badge_3_meses")) {
                     updates.put("badge_3_meses", true);
-                    tituloNovaConquista = "🔥 Medalha de 3 Meses";
-                    mensagemMotivacional = "90 dias! Você já mudou hábitos profundos. Sua versão mais forte está aqui!";
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_3_months);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_3_months_desc);
                 }
                 if (dias >= 180 && !isConquistaDesbloqueada(snapshot, "badge_6_meses")) {
                     updates.put("badge_6_meses", true);
-                    tituloNovaConquista = "💎 Medalha de 6 Meses";
-                    mensagemMotivacional = "Meio ano de compromisso diário! Você é uma inspiração para a comunidade.";
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_6_months);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_6_months_desc);
                 }
                 if (dias >= 365 && !isConquistaDesbloqueada(snapshot, "badge_1_ano")) {
                     updates.put("badge_1_ano", true);
-                    tituloNovaConquista = "👑 Medalha de 1 Ano";
-                    mensagemMotivacional = "UM ANO! A maior conquista possível. Você é a prova viva de que a mudança é real!";
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_year);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_1_year_desc);
+                }
+                if (dias >= 1095 && !isConquistaDesbloqueada(snapshot, "badge_3_anos")) {
+                    updates.put("badge_3_anos", true);
+                    tituloNovaConquista = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_3_years);
+                    mensagemMotivacional = context.getString(com.meuprojeto.eudaimoniaforum.R.string.medal_3_years_desc);
                 }
 
                 if (!updates.isEmpty()) {
-                    conquistasRef.updateChildren(updates);
-                }
-
-                if (callback != null) {
-                    if (tituloNovaConquista != null) {
-                        callback.onNewAchievementUnlocked(tituloNovaConquista, mensagemMotivacional);
-                    } else {
+                    final String finalTitulo = tituloNovaConquista;
+                    final String finalMensagem = mensagemMotivacional;
+                    conquistasRef.updateChildren(updates).addOnSuccessListener(aVoid -> {
+                        if (callback != null) {
+                            callback.onNewAchievementUnlocked(finalTitulo, finalMensagem);
+                        }
+                    }).addOnFailureListener(e -> {
+                        if (callback != null) callback.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_updating_achievements));
+                    });
+                } else {
+                    if (callback != null) {
                         callback.onRegularCheckInCompleted();
                     }
                 }
             }
 
-            @Override
             public void onCancelled(@NonNull DatabaseError error) {
+                if (callback != null) callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(context, error));
             }
         });
     }

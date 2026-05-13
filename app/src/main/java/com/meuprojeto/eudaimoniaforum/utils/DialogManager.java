@@ -34,14 +34,14 @@ public class DialogManager {
         layout.setOrientation(LinearLayout.VERTICAL);
         layout.setPadding(60, 60, 60, 40);
         layout.setGravity(Gravity.CENTER);
-        
+
         GradientDrawable shape = new GradientDrawable();
         shape.setCornerRadius(32f);
         shape.setColor(Color.parseColor("#1F2937")); // Cinza bem escuro
         layout.setBackground(shape);
 
         TextView title = new TextView(context);
-        title.setText("Contato & Feedback");
+        title.setText(context.getString(R.string.title_contact_feedback));
         title.setTextSize(22);
         title.setTextColor(Color.WHITE);
         title.setTypeface(null, Typeface.BOLD);
@@ -49,7 +49,7 @@ public class DialogManager {
         layout.addView(title);
 
         TextView subtitle = new TextView(context);
-        subtitle.setText("\nPara dúvidas, sugestões ou suporte técnico geral, envie um e-mail direto para nossa equipe:\n");
+        subtitle.setText(context.getString(R.string.desc_contact_feedback));
         subtitle.setTextSize(15);
         subtitle.setTextColor(Color.parseColor("#D1D5DB")); // Cinza clarinho
         subtitle.setGravity(Gravity.CENTER);
@@ -63,7 +63,7 @@ public class DialogManager {
         email.setGravity(Gravity.CENTER);
         email.setAutoLinkMask(Linkify.EMAIL_ADDRESSES);
         email.setMovementMethod(LinkMovementMethod.getInstance());
-        email.setLinkTextColor(Color.WHITE); 
+        email.setLinkTextColor(Color.WHITE);
         layout.addView(email);
 
         View spacer = new View(context);
@@ -71,19 +71,35 @@ public class DialogManager {
                 LinearLayout.LayoutParams.MATCH_PARENT, 40));
         layout.addView(spacer);
 
+        MaterialButton btnWebsite = new MaterialButton(context);
+        btnWebsite.setText(context.getString(R.string.label_our_website));
+        btnWebsite.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#374151")));
+        btnWebsite.setTextColor(Color.WHITE);
+        btnWebsite.setCornerRadius(16);
+        LinearLayout.LayoutParams webParams = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        webParams.setMargins(0, 0, 0, 20);
+        btnWebsite.setLayoutParams(webParams);
+        btnWebsite.setOnClickListener(v -> {
+            context.startActivity(new Intent(Intent.ACTION_VIEW,
+                    Uri.parse("https://sites.google.com/view/sosfiber-softwares/início")));
+        });
+        layout.addView(btnWebsite);
+
         MaterialButton btnPrivacy = new MaterialButton(context);
-        btnPrivacy.setText("📜 Política de Privacidade");
+        btnPrivacy.setText(context.getString(R.string.label_privacy_policy));
         btnPrivacy.setBackgroundTintList(android.content.res.ColorStateList.valueOf(Color.parseColor("#374151")));
         btnPrivacy.setTextColor(Color.WHITE);
         btnPrivacy.setCornerRadius(16);
         btnPrivacy.setOnClickListener(v -> {
             context.startActivity(new Intent(Intent.ACTION_VIEW,
-                    Uri.parse("https://gist.github.com/rodolfoboing/c68da4a7504b78036166b44b11e8c7ee")));
+                    Uri.parse("https://sites.google.com/view/sosfiber-softwares/politica-de-privacidade")));
         });
         layout.addView(btnPrivacy);
 
-        MaterialButton btnFechar = new MaterialButton(context, null, com.google.android.material.R.attr.borderlessButtonStyle);
-        btnFechar.setText("FECHAR");
+        MaterialButton btnFechar = new MaterialButton(context, null,
+                com.google.android.material.R.attr.borderlessButtonStyle);
+        btnFechar.setText(context.getString(R.string.btn_close));
         btnFechar.setTextColor(Color.WHITE);
         LinearLayout.LayoutParams fecharParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -97,23 +113,22 @@ public class DialogManager {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             dialog.getWindow().setLayout(
                     (int) (context.getResources().getDisplayMetrics().widthPixels * 0.90),
-                    WindowManager.LayoutParams.WRAP_CONTENT
-            );
+                    WindowManager.LayoutParams.WRAP_CONTENT);
         }
         dialog.show();
     }
 
-    public static void exibirDialogConquista(Context context, String titulo, String mensagem, Runnable onVerPerfilClick) {
+    public static void exibirDialogConquista(Context context, String titulo, String mensagem,
+            Runnable onVerPerfilClick) {
         Dialog dialog = new Dialog(context);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        dialog.setContentView(R.layout.main_conquista_dialog);
+        dialog.setContentView(R.layout.main_achievement_dialog);
 
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
             dialog.getWindow().setLayout(
                     WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT
-            );
+                    WindowManager.LayoutParams.WRAP_CONTENT);
         }
 
         TextView textTitulo = dialog.findViewById(R.id.textViewConquistaNome);

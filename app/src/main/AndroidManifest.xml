@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
+        android:name=".EudaimoniaApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -17,16 +18,18 @@
         tools:targetApi="31">
 
         <!-- Activities Novas -->
-        <activity android:name=".chat.ChatActivity" />
-        <activity android:name=".chat.ConversasActivity" />
-        <activity android:name=".auth.RecuperarSenhaActivity" />
-        <activity android:name=".forum.MinhasPostagensActivity" />
+        <activity android:name=".chat.ChatActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".chat.ConversationActivity" />
+        <activity android:name=".auth.RecoverPasswordActivity" />
+        <activity android:name=".forum.MyPostActivity" />
 
         <activity
-            android:name=".notification.NotificacaoActivity"
+            android:name=".notification.NotificationActivity"
             android:exported="false" />
         <activity
-            android:name=".forum.ComentarioActivity"
+            android:name=".forum.CommentActivity"
+            android:windowSoftInputMode="adjustResize"
             android:exported="false" />
         <activity
             android:name=".onboarding.SplashActivity"
@@ -36,7 +39,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".perfil.VisualizarPerfilActivity" />
+        <activity android:name=".profile.ViewProfileActivity" />
         <activity android:name=".auth.LoginActivity" />
         <activity
             android:name=".main.MainActivity"
@@ -47,13 +50,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-        <activity android:name=".auth.RegistrarActivity" />
-        <activity android:name=".perfil.SetupPerfilActivity" />
-        <activity android:name=".main.EditarAbstinenciaActivity" />
-        <activity android:name=".perfil.PerfilActivity" />
+        <activity android:name=".auth.RegisterActivity" />
+        <activity android:name=".profile.SetupProfileActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".main.EditAbstinenceActivity" />
+        <activity android:name=".profile.ProfileActivity" />
         <activity android:name=".forum.ForumActivity" />
-        <activity android:name=".perfil.EditarPerfilActivity" />
-        <activity android:name=".forum.NovoPostActivity" />
+        <activity android:name=".forum.ForumRulesActivity" />
+        <activity android:name=".profile.EditProfileActivity"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:name=".forum.NewPostActivity"
+            android:windowSoftInputMode="adjustResize" />
         <service
             android:name=".notification.MyFirebaseMessagingService"
             android:exported="false">
@@ -68,9 +75,9 @@
             android:value="fcm_default_channel" />
         
         <activity android:name=".onboarding.OnboardingActivity" />
-        <activity android:name=".orientacoes.OrientacoesActivity" />
-        <activity android:name=".moderacao.ModeracaoActivity" />
-        <activity android:name=".moderacao.DenunciaActivity" />
+        <activity android:name=".orientation.OrientationActivity" />
+        <activity android:name=".moderation.ModerationActivity" />
+        <activity android:name=".moderation.ReportActivity" />
     </application>
 
 </manifest>

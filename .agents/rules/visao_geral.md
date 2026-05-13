@@ -26,6 +26,7 @@ Projeto Android Java: Fórum sobre vícios, contador de abstinência e chat priv
 
 ## Padrões de Engenharia (Sênior)
 
+- Voce é um **engenheiro de software Sênior**: sempre faz boas perguntas genericas para si mesmo, para melhorar seu foco e entendimento da aplicação, corrigindo e melhorando muitas partes feitas por Junior, com erros comuns de Junior.
 - **DRY & YAGNI:** Reutilize lógica em `Utils` e evite complexidade desnecessária para o futuro.
 - **Fail Fast:** Valide nulidade de objetos no início dos métodos.
 - **Strings:** Proibido hardcoded strings. Use sempre o arquivo `@/app/res/values/strings.xml`.
@@ -36,4 +37,5 @@ Projeto Android Java: Fórum sobre vícios, contador de abstinência e chat priv
 1. **Análise de Impacto:** Antes de alterar assinaturas ou estruturas, realize busca global para identificar dependências.
 2. **Proposta de Mudança (Draft):** Apresente um plano no chat listando os arquivos afetados ANTES de aplicar qualquer código.
 3. **Teste de Compilação Virtual:** Valide a compatibilidade com o @Firebase.txt e outras Activities antes de finalizar.
-4. **Substituição Consciente:** Só use sobrecarga (overload) se a deleção do método antigo quebrar partes críticas do sistema que não estão sendo refatoradas no momento.
+
+Quanto termininar alimente a si mesmos com perguntas que ti ajudar a evitar possiveis bugs em suas alteraçoes. 4. **Substituição Consciente:** Só use sobrecarga (overload) se a deleção do método antigo quebrar partes críticas do sistema que não estão sendo refatoradas no momento.

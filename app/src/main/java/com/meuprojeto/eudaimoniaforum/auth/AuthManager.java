@@ -11,7 +11,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.meuprojeto.eudaimoniaforum.perfil.Usuario;
+import com.meuprojeto.eudaimoniaforum.profile.User;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -93,7 +93,7 @@ public class AuthManager {
                         verificarBanimento(user, callback);
                     } else {
                         Log.e(TAG, "Falha na autenticação: ", task.getException());
-                        callback.onError("Falha na autenticação. Verifique suas credenciais.");
+                        callback.onError(getFriendlyErrorMessage(task.getException()));
                     }
                 });
     }
@@ -156,7 +156,7 @@ public class AuthManager {
             } else if (task.isSuccessful()) {
                 realizarRegistro(email, password, nick, vicio, callback);
             } else {
-                callback.onError(task.getException() != null ? task.getException().getMessage() : "Erro desconhecido ao verificar nick");
+                callback.onError(getFriendlyErrorMessage(task.getException()));
             }
         });
     }
@@ -167,7 +167,7 @@ public class AuthManager {
                 FirebaseUser user = mAuth.getCurrentUser();
                 salvarDadosUsuarioBase(user, nick, vicio, callback);
             } else {
-                callback.onError("Falha ao criar conta: " + (task.getException() != null ? task.getException().getMessage() : ""));
+                callback.onError("Falha ao criar conta: " + getFriendlyErrorMessage(task.getException()));
             }
         });
     }
@@ -180,12 +180,12 @@ public class AuthManager {
 
         String userId = user.getUid();
         long dataEntradaTimestamp = System.currentTimeMillis();
-        String sobreMim = "Bem-vindo ao meu perfil!";
+        String sobreMim = "Bem-vindo ao meu profile!";
 
-        Usuario novoUsuario = new Usuario(userId, nick, String.valueOf(dataEntradaTimestamp), sobreMim, vicio);
+        User novoUser = new User(userId, nick, String.valueOf(dataEntradaTimestamp), sobreMim, vicio);
 
         Map<String, Object> updates = new HashMap<>();
-        updates.put("users/" + userId, novoUsuario);
+        updates.put("users/" + userId, novoUser);
         updates.put("usernames/" + nick, userId);
 
         FirebaseDatabase.getInstance().getReference().updateChildren(updates).addOnCompleteListener(task -> {
@@ -202,9 +202,28 @@ public class AuthManager {
             if (task.isSuccessful()) {
                 callback.onSuccess();
             } else {
-                callback.onError(task.getException() != null ? task.getException().getMessage() : "Erro desconhecido");
+                callback.onError(getFriendlyErrorMessage(task.getException()));
             }
         });
     }
 
+    private String getFriendlyErrorMessage(Exception e) {
+        if (e == null) return "Erro desconhecido.";
+        
+        if (e instanceof com.google.firebase.FirebaseNetworkException) {
+            return "Sem conexão com a internet. Verifique sua rede e tente novamente.";
+        } else if (e instanceof com.google.firebase.auth.FirebaseAuthInvalidCredentialsException) {
+            return "Credenciais inválidas. Verifique seu e-mail e senha.";
+        } else if (e instanceof com.google.firebase.auth.FirebaseAuthInvalidUserException) {
+            return "Nenhuma conta encontrada com este e-mail.";
+        } else if (e instanceof com.google.firebase.auth.FirebaseAuthUserCollisionException) {
+            return "Já existe uma conta registrada com este e-mail.";
+        } else if (e instanceof com.google.firebase.auth.FirebaseAuthWeakPasswordException) {
+            return "A senha é muito fraca. Deve ter no mínimo 6 caracteres.";
+        } else if (e instanceof com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException) {
+            return "Por motivos de segurança, você precisa fazer login novamente antes dessa operação.";
+        }
+
+        return "Erro no servidor: " + e.getLocalizedMessage();
+    }
 }

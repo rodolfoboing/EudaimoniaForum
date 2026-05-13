@@ -49,7 +49,7 @@ public class ChatActivity extends AppCompatActivity implements ChatManager.ChatU
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null || receiverId == null) {
-            Toast.makeText(this, "Erro: Usuário não identificado.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.error_user_unidentified), Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
@@ -81,6 +81,9 @@ public class ChatActivity extends AppCompatActivity implements ChatManager.ChatU
         super.onResume();
         activeChatUserId = receiverId;
         ChatNotificationHelper.limparNotificacaoDeChat(currentUserId, receiverId);
+        if (chatManager != null) {
+            chatManager.atualizarStatusOnline();
+        }
     }
 
     @Override
@@ -95,11 +98,11 @@ public class ChatActivity extends AppCompatActivity implements ChatManager.ChatU
         popup.setOnMenuItemClickListener(item -> {
             int itemId = item.getItemId();
             if (itemId == R.id.menu_apagar_conversa) {
-                confirmOp("Apagar Conversa", "Tem certeza que deseja apagar esta conversa? A ação não pode ser desfeita.",
+                confirmOp(getString(R.string.action_delete_conversation), getString(R.string.msg_confirm_delete_conversation),
                         () -> chatManager.apagarConversa(this));
                 return true;
             } else if (itemId == R.id.menu_bloquear_usuario) {
-                confirmOp("Bloquear Usuário", "Tem certeza que deseja bloquear este usuário? Você não receberá mais mensagens dele.",
+                confirmOp(getString(R.string.action_block_user), getString(R.string.msg_confirm_block_user),
                         () -> chatManager.bloquearUsuario(this));
                 return true;
             }
@@ -112,8 +115,8 @@ public class ChatActivity extends AppCompatActivity implements ChatManager.ChatU
         new AlertDialog.Builder(this)
                 .setTitle(title)
                 .setMessage(message)
-                .setPositiveButton("Sim", (dialog, which) -> onConfirm.run())
-                .setNegativeButton("Não", null)
+                .setPositiveButton(R.string.dialog_yes, (dialog, which) -> onConfirm.run())
+                .setNegativeButton(R.string.dialog_no, null)
                 .show();
     }
 
@@ -177,7 +180,8 @@ public class ChatActivity extends AppCompatActivity implements ChatManager.ChatU
     public void onActionSuccess(String message) {
         if(isFinishing() || isDestroyed()) return;
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-        if ("Conversa apagada.".equals(message)) {
+        // Fallback checks against hardcoded strings could be problematic.
+        if (message.equals(getString(R.string.msg_conversation_deleted)) || message.contains("apagada")) {
             finish();
         }
     }

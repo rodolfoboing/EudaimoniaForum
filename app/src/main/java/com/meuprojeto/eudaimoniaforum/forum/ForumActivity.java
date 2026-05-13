@@ -5,11 +5,15 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.content.Context;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,6 +35,7 @@ public class ForumActivity extends AppCompatActivity {
     private List<Post> postListRaw;
     private List<Post> postsExibidos;
     private EditText editTextSearch;
+    private TextView textViewEmptyState;
     private Button buttonOrdenarRecentes, buttonOrdenarComentados, buttonMinhasPostagens;
     private Spinner spinnerCategorias;
     private String categoriaSelecionada = "Todos";
@@ -44,6 +49,12 @@ public class ForumActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         android.util.Log.d("ForumActivity", "onCreate() chamado. Inicializando ForumActivity.");
+
+        android.content.SharedPreferences prefs = getSharedPreferences("AppPrefs", android.content.Context.MODE_PRIVATE);
+        if (!prefs.getBoolean("has_accepted_forum_rules", false)) {
+            startActivity(new Intent(this, ForumRulesActivity.class));
+        }
+
         setContentView(R.layout.forum_activity);
 
         editTextSearch = findViewById(R.id.editTextSearch);
@@ -52,6 +63,7 @@ public class ForumActivity extends AppCompatActivity {
         buttonMinhasPostagens = findViewById(R.id.buttonMinhasPostagens);
         spinnerCategorias = findViewById(R.id.spinnerCategorias);
         recyclerViewPosts = findViewById(R.id.recyclerViewPosts);
+        textViewEmptyState = findViewById(R.id.textViewEmptyState);
         
         recyclerViewPosts.setLayoutManager(new LinearLayoutManager(this));
 
@@ -78,15 +90,26 @@ public class ForumActivity extends AppCompatActivity {
             public void afterTextChanged(Editable s) {}
         });
 
+        editTextSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
+                }
+                return true;
+            }
+            return false;
+        });
+
         buttonOrdenarRecentes.setOnClickListener(v -> ordenarPorMaisRecentes());
         buttonOrdenarComentados.setOnClickListener(v -> ordenarPorMaisComentados());
 
         findViewById(R.id.buttonCriarPost).setOnClickListener(v -> {
-            startActivity(new Intent(ForumActivity.this, NovoPostActivity.class));
+            startActivity(new Intent(ForumActivity.this, NewPostActivity.class));
         });
 
         buttonMinhasPostagens.setOnClickListener(v -> {
-            startActivity(new Intent(ForumActivity.this, MinhasPostagensActivity.class));
+            startActivity(new Intent(ForumActivity.this, MyPostActivity.class));
         });
     }
 
@@ -100,14 +123,8 @@ public class ForumActivity extends AppCompatActivity {
     }
 
     private void setupSpinner() {
-        List<String> categorias = new ArrayList<>();
-        categorias.add("Todos");
-        categorias.add("Pornografia");
-        categorias.add("Jogos de Azar");
-        categorias.add("Videogame");
-        categorias.add("Álcool");
-        categorias.add("Drogas");
-        categorias.add("Cigarro");
+        String[] categoriasArray = getResources().getStringArray(R.array.lista_categorias);
+        List<String> categorias = new ArrayList<>(java.util.Arrays.asList(categoriasArray));
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(this, R.layout.forum_spinner_item, categorias);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -144,7 +161,7 @@ public class ForumActivity extends AppCompatActivity {
             @Override
             public void onError(String erro) {
                 if(isFinishing() || isDestroyed()) return;
-                Toast.makeText(ForumActivity.this, "Erro: " + erro, Toast.LENGTH_SHORT).show();
+                Toast.makeText(ForumActivity.this, getString(R.string.error_loading_data) + ": " + erro, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -174,6 +191,14 @@ public class ForumActivity extends AppCompatActivity {
         postsExibidos.clear();
         postsExibidos.addAll(postsTrabalho);
         postAdapter.notifyDataSetChanged();
+
+        if (postsExibidos.isEmpty()) {
+            textViewEmptyState.setVisibility(View.VISIBLE);
+            recyclerViewPosts.setVisibility(View.GONE);
+        } else {
+            textViewEmptyState.setVisibility(View.GONE);
+            recyclerViewPosts.setVisibility(View.VISIBLE);
+        }
     }
 
     private void ordenarPorMaisRecentes() {

@@ -4,13 +4,27 @@
     <option name="selectedTabId" value="Android Vitals" />
     <option name="tabSettings">
       <map>
+        <entry key="Android vitals">
+          <value>
+            <InsightsFilterSettings>
+              <option name="connection">
+                <ConnectionSetting>
+                  <option name="appId" value="com.sosfiber.eudaimoniaforum" />
+                </ConnectionSetting>
+              </option>
+              <option name="signal" value="SIGNAL_UNSPECIFIED" />
+              <option name="timeIntervalDays" value="SEVEN_DAYS" />
+              <option name="visibilityType" value="ALL" />
+            </InsightsFilterSettings>
+          </value>
+        </entry>
         <entry key="Firebase Crashlytics">
           <value>
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.example.Eudaimonia_Forum" />
-                  <option name="mobileSdkAppId" value="1:269159652319:android:adabe027ee59321c2d826a" />
+                  <option name="appId" value="com.sosfiber.eudaimoniaforum" />
+                  <option name="mobileSdkAppId" value="1:269159652319:android:3bb7b4b2641f17932d826a" />
                   <option name="projectId" value="app-metas-tcc" />
                   <option name="projectNumber" value="269159652319" />
                 </ConnectionSetting>

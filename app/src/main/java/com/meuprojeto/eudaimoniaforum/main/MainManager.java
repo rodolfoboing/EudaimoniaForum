@@ -9,13 +9,15 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.meuprojeto.eudaimoniaforum.notification.Notificacao;
+import com.meuprojeto.eudaimoniaforum.notification.Notification;
 
+import android.content.Context;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MainManager {
 
+    private final Context context;
     private final FirebaseAuth firebaseAuth;
     private final DatabaseReference rootRef;
     
@@ -40,9 +42,15 @@ public class MainManager {
         void onStatusNaoLidaStatusChanged(boolean temNaoLida);
     }
 
-    public MainManager() {
+    public MainManager(Context context) {
+        this.context = context.getApplicationContext();
         firebaseAuth = FirebaseAuth.getInstance();
         rootRef = FirebaseDatabase.getInstance().getReference();
+        
+        FirebaseUser user = firebaseAuth.getCurrentUser();
+        if (user != null) {
+            rootRef.child("users").child(user.getUid()).keepSynced(true);
+        }
     }
 
     public String getCurrentUserId() {
@@ -57,7 +65,7 @@ public class MainManager {
     public void carregarVicioDoUsuario(DadosUsuarioCallback callback) {
         String uid = getCurrentUserId();
         if (uid == null) {
-            callback.onError("Usuário não autenticado");
+            callback.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_unauthenticated));
             return;
         }
 
@@ -68,9 +76,8 @@ public class MainManager {
                 callback.onVicioCarregado(vicio != null && !vicio.isEmpty() ? vicio : "");
             }
 
-            @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                callback.onError(error.getMessage());
+                callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(context, error));
             }
         });
     }
@@ -98,20 +105,21 @@ public class MainManager {
     public void zerarContadorRastreamento(AcaoCallback callback) {
         String uid = getCurrentUserId();
         if (uid == null) {
-            callback.onError("Não autenticado");
+            callback.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_unauthenticated));
             return;
         }
 
         Map<String, Object> resetUpdates = new HashMap<>();
         resetUpdates.put("streakAtual", 0);
         resetUpdates.put("ultimoCheckIn", null);
-        resetUpdates.put("checkins", null);
+        // 'checkins' NÃO PODE ser apagado aqui para não perder os dias totais na ProfileActivity
+        resetUpdates.put("tempoInicial", System.currentTimeMillis());
 
         rootRef.child("users").child(uid).updateChildren(resetUpdates).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 callback.onSuccess();
             } else {
-                callback.onError(task.getException() != null ? task.getException().getMessage() : "Erro ao zerar contadores");
+                callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(context, task.getException()));
             }
         });
     }
@@ -126,7 +134,7 @@ public class MainManager {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 boolean temNaoLida = false;
                 for (DataSnapshot doc : snapshot.getChildren()) {
-                    Notificacao notif = doc.getValue(Notificacao.class);
+                    Notification notif = doc.getValue(Notification.class);
                     if (notif != null && !notif.isLida()) {
                         temNaoLida = true;
                         break;
@@ -141,21 +149,54 @@ public class MainManager {
         notificacoesRef.addValueEventListener(notificacoesListener);
     }
 
-    public void atualizarVicio(String novoVicio, AcaoCallback callback) {
+    public void marcarNotificacaoComoLidaPorReferencia(String tipo, String idReferencia) {
+        String uid = getCurrentUserId();
+        if (uid == null || tipo == null || idReferencia == null) return;
+
+        rootRef.child("notificacoes").child(uid).orderByChild("idReferencia").equalTo(idReferencia)
+            .addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    for (DataSnapshot no : snapshot.getChildren()) {
+                        Notification notif = no.getValue(Notification.class);
+                        if (notif != null && tipo.equals(notif.getTipo()) && !notif.isLida()) {
+                            no.getRef().child("lida").setValue(true);
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {}
+            });
+    }
+
+    public void atualizarConfiguracaoAbstinencia(String novoVicio, long novoTempo, AcaoCallback callback) {
         String uid = getCurrentUserId();
         if (uid == null) {
-            callback.onError("Não autenticado");
+            callback.onError(context.getString(com.meuprojeto.eudaimoniaforum.R.string.error_unauthenticated));
             return;
         }
 
-        rootRef.child("users").child(uid).child("vicio").setValue(novoVicio).addOnCompleteListener(task -> {
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("vicio", novoVicio);
+        
+        // Ao editar, quebra a streak atual, mas preserva check-ins totais e conquistas (conforme regra de negócio)
+        updates.put("streakAtual", 0);
+        updates.put("ultimoCheckIn", null);
+        
+        if (novoTempo > 0) {
+            updates.put("tempoInicial", novoTempo);
+        }
+
+        rootRef.child("users").child(uid).updateChildren(updates).addOnCompleteListener(task -> {
             if (task.isSuccessful()) {
                 callback.onSuccess();
             } else {
-                callback.onError(task.getException() != null ? task.getException().getMessage() : "Erro ao salvar no banco");
+                callback.onError(com.meuprojeto.eudaimoniaforum.utils.FirebaseErrorHandler.getFriendlyMessage(context, task.getException()));
             }
         });
     }
+
 
     public void removerListeners() {
         if (notificacoesRef != null && notificacoesListener != null) {
